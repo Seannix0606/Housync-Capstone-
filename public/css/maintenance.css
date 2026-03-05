@@ -1,0 +1,1069 @@
+/* Maintenance Requests Styles */
+
+.maintenance-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header Section */
+.maintenance-header {
+    margin-bottom: 2rem;
+}
+
+.maintenance-header .header-title h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.maintenance-header .header-title h1 i {
+    color: #3498db;
+}
+
+.maintenance-header .subtitle {
+    color: #7f8c8d;
+    font-size: 1rem;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #ecf0f1;
+    color: #2c3e50;
+    text-decoration: none;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: #bdc3c7;
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Statistics Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-icon.total {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-icon.pending {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-icon.in-progress {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-icon.urgent {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.stat-details h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stat-details p {
+    color: #7f8c8d;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Filters Section */
+.filters-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.filters-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-group label i {
+    color: #3498db;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-info {
+    background: #1abc9c;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #16a085;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+/* Maintenance Table */
+.maintenance-table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.maintenance-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.maintenance-table thead {
+    background: #f8f9fa;
+}
+
+.maintenance-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.maintenance-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.maintenance-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.maintenance-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.maintenance-table tbody tr.urgent-row {
+    background-color: #fff3f3;
+}
+
+.request-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.request-description-preview {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.unit-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.unit-info strong {
+    color: #2c3e50;
+}
+
+.unit-info span {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.tenant-info {
+    color: #2c3e50;
+}
+
+.staff-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2c3e50;
+}
+
+.text-muted {
+    color: #95a5a6;
+    font-style: italic;
+}
+
+/* Badges */
+.category-badge,
+.priority-badge,
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+}
+
+.category-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.category-plumbing {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+.category-electrical {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.category-hvac {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.category-appliance {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.category-structural {
+    background: #fbe9e7;
+    color: #d84315;
+}
+
+.category-cleaning {
+    background: #e0f2f1;
+    color: #00695c;
+}
+
+.priority-low {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.priority-medium {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.priority-high {
+    background: #ffe0b2;
+    color: #bf360c;
+}
+
+.priority-urgent {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-pending {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-assigned {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-in-progress {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+.status-completed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #95a5a6;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #7f8c8d;
+    margin-bottom: 0.5rem;
+}
+
+/* Pagination */
+.pagination-container {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+/* Details Page */
+.maintenance-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.details-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.details-card.main-card {
+    grid-column: 1 / -1;
+}
+
+.details-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.25rem 1.5rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 1.25rem;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-row label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 160px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.info-row label i {
+    color: #3498db;
+    margin-top: 0.2rem;
+}
+
+.info-value {
+    color: #34495e;
+    flex: 1;
+}
+
+.description-box,
+.notes-box {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    line-height: 1.6;
+}
+
+/* Staff Assignment */
+.assigned-staff-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.staff-avatar {
+    font-size: 3rem;
+    color: #3498db;
+}
+
+.staff-details h3 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+.staff-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.no-assignment {
+    text-align: center;
+    padding: 2rem;
+    color: #95a5a6;
+}
+
+.no-assignment i {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.assign-form,
+.reassign-form,
+.status-form,
+.notes-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.assign-form label,
+.reassign-form label,
+.status-form label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.assign-form select,
+.reassign-form select,
+.status-form select {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.notes-form textarea {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.cancel-form {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.current-notes {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+/* Tenant-Specific Styles */
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.assignment-info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.assignment-header h3 {
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.assignment-header h3 i {
+    color: #3498db;
+}
+
+.assignment-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Request Cards (for tenant list view) */
+.maintenance-list-container {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.requests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.request-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.request-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.request-card.urgent-card {
+    border: 2px solid #e74c3c;
+}
+
+.request-card-header {
+    padding: 1.25rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.request-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.request-title-row h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.request-id {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.request-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.request-card-body {
+    padding: 1.25rem;
+}
+
+.request-description {
+    margin-bottom: 1rem;
+}
+
+.request-description p {
+    margin: 0;
+    color: #34495e;
+    line-height: 1.6;
+}
+
+.request-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.meta-item i {
+    color: #3498db;
+    width: 16px;
+}
+
+.request-card-footer {
+    padding: 1rem 1.25rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .maintenance-container {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filters-form {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .details-card.main-card,
+    .details-card.full-width {
+        grid-column: 1;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-row label {
+        min-width: auto;
+    }
+
+    .maintenance-table {
+        font-size: 0.85rem;
+    }
+
+    .maintenance-table th,
+    .maintenance-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .requests-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .assignment-details {
+        grid-template-columns: 1fr;
+    }
+
+    .maintenance-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ========== DARK MODE ========== */
+body.dark-mode .maintenance-container {
+    color: #e2e8f0;
+}
+
+body.dark-mode .maintenance-header .header-title h1 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .maintenance-header .subtitle {
+    color: #94a3b8;
+}
+
+body.dark-mode .btn-back {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .btn-back:hover {
+    background: #334155;
+}
+
+body.dark-mode .stat-card {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .stat-details h3 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .stat-details p {
+    color: #94a3b8;
+}
+
+body.dark-mode .filters-section {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .filter-group label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .filter-group input,
+body.dark-mode .filter-group select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark-mode .maintenance-table-container {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .maintenance-table thead {
+    background: #0f172a;
+}
+
+body.dark-mode .maintenance-table th {
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+body.dark-mode .maintenance-table td {
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .maintenance-table tbody tr:hover {
+    background-color: #0f172a;
+}
+
+body.dark-mode .maintenance-table tbody tr.urgent-row {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+body.dark-mode .request-title {
+    color: #f1f5f9;
+}
+
+body.dark-mode .request-description-preview {
+    color: #94a3b8;
+}
+
+body.dark-mode .unit-info strong {
+    color: #f1f5f9;
+}
+
+body.dark-mode .unit-info span {
+    color: #94a3b8;
+}
+
+body.dark-mode .tenant-info {
+    color: #e2e8f0;
+}
+
+body.dark-mode .staff-info {
+    color: #e2e8f0;
+}
+
+body.dark-mode .details-card {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .card-body {
+    color: #e2e8f0;
+}
+
+body.dark-mode .info-row label {
+    color: #94a3b8;
+}
+
+body.dark-mode .info-value {
+    color: #e2e8f0;
+}
+
+body.dark-mode .description-box,
+body.dark-mode .notes-box {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+body.dark-mode .assigned-staff-info {
+    background: #0f172a;
+}
+
+body.dark-mode .staff-details h3 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .staff-details p {
+    color: #94a3b8;
+}
+
+body.dark-mode .current-notes {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+body.dark-mode .assign-form label,
+body.dark-mode .reassign-form label,
+body.dark-mode .status-form label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .assign-form select,
+body.dark-mode .reassign-form select,
+body.dark-mode .status-form select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark-mode .notes-form textarea {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark-mode .assignment-info-card {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .assignment-header h3 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .detail-label {
+    color: #94a3b8;
+}
+
+body.dark-mode .detail-value {
+    color: #f1f5f9;
+}
+
+body.dark-mode .request-card {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .request-card-header {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .request-title-row h3 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .request-id {
+    color: #94a3b8;
+}
+
+body.dark-mode .request-description p {
+    color: #e2e8f0;
+}
+
+body.dark-mode .meta-item {
+    color: #94a3b8;
+}
+
+body.dark-mode .request-card-footer {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .cancel-form {
+    border-color: #334155;
+}
+
+body.dark-mode .empty-state {
+    color: #94a3b8;
+}
+
+body.dark-mode .empty-state h3 {
+    color: #64748b;
+}
+

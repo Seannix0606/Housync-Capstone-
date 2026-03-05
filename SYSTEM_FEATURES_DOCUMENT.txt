@@ -1,0 +1,65 @@
+HouSync
+
+HouseSync is a web-based boarding house management system with RFID-enabled security for tracking tenants, units, and property activity in real time.
+
+Proponents:
+· de los Reyes, Joshua Caleb
+· Fernandez, Sean Archer
+· Canete, John Maynard
+
+MUST HAVES
+Architecture: Web · Database · ESP32 · RFID Module
+
+GLOBAL SYSTEM FEATURES
+· Secure role-based login (Super Admin, Landlord, Tenant, Staff)
+· Document uploads with Supabase storage and verification
+· Public Explore page for property listings and tenant applications
+· CSV exports, search/filter, and activity logs
+· Central settings (rates, email templates, feature toggles, dark mode)
+· Access logging for RFID scans and other system events
+
+ROLE FEATURES
+
+Super Admin
+· Approve or reject landlord signups and review documents
+· Monitor all landlords, properties, and tenants from a single dashboard
+· Manage users, global settings, and disputes
+
+Landlord
+· Manage multiple properties, units, and tenants in one dashboard
+· Bulk create units, assign tenants, track occupancy, export tenant history
+· Add staff and assign maintenance tasks per unit
+· Full RFID card management (issue, revoke, reassign, view logs)
+· Review tenant applications from the Explore portal
+
+Staff
+· Receive role-specific assignments tied to units
+· View task details, update status, and mark jobs completed
+· Access profile info and change password
+
+Tenant
+· View dashboard with profile, lease, unit, and co-occupant details
+· Upload personal documents once and reuse for applications
+· Apply for listed properties and track application status
+· Access assigned RFID permissions and change password
+
+MISSING FEATURES (NOT YET BUILT)
+· Billing & Payments: bill entry, rate management, payment tracking, PDF invoices
+· Communication & Chat: real-time messaging, ticketing, attachments
+· Advanced Reporting: PDF exports, financial dashboards
+· Full Notification Suite: SMS/email reminders, push alerts, auto schedulers
+· Maintenance Ticketing: priority-based workflow with attachment support
+• Tenant rating/notes
+• Lease expiry reminders
+
+NICE TO HAVE
+• Visitor log
+• Multi-property support (already available)
+• Push notifications (infrastructure ready, needs rollout)
+
+TO ACCOMPLISH ASAP
+• PROJECT ADVISOR – Ms. Khiara Rubia
+• PROJECT COORDINATOR – Mr. Temothy Homecillo
+• PANEL CHAIRMAN – Mr. Roderick Bandalan
+• PANEL MEMBER – Engr. Vicente Patallita III
+

@@ -1,0 +1,404 @@
+/* Tenant History Page Styles */
+
+.tenant-history-container {
+    padding: 20px;
+}
+
+/* Statistics Cards */
+.stats-row {
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 10px 0 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Filter Section */
+.filter-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.filter-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* Timeline Table */
+.history-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.timeline-table thead th {
+    background: #f8f9fa;
+    padding: 15px;
+    font-weight: 600;
+    color: #495057;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.timeline-table tbody tr {
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.timeline-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.timeline-table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+/* Tenant Avatar */
+.tenant-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.tenant-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tenant-details h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: #2c3e50;
+}
+
+.tenant-details small {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Property Info */
+.property-info strong {
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.property-info small {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.terminated {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.payment-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.payment-badge.verified {
+    background: #d1f2eb;
+    color: #0c5460;
+}
+
+.payment-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.payment-badge.not-uploaded {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Bedroom Badge */
+.bedroom-badge {
+    background: #e7f3ff;
+    color: #004085;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Date Display */
+.date-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.date-display i {
+    font-size: 14px;
+}
+
+.date-display.move-in i {
+    color: #28a745;
+}
+
+.date-display.move-out i {
+    color: #dc3545;
+}
+
+/* Rent Display */
+.rent-display {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f97316;
+}
+
+.deposit-display {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 3px;
+}
+
+/* Duration Display */
+.duration-display {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Notes Row */
+.notes-row {
+    background: #f8f9fa;
+}
+
+.notes-row td {
+    padding: 12px 15px !important;
+}
+
+.notes-content {
+    font-size: 13px;
+    color: #495057;
+    font-style: italic;
+}
+
+/* Action Buttons */
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.action-btn.view {
+    background: #007bff;
+    color: white;
+}
+
+.action-btn.view:hover {
+    background: #0056b3;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state h4 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 25px;
+}
+
+/* Pagination */
+.pagination-wrapper {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .timeline-table {
+        font-size: 13px;
+    }
+    
+    .timeline-table thead th,
+    .timeline-table tbody td {
+        padding: 12px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-card {
+        padding: 20px 15px;
+    }
+    
+    .export-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .export-buttons button {
+        width: 100%;
+    }
+    
+    .timeline-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* Loading State */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #f97316;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Print Styles */
+@media print {
+    .filter-card,
+    .sidebar,
+    .action-btn,
+    .export-buttons,
+    .pagination-wrapper {
+        display: none !important;
+    }
+    
+    .history-card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    
+    .timeline-table {
+        font-size: 11px;
+    }
+}
+
