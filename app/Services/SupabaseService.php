@@ -42,8 +42,8 @@ class SupabaseService
 
             $response = $this->client->get($url);
             return json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            Log::error('Supabase query error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase query error: ' . $exception->getMessage());
             return null;
         }
     }
@@ -59,8 +59,8 @@ class SupabaseService
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            Log::error('Supabase insert error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase insert error: ' . $exception->getMessage());
             return null;
         }
     }
@@ -83,8 +83,8 @@ class SupabaseService
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            Log::error('Supabase update error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase update error: ' . $exception->getMessage());
             return null;
         }
     }
@@ -101,8 +101,8 @@ class SupabaseService
 
             $this->client->delete($url);
             return true;
-        } catch (GuzzleException $e) {
-            Log::error('Supabase delete error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase delete error: ' . $exception->getMessage());
             return false;
         }
     }
@@ -161,10 +161,10 @@ class SupabaseService
                 'url' => $this->getPublicUrl($bucket, $path),
                 'message' => 'File uploaded successfully'
             ];
-        } catch (RequestException $e) {
-            $errorMessage = $e->getMessage();
-            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null;
+        } catch (RequestException $exception) {
+            $errorMessage = $exception->getMessage();
+            $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : null;
+            $responseBody = $exception->hasResponse() ? $exception->getResponse()->getBody()->getContents() : null;
             
             Log::error('Supabase upload error', [
                 'message' => $errorMessage,
@@ -181,21 +181,21 @@ class SupabaseService
                 'response' => $responseBody,
                 'message' => 'Upload failed: ' . $errorMessage
             ];
-        } catch (GuzzleException $e) {
-            Log::error('Supabase Guzzle error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase Guzzle error: ' . $exception->getMessage());
             
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
-                'message' => 'Upload failed: ' . $e->getMessage()
+                'error' => $exception->getMessage(),
+                'message' => 'Upload failed: ' . $exception->getMessage()
             ];
-        } catch (\Exception $e) {
-            Log::error('File upload error: ' . $e->getMessage());
+        } catch (\Exception $exception) {
+            Log::error('File upload error: ' . $exception->getMessage());
             
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
-                'message' => 'Upload failed: ' . $e->getMessage()
+                'error' => $exception->getMessage(),
+                'message' => 'Upload failed: ' . $exception->getMessage()
             ];
         }
     }
@@ -209,8 +209,8 @@ class SupabaseService
         try {
             $this->client->delete("/storage/v1/object/{$bucket}/{$path}");
             return true;
-        } catch (GuzzleException $e) {
-            Log::error('Supabase delete file error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase delete file error: ' . $exception->getMessage());
             return false;
         }
     }
@@ -225,8 +225,8 @@ class SupabaseService
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            Log::error('Supabase list files error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase list files error: ' . $exception->getMessage());
             return null;
         }
     }
@@ -242,8 +242,8 @@ class SupabaseService
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
-        } catch (GuzzleException $e) {
-            Log::error('Supabase query error: ' . $e->getMessage());
+        } catch (GuzzleException $exception) {
+            Log::error('Supabase query error: ' . $exception->getMessage());
             return null;
         }
     }

@@ -181,8 +181,8 @@ class AnnouncementController extends Controller
 
         $announcements = Announcement::where('user_id', $landlordId)
             ->active()
-            ->where(function ($q) use ($propertyId) {
-                $q->whereNull('property_id')
+            ->where(function ($query) use ($propertyId) {
+                $query->whereNull('property_id')
                   ->orWhere('property_id', $propertyId);
             })
             ->whereIn('audience', ['all_tenants', 'property_tenants', 'everyone'])
@@ -207,8 +207,8 @@ class AnnouncementController extends Controller
         }
 
         $announcement = Announcement::active()
-            ->where(function ($q) use ($activeAssignment) {
-                $q->whereNull('property_id')
+            ->where(function ($query) use ($activeAssignment) {
+                $query->whereNull('property_id')
                   ->orWhere('property_id', $activeAssignment->unit?->property_id);
             })
             ->findOrFail($id);
@@ -266,8 +266,8 @@ class AnnouncementController extends Controller
                 ->with('tenant');
 
             if ($announcement->audience === 'property_tenants' && $announcement->property_id) {
-                $tenantQuery->whereHas('unit', function ($q) use ($announcement) {
-                    $q->where('property_id', $announcement->property_id);
+                $tenantQuery->whereHas('unit', function ($query) use ($announcement) {
+                    $query->where('property_id', $announcement->property_id);
                 });
             }
 
@@ -277,8 +277,8 @@ class AnnouncementController extends Controller
 
         if (in_array($announcement->audience, ['all_staff', 'everyone'])) {
             $staff = User::where('role', 'staff')
-                ->whereHas('staffProfile', function ($q) use ($landlordId) {
-                    $q->where('created_by_landlord_id', $landlordId);
+                ->whereHas('staffProfile', function ($query) use ($landlordId) {
+                    $query->where('created_by_landlord_id', $landlordId);
                 })
                 ->get();
             $recipients = $recipients->merge($staff);

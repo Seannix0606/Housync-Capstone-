@@ -124,10 +124,10 @@ class StaffController extends Controller
                     'staff_type' => $request->staff_type
                 ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to add staff member: ' . $e->getMessage())->withInput();
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
+        } catch (\Exception $exception) {
+            return back()->with('error', 'Failed to add staff member: ' . $exception->getMessage())->withInput();
         }
     }
 
@@ -183,10 +183,10 @@ class StaffController extends Controller
             return redirect()->route('landlord.staff')
                 ->with('success', "Staff member {$staff->name} has been assigned to unit {$unit->unit_number} successfully!");
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to assign staff: ' . $e->getMessage())->withInput();
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
+        } catch (\Exception $exception) {
+            return back()->with('error', 'Failed to assign staff: ' . $exception->getMessage())->withInput();
         }
     }
 
@@ -238,7 +238,7 @@ class StaffController extends Controller
             return redirect()->route('landlord.staff')
                 ->with('success', 'Staff assignment deleted successfully.');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             return back()->with('error', 'Failed to delete staff assignment. Please try again.');
         }
     }
@@ -425,13 +425,13 @@ class StaffController extends Controller
                 'message' => 'Assignment marked as completed successfully! The landlord has been notified.'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             \Illuminate\Support\Facades\Log::error('Failed to complete staff assignment', [
                 'assignment_id' => $id,
                 'staff_id' => Auth::id(),
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
+                'error_message' => $exception->getMessage(),
+                'error_file' => $exception->getFile(),
+                'error_line' => $exception->getLine(),
             ]);
 
             return response()->json([
@@ -461,10 +461,10 @@ class StaffController extends Controller
 
             return view('staff.profile', compact('staff', 'assignment'));
             
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Staff profile error: ' . $e->getMessage(), [
+        } catch (\Exception $exception) {
+            \Illuminate\Support\Facades\Log::error('Staff profile error: ' . $exception->getMessage(), [
                 'user_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $exception->getTraceAsString()
             ]);
             
             return redirect()->route('staff.dashboard')->with('error', 'Unable to load profile. Please try again.');
@@ -507,10 +507,10 @@ class StaffController extends Controller
 
             return response()->json(['success' => 'Password updated successfully!']);
 
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Staff password update error: ' . $e->getMessage(), [
+        } catch (\Exception $exception) {
+            \Illuminate\Support\Facades\Log::error('Staff password update error: ' . $exception->getMessage(), [
                 'staff_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $exception->getTraceAsString()
             ]);
 
             return response()->json(['error' => 'Failed to update password. Please try again.'], 500);

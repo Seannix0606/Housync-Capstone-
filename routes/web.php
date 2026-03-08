@@ -398,8 +398,8 @@ Route::get('/dashboard', function () {
 Route::get('/health', function () {
     try {
         $dbConnected = DB::connection()->getPdo() ? 'connected' : 'disconnected';
-    } catch (\Exception $e) {
-        $dbConnected = 'disconnected: ' . $e->getMessage();
+    } catch (\Exception $exception) {
+        $dbConnected = 'disconnected: ' . $exception->getMessage();
     }
     
     return response()->json([

@@ -48,8 +48,8 @@ class UnitController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('unit_number', 'like', "%{$search}%")
+            $query->where(function($query) use ($search) {
+                $query->where('unit_number', 'like', "%{$search}%")
                   ->orWhere('unit_type', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
@@ -109,10 +109,10 @@ class UnitController extends Controller
                 'message' => 'Unit created successfully!',
                 'unit' => $unit
             ], 201);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create unit: ' . $e->getMessage()
+                'message' => 'Failed to create unit: ' . $exception->getMessage()
             ], 500);
         }
     }
@@ -155,8 +155,8 @@ class UnitController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('unit_number', 'like', "%{$search}%")
+            $query->where(function($query) use ($search) {
+                $query->where('unit_number', 'like', "%{$search}%")
                   ->orWhere('unit_type', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });

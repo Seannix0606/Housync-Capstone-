@@ -59,10 +59,10 @@ class TenantAssignmentService
                 'credentials' => null,
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             return [
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $exception->getMessage(),
             ];
         }
     }

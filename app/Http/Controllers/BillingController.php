@@ -154,9 +154,9 @@ class BillingController extends Controller
             return redirect()->route('landlord.payments')
                 ->with('success', "Bill #{$invoiceNumber} created successfully for ₱" . number_format($request->amount, 2));
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Failed to create bill', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'landlord_id' => $landlordId,
             ]);
             return back()->with('error', 'Failed to create bill. Please try again.');
@@ -247,9 +247,9 @@ class BillingController extends Controller
 
             return back()->with('success', 'Payment of ₱' . number_format($request->amount, 2) . ' recorded successfully.');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Failed to record payment', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'bill_id' => $billId,
             ]);
             return back()->with('error', 'Failed to record payment. Please try again.');
@@ -293,8 +293,8 @@ class BillingController extends Controller
 
             return back()->with('success', 'Bill marked as paid successfully.');
 
-        } catch (\Exception $e) {
-            Log::error('Failed to mark bill as paid', ['error' => $e->getMessage(), 'bill_id' => $billId]);
+        } catch (\Exception $exception) {
+            Log::error('Failed to mark bill as paid', ['error' => $exception->getMessage(), 'bill_id' => $billId]);
             return back()->with('error', 'Failed to update bill. Please try again.');
         }
     }
@@ -318,8 +318,8 @@ class BillingController extends Controller
             return redirect()->route('landlord.payments')
                 ->with('success', "Bill #{$invoiceNumber} deleted successfully.");
 
-        } catch (\Exception $e) {
-            Log::error('Failed to delete bill', ['error' => $e->getMessage(), 'bill_id' => $billId]);
+        } catch (\Exception $exception) {
+            Log::error('Failed to delete bill', ['error' => $exception->getMessage(), 'bill_id' => $billId]);
             return back()->with('error', 'Failed to delete bill. Please try again.');
         }
     }
@@ -413,8 +413,8 @@ class BillingController extends Controller
 
             return back()->with('success', 'Payment proof submitted! Your landlord will verify it shortly.');
 
-        } catch (\Exception $e) {
-            Log::error('Failed to submit payment proof', ['error' => $e->getMessage()]);
+        } catch (\Exception $exception) {
+            Log::error('Failed to submit payment proof', ['error' => $exception->getMessage()]);
             return back()->with('error', 'Failed to submit payment proof. Please try again.');
         }
     }
@@ -430,8 +430,8 @@ class BillingController extends Controller
 
         $landlordId = Auth::id();
 
-        $payment = Payment::whereHas('bill', function ($q) use ($landlordId) {
-            $q->where('landlord_id', $landlordId);
+        $payment = Payment::whereHas('bill', function ($query) use ($landlordId) {
+            $query->where('landlord_id', $landlordId);
         })->findOrFail($paymentId);
 
         $bill = $payment->bill;

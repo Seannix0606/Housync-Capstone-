@@ -62,12 +62,12 @@ class CheckLeaseExpiry extends Command
 
                 $notified++;
                 $this->line("  Notified: {$assignment->tenant?->name} - Unit {$assignment->unit?->unit_number} - {$daysRemaining} days remaining");
-            } catch (\Exception $e) {
+            } catch (\Exception $exception) {
                 Log::error('Failed to send lease expiry notification', [
                     'assignment_id' => $assignment->id,
-                    'error' => $e->getMessage(),
+                    'error' => $exception->getMessage(),
                 ]);
-                $this->error("  Failed: {$assignment->tenant?->name} - {$e->getMessage()}");
+                $this->error("  Failed: {$assignment->tenant?->name} - {$exception->getMessage()}");
             }
         }
 

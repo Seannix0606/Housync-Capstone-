@@ -83,15 +83,15 @@ class Conversation extends Model
 
     public function scopeForUser($query, $userId)
     {
-        return $query->whereHas('participants', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+        return $query->whereHas('participants', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
         });
     }
 
     public function scopeWithUnread($query, $userId)
     {
-        return $query->whereHas('participants', function ($q) use ($userId) {
-            $q->where('user_id', $userId)->where('unread_count', '>', 0);
+        return $query->whereHas('participants', function ($query) use ($userId) {
+            $query->where('user_id', $userId)->where('unread_count', '>', 0);
         });
     }
 
@@ -171,11 +171,11 @@ class Conversation extends Model
     {
         // Find existing conversation
         $conversation = static::where('type', 'direct')
-            ->whereHas('participants', function ($q) use ($userId1) {
-                $q->where('user_id', $userId1);
+            ->whereHas('participants', function ($query) use ($userId1) {
+                $query->where('user_id', $userId1);
             })
-            ->whereHas('participants', function ($q) use ($userId2) {
-                $q->where('user_id', $userId2);
+            ->whereHas('participants', function ($query) use ($userId2) {
+                $query->where('user_id', $userId2);
             })
             ->first();
 

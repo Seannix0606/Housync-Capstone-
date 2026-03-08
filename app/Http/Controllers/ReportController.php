@@ -215,8 +215,8 @@ class ReportController extends Controller
             $occupancyRate = $totalUnits > 0 ? round(($occupiedUnits / $totalUnits) * 100, 1) : 0;
 
             $monthlyRevenue = Bill::where('landlord_id', $landlordId)
-                ->whereHas('unit', function ($q) use ($property) {
-                    $q->where('property_id', $property->id);
+                ->whereHas('unit', function ($query) use ($property) {
+                    $query->where('property_id', $property->id);
                 })
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)

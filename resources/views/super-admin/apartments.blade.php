@@ -538,8 +538,8 @@
                     $apartments = \App\Models\Property::with(['landlord', 'units'])
                         ->when(request('search'), function($query) {
                             $search = request('search');
-                            $query->where(function($q) use ($search) {
-                                $q->where('name', 'like', '%' . $search . '%')
+                            $query->where(function($query) use ($search) {
+                                $query->where('name', 'like', '%' . $search . '%')
                                   ->orWhere('address', 'like', '%' . $search . '%')
                                   ->orWhereHas('landlord', function($subQuery) use ($search) {
                                       $subQuery->where('name', 'like', '%' . $search . '%');

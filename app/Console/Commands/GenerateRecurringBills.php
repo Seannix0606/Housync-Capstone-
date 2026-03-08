@@ -98,12 +98,12 @@ class GenerateRecurringBills extends Command
 
                 $created++;
                 $this->line("  Created: {$assignment->tenant?->name} - {$invoiceNumber} - ₱" . number_format($amount, 2));
-            } catch (\Exception $e) {
+            } catch (\Exception $exception) {
                 Log::error('Failed to generate recurring bill', [
                     'assignment_id' => $assignment->id,
-                    'error' => $e->getMessage(),
+                    'error' => $exception->getMessage(),
                 ]);
-                $this->error("  Failed: {$assignment->tenant?->name} - {$e->getMessage()}");
+                $this->error("  Failed: {$assignment->tenant?->name} - {$exception->getMessage()}");
             }
         }
 

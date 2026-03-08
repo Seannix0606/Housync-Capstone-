@@ -17,13 +17,13 @@ class NotificationController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'notifications' => $notifications->map(function ($n) {
+                'notifications' => $notifications->map(function ($notification) {
                     return [
-                        'id' => $n->id,
-                        'data' => $n->data,
-                        'read_at' => $n->read_at,
-                        'created_at' => $n->created_at->diffForHumans(),
-                        'created_at_full' => $n->created_at->format('M d, Y h:i A'),
+                        'id' => $notification->id,
+                        'data' => $notification->data,
+                        'read_at' => $notification->read_at,
+                        'created_at' => $notification->created_at->diffForHumans(),
+                        'created_at_full' => $notification->created_at->format('M d, Y h:i A'),
                     ];
                 }),
                 'unread_count' => $user->unreadNotifications()->count(),
