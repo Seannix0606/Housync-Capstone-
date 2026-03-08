@@ -59,8 +59,8 @@ class MigrateUnitsToProperties extends Command
                     $property = $this->migrateUnit($unit, $apartment);
                     $migratedCount++;
                     $this->line("  ✓ Migrated: {$property->title}");
-                } catch (\Exception $e) {
-                    $this->error("  ✗ Failed to migrate unit {$unit->unit_number}: {$e->getMessage()}");
+                } catch (\Exception $exception) {
+                    $this->error("  ✗ Failed to migrate unit {$unit->unit_number}: {$exception->getMessage()}");
                 }
             }
         }

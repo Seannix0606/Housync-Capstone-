@@ -56,8 +56,8 @@ class SuperAdminController extends Controller
         // Search by name or email
         if (request('search')) {
             $search = request('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
+            $query->where(function($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
                   ->orWhere('email', 'like', '%' . $search . '%');
             });
         }
@@ -296,8 +296,8 @@ class SuperAdminController extends Controller
         // Search by property name or address
         if (request('search')) {
             $search = request('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
+            $query->where(function($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
                   ->orWhere('address', 'like', '%' . $search . '%');
             });
         }

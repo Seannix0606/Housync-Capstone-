@@ -20,8 +20,8 @@ class PropertySeeder extends Seeder
     {
         // Find landlords to create properties for
         $landlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', function($q) {
-                $q->where('status', 'approved');
+            ->whereHas('landlordProfile', function($query) {
+                $query->where('status', 'approved');
             })->get();
 
         if ($landlords->isEmpty()) {

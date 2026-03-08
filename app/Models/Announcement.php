@@ -44,8 +44,8 @@ class Announcement extends Model
     public function scopeActive($query)
     {
         return $query->published()
-                     ->where(function ($q) {
-                         $q->whereNull('expires_at')
+                     ->where(function ($query) {
+                         $query->whereNull('expires_at')
                            ->orWhere('expires_at', '>', now());
                      });
     }
@@ -57,8 +57,8 @@ class Announcement extends Model
 
     public function scopeForProperty($query, $propertyId)
     {
-        return $query->where(function ($q) use ($propertyId) {
-            $q->where('property_id', $propertyId)
+        return $query->where(function ($query) use ($propertyId) {
+            $query->where('property_id', $propertyId)
               ->orWhereNull('property_id');
         });
     }

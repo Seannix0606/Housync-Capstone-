@@ -339,24 +339,24 @@ class User extends Authenticatable
     public function scopePendingLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function($q) {
-                $q->where('status', 'pending');
+            ->whereHas('landlordProfile', function ($profileQuery) {
+                $profileQuery->where('status', 'pending');
             });
     }
 
     public function scopeApprovedLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function($q) {
-                $q->where('status', 'approved');
+            ->whereHas('landlordProfile', function ($profileQuery) {
+                $profileQuery->where('status', 'approved');
             });
     }
 
     public function scopeRejectedLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function($q) {
-                $q->where('status', 'rejected');
+            ->whereHas('landlordProfile', function ($profileQuery) {
+                $profileQuery->where('status', 'rejected');
             });
     }
 

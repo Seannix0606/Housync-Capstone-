@@ -24,8 +24,8 @@ class ExploreController extends Controller
         // Get available units with their properties
         $units = Unit::with(['property.landlord'])
             ->where('status', 'available')
-            ->whereHas('property', function($q) {
-                $q->where('status', 'active')->where('is_active', true);
+            ->whereHas('property', function($query) {
+                $query->where('status', 'active')->where('is_active', true);
             })
             ->orderBy('created_at', 'desc')
             ->paginate(12);
@@ -46,8 +46,8 @@ class ExploreController extends Controller
     public function filterUnits(Request $request)
     {
         $query = Unit::with(['property.landlord'])
-            ->whereHas('property', function($q) {
-                $q->where('status', 'active')->where('is_active', true);
+            ->whereHas('property', function($query) {
+                $query->where('status', 'active')->where('is_active', true);
             });
 
         // Apply filters
@@ -80,8 +80,8 @@ class ExploreController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('unit_number', 'LIKE', "%{$search}%")
+            $query->where(function($query) use ($search) {
+                $query->where('unit_number', 'LIKE', "%{$search}%")
                   ->orWhere('description', 'LIKE', "%{$search}%")
                   ->orWhereHas('property', function($pq) use ($search) {
                       $pq->where('name', 'LIKE', "%{$search}%")
@@ -142,8 +142,8 @@ class ExploreController extends Controller
         }
         
         // Fallback: try to find a property with this slug
-        $property = Property::with(['units' => function($q) {
-            $q->where('status', 'available');
+        $property = Property::with(['units' => function($query) {
+            $query->where('status', 'available');
         }, 'landlord'])->where('slug', $slug)->first();
         
         if ($property && $property->units->count() > 0) {
@@ -161,17 +161,17 @@ class ExploreController extends Controller
      */
     public function showProperty($slug)
     {
-        $property = Property::with(['units' => function($q) {
-            $q->where('status', 'available')->orderBy('rent_amount');
+        $property = Property::with(['units' => function($query) {
+            $query->where('status', 'available')->orderBy('rent_amount');
         }, 'landlord'])->where('slug', $slug)->firstOrFail();
 
-        $relatedProperties = Property::with(['units' => function($q) {
-            $q->where('status', 'available');
+        $relatedProperties = Property::with(['units' => function($query) {
+            $query->where('status', 'available');
         }])
             ->where('id', '!=', $property->id)
             ->where('status', 'active')
-            ->whereHas('units', function($q) {
-                $q->where('status', 'available');
+            ->whereHas('units', function($query) {
+                $query->where('status', 'available');
             })
             ->limit(4)
             ->get();

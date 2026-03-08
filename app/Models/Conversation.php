@@ -83,15 +83,15 @@ class Conversation extends Model
 
     public function scopeForUser($query, $userId)
     {
-        return $query->whereHas('participants', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+        return $query->whereHas('participants', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
         });
     }
 
     public function scopeWithUnread($query, $userId)
     {
-        return $query->whereHas('participants', function ($q) use ($userId) {
-            $q->where('user_id', $userId)->where('unread_count', '>', 0);
+        return $query->whereHas('participants', function ($query) use ($userId) {
+            $query->where('user_id', $userId)->where('unread_count', '>', 0);
         });
     }
 
@@ -169,15 +169,22 @@ class Conversation extends Model
      */
     public static function getOrCreateDirect($userId1, $userId2, $apartmentId = null)
     {
-        // Find existing conversation
-        $conversation = static::where('type', 'direct')
-            ->whereHas('participants', function ($q) use ($userId1) {
-                $q->where('user_id', $userId1);
+        // Find existing conversation (scoped by apartment when provided)
+        $query = static::where('type', 'direct')
+            ->whereHas('participants', function ($query) use ($userId1) {
+                $query->where('user_id', $userId1);
             })
-            ->whereHas('participants', function ($q) use ($userId2) {
-                $q->where('user_id', $userId2);
-            })
-            ->first();
+            ->whereHas('participants', function ($query) use ($userId2) {
+                $query->where('user_id', $userId2);
+            });
+
+        if ($apartmentId !== null) {
+            $query->where('apartment_id', $apartmentId);
+        } else {
+            $query->whereNull('apartment_id');
+        }
+
+        $conversation = $query->first();
 
         if ($conversation) {
             return $conversation;

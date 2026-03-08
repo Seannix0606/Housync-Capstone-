@@ -84,16 +84,12 @@ class TenantAssignmentController extends Controller
                 return back()->withInput()->with('error', $result['message']);
             }
 
-        } catch (\Exception $e) {
-            // Detailed error logging
+        } catch (\Exception $exception) {
             Log::error('Tenant assignment failed', [
                 'landlord_id' => Auth::id(),
                 'unit_id' => $unitId,
-                'tenant_name' => $request->name,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'request_data' => $request->except(['_token']),
+                'file_count' => is_countable($request->file('documents')) ? count($request->file('documents')) : 0,
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
@@ -124,10 +120,12 @@ class TenantAssignmentController extends Controller
         try {
             // Use database transaction with race condition protection
             $result = DB::transaction(function() use ($request, $assignmentId) {
-                // Fetch the vacated assignment within landlord scope
+                // Fetch the vacated assignment within landlord scope (lock to avoid concurrent reassignments)
                 $assignment = TenantAssignment::where('landlord_id', Auth::id())
+                    ->where('id', $assignmentId)
+                    ->lockForUpdate()
                     ->with(['tenant', 'unit'])
-                    ->findOrFail($assignmentId);
+                    ->firstOrFail();
 
                 if ($assignment->status !== 'terminated') {
                     throw new \Exception('Only vacated tenants can be reassigned.');
@@ -137,8 +135,8 @@ class TenantAssignmentController extends Controller
                 $oldUnit = $assignment->unit;
                 
                 // Race condition protection: Lock the target unit and check availability
-                $newUnit = Unit::whereHas('property', function($q) {
-                    $q->where('landlord_id', Auth::id());
+                $newUnit = Unit::whereHas('property', function($query) {
+                    $query->where('landlord_id', Auth::id());
                 })
                 ->where('id', $request->unit_id)
                 ->where('status', 'available')
@@ -196,20 +194,16 @@ class TenantAssignmentController extends Controller
             return redirect()->route('landlord.tenant-assignments')
                 ->with('success', 'Tenant reassigned successfully. Credentials remain the same.');
 
-        } catch (\Exception $e) {
-            // Detailed error logging
+        } catch (\Exception $exception) {
             Log::error('Tenant reassignment failed', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $assignmentId,
                 'unit_id' => $request->unit_id,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'request_data' => $request->except(['_token']),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
-            return back()->withInput()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', 'Tenant reassignment failed. Please contact support.');
         }
     }
 
@@ -261,15 +255,11 @@ class TenantAssignmentController extends Controller
 
             return back()->with('success', 'Assignment status updated successfully.');
 
-        } catch (\Exception $e) {
-            // Detailed error logging
+        } catch (\Exception $exception) {
             Log::error('Assignment status update failed', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
-                'new_status' => $request->status,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
@@ -343,13 +333,13 @@ class TenantAssignmentController extends Controller
                 'document_types.*.required' => 'Please select a document type for each file',
                 'document_types.*.in' => 'Invalid document type selected',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $exception) {
             Log::error('Document upload validation failed', [
                 'tenant_id' => Auth::id(),
-                'errors' => $e->errors(),
+                'errors' => $exception->errors(),
                 'input' => $request->all(),
             ]);
-            throw $e;
+            throw $exception;
         }
     
         /** @var \App\Models\User $tenant */
@@ -466,21 +456,21 @@ class TenantAssignmentController extends Controller
     
             return back()->with('success', 'Documents uploaded successfully! They will be available when you apply for properties.');
     
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $exception) {
             // Handle validation errors specifically
-            $errorCode = 'DOC_VALIDATION_' . strtoupper(substr(md5($e->getMessage() . time()), 0, 8));
+            $errorCode = 'DOC_VALIDATION_' . strtoupper(substr(md5($exception->getMessage() . time()), 0, 8));
             
             Log::error('Document upload validation failed', [
                 'error_code' => $errorCode,
                 'tenant_id' => $tenant->id,
-                'validation_errors' => $e->errors(),
+                'validation_errors' => $exception->errors(),
             ]);
             
-            return back()->withErrors($e->errors())->with('error', "Validation failed. Please check the form and try again. Error Code: {$errorCode}");
+            return back()->withErrors($exception->errors())->with('error', "Validation failed. Please check the form and try again. Error Code: {$errorCode}");
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             // Generate error code for tracking
-            $errorCode = 'DOC_UPLOAD_' . strtoupper(substr(md5($e->getMessage() . time()), 0, 8));
+            $errorCode = 'DOC_UPLOAD_' . strtoupper(substr(md5($exception->getMessage() . time()), 0, 8));
             
             // Enhanced error logging with more details
             $files = $request->file('documents', []);
@@ -498,24 +488,13 @@ class TenantAssignmentController extends Controller
             Log::error('Personal document upload failed', [
                 'error_code' => $errorCode,
                 'tenant_id' => $tenant->id,
-                'tenant_name' => $tenant->name,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'error_trace' => $e->getTraceAsString(),
+                'error' => $exception->getMessage(),
                 'files_count' => count($files),
-                'file_details' => $fileDetails,
-                'document_types' => $request->input('document_types', []),
-                'supabase_config' => [
-                    'url' => config('services.supabase.url'),
-                    'has_key' => !empty(config('services.supabase.key')),
-                    'has_service_key' => !empty(config('services.supabase.service_key')),
-                ],
                 'timestamp' => now()
             ]);
     
             // Determine user-friendly error message based on error type
-            $userMessage = $this->getUserFriendlyErrorMessage($e, $errorCode);
+            $userMessage = $this->getUserFriendlyErrorMessage($exception, $errorCode);
     
             return back()->with('error', $userMessage);
         }
@@ -524,21 +503,21 @@ class TenantAssignmentController extends Controller
     /**
      * Generate user-friendly error messages based on exception type
      */
-    private function getUserFriendlyErrorMessage(\Exception $e, string $errorCode)
+    private function getUserFriendlyErrorMessage(\Exception $exception, string $errorCode)
     {
         $baseMessage = "Failed to upload documents. Error Code: {$errorCode}";
         
         // Check for specific error patterns
-        if (str_contains($e->getMessage(), 'No files uploaded')) {
+        if (str_contains($exception->getMessage(), 'No files uploaded')) {
             return "Please select at least one document to upload. {$baseMessage}";
         }
         
-        if (str_contains($e->getMessage(), 'Number of files must match')) {
+        if (str_contains($exception->getMessage(), 'Number of files must match')) {
             return "Please ensure each file has a corresponding document type selected. {$baseMessage}";
         }
         
-        if (str_contains($e->getMessage(), 'Failed to upload document')) {
-            $uploadError = $e->getMessage();
+        if (str_contains($exception->getMessage(), 'Failed to upload document')) {
+            $uploadError = $exception->getMessage();
             if (str_contains($uploadError, 'Supabase')) {
                 return "Upload service temporarily unavailable. Please try again in a few minutes. {$baseMessage}";
             }
@@ -560,15 +539,15 @@ class TenantAssignmentController extends Controller
             return "File upload failed. Please check your file size (max 5MB) and format (PDF, JPG, PNG). {$baseMessage}";
         }
         
-        if (str_contains($e->getMessage(), 'validation')) {
+        if (str_contains($exception->getMessage(), 'validation')) {
             return "File validation failed. Please ensure files are PDF, JPG, or PNG format and under 5MB. {$baseMessage}";
         }
         
-        if (str_contains($e->getMessage(), 'database')) {
+        if (str_contains($exception->getMessage(), 'database')) {
             return "Database error occurred. Please try again. If the problem persists, contact support. {$baseMessage}";
         }
         
-        if (str_contains($e->getMessage(), 'permission')) {
+        if (str_contains($exception->getMessage(), 'permission')) {
             return "Permission denied. Please ensure you have the right to upload documents. {$baseMessage}";
         }
         
@@ -685,14 +664,11 @@ class TenantAssignmentController extends Controller
 
             return back()->with('success', 'Document deleted successfully.');
 
-        } catch (\Exception $e) {
-            // Detailed error logging
+        } catch (\Exception $exception) {
             Log::error('Document deletion failed', [
                 'tenant_id' => Auth::id(),
                 'document_id' => $documentId,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
@@ -788,14 +764,11 @@ class TenantAssignmentController extends Controller
             return redirect()->route('landlord.tenant-assignments')
                 ->with('success', 'Tenant assignment deleted successfully. Unit is now available for new assignments.');
 
-        } catch (\Exception $e) {
-            // Detailed error logging
+        } catch (\Exception $exception) {
             Log::error('Tenant assignment deletion failed', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
@@ -836,7 +809,7 @@ class TenantAssignmentController extends Controller
                     $rfidCards = \App\Models\RfidCard::where('tenant_id', $tenant->id)
                         ->where('property_id', $assignment->unit->property->id)
                         ->get();
-                } catch (\Exception $e) {
+                } catch (\Exception $exception) {
                     // RFID functionality might not be fully implemented yet
                     $rfidCards = collect();
                 }
@@ -844,12 +817,12 @@ class TenantAssignmentController extends Controller
 
             return view('tenant-profile', compact('tenant', 'assignment', 'rfidCards', 'personalDocuments'));
             
-        } catch (\Exception $e) {
-            Log::error('Tenant profile error: ' . $e->getMessage(), [
+        } catch (\Exception $exception) {
+            Log::error('Tenant profile error', [
                 'user_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'error' => $exception->getMessage()
             ]);
-            
+
             return redirect()->route('tenant.dashboard')->with('error', 'Unable to load profile. Please try again.');
         }
     }
@@ -880,10 +853,10 @@ class TenantAssignmentController extends Controller
 
             return view('tenant-lease', compact('tenant', 'assignment'));
             
-        } catch (\Exception $e) {
-            Log::error('Tenant lease error: ' . $e->getMessage(), [
+        } catch (\Exception $exception) {
+            Log::error('Tenant lease error', [
                 'user_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'error' => $exception->getMessage()
             ]);
             
             return redirect()->route('tenant.dashboard')->with('error', 'Unable to load lease information. Please try again.');
@@ -938,10 +911,10 @@ class TenantAssignmentController extends Controller
 
             return response()->json(['success' => 'Password updated successfully!']);
 
-        } catch (\Exception $e) {
-            Log::error('Password update error: ' . $e->getMessage(), [
+        } catch (\Exception $exception) {
+            Log::error('Password update error', [
                 'tenant_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'error' => $exception->getMessage()
             ]);
 
             return response()->json(['error' => 'An error occurred while updating your password.'], 500);
@@ -984,8 +957,8 @@ class TenantAssignmentController extends Controller
             
             // If no direct link, try to find an available unit from this landlord's apartments
             if (!$unit || $unit->status !== 'available') {
-                $unit = Unit::whereHas('property', function($q) use ($property) {
-                    $q->where('landlord_id', $property->landlord_id);
+                $unit = Unit::whereHas('property', function($query) use ($property) {
+                    $query->where('landlord_id', $property->landlord_id);
                 })
                 ->where('status', 'available')
                 ->with('property.landlord')
@@ -1070,23 +1043,15 @@ class TenantAssignmentController extends Controller
             return redirect()->route('explore')
                 ->with('success', 'Your application has been submitted successfully! The landlord will review it shortly.');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Tenant application failed', [
                 'tenant_id' => Auth::id(),
                 'property_id' => $propertyId,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
-            // Show detailed error in development
-            $errorMessage = config('app.debug') 
-                ? 'Failed to submit application: ' . $e->getMessage()
-                : 'Failed to submit application. Please try again.';
-
-            return back()->with('error', $errorMessage);
+            return back()->with('error', 'Failed to submit application. Please try again.');
         }
     }
 
@@ -1183,23 +1148,15 @@ class TenantAssignmentController extends Controller
             return redirect()->route('explore')
                 ->with('success', 'Your application has been submitted successfully! The landlord will review it shortly.');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Tenant unit application failed', [
                 'tenant_id' => Auth::id(),
                 'unit_id' => $unitId,
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
-            // Show detailed error in development
-            $errorMessage = config('app.debug') 
-                ? 'Failed to submit application: ' . $e->getMessage()
-                : 'Failed to submit application. Please try again.';
-
-            return back()->with('error', $errorMessage);
+            return back()->with('error', 'Failed to submit application. Please try again.');
         }
     }
 
@@ -1240,11 +1197,11 @@ class TenantAssignmentController extends Controller
                 'message' => 'Application approved successfully'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Application approval failed', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 
@@ -1291,11 +1248,11 @@ class TenantAssignmentController extends Controller
                 'message' => 'Application rejected successfully'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Application rejection failed', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'timestamp' => now()
             ]);
 

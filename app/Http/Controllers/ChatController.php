@@ -221,10 +221,10 @@ class ChatController extends Controller
             return redirect()->route('tenant.chat.show', $conversation->id)
                 ->with('success', 'Maintenance ticket created successfully!');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             DB::rollback();
             Log::error('Failed to create maintenance ticket', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'tenant_id' => $tenant->id,
             ]);
             return back()->with('error', 'Failed to create ticket. Please try again.');
@@ -241,10 +241,10 @@ class ChatController extends Controller
                 'content' => 'required_without:attachments|string|max:5000',
                 'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $exception) {
             return response()->json([
                 'success' => false,
-                'error' => 'Validation failed: ' . implode(', ', $e->validator->errors()->all()),
+                'error' => 'Validation failed: ' . implode(', ', $exception->validator->errors()->all()),
             ], 422);
         }
 
@@ -252,7 +252,7 @@ class ChatController extends Controller
         
         try {
             $conversation = Conversation::forUser($user->id)->findOrFail($conversationId);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             return response()->json([
                 'success' => false,
                 'error' => 'Conversation not found or you do not have access.',
@@ -291,10 +291,10 @@ class ChatController extends Controller
                 ],
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('Failed to send message', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'error' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
                 'conversation_id' => $conversationId,
                 'user_id' => $user->id,
                 'content' => $request->input('content'),
@@ -302,7 +302,7 @@ class ChatController extends Controller
 
             if ($request->ajax() || $request->wantsJson()) {
                 $errorMessage = config('app.debug') 
-                    ? 'Failed to send message: ' . $e->getMessage()
+                    ? 'Failed to send message: ' . $exception->getMessage()
                     : 'Failed to send message. Please try again.';
                     
                 return response()->json([
@@ -522,9 +522,9 @@ class ChatController extends Controller
 
             return $message->load('attachments');
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             DB::rollback();
-            throw $e;
+            throw $exception;
         }
     }
 

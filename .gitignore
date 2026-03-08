@@ -1,8 +1,14 @@
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
+# Firebase / API key config - never commit
+*firebase*config*
+*firebase*.json
+*-config-to-add*
 .phpactor.json
 .phpunit.result.cache
 /.fleet

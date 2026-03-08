@@ -513,8 +513,8 @@ class ESP32Reader
         // Connect to ESP32
         try {
             $this->connect();
-        } catch (Exception $e) {
-            echo "Connection failed: " . $e->getMessage() . "\n";
+        } catch (Exception $exception) {
+            echo "Connection failed: " . $exception->getMessage() . "\n";
             return false;
         }
 

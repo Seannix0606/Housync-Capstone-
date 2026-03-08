@@ -19,8 +19,8 @@ class AuthController extends Controller
     public function showLogin()
     {
         // Show a landing panel with a few latest properties and available units
-        $properties = Property::with(['units' => function ($q) {
-            $q->where('status', 'available');
+        $properties = Property::with(['units' => function ($query) {
+            $query->where('status', 'available');
         }])->where('is_active', true)->latest()->take(8)->get();
 
         return view('login', compact('properties'));

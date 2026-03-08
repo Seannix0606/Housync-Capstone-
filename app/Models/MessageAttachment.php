@@ -83,8 +83,8 @@ class MessageAttachment extends Model
     // Scopes
     public function scopeImages($query)
     {
-        return $query->where(function ($q) {
-            $q->where('file_type', 'image')
+        return $query->where(function ($query) {
+            $query->where('file_type', 'image')
               ->orWhere('mime_type', 'like', 'image/%');
         });
     }

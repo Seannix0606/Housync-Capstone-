@@ -10,6 +10,7 @@ use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RfidController extends Controller
 {
@@ -71,8 +72,8 @@ class RfidController extends Controller
         $tenantAssignments = TenantAssignment::with(['tenant', 'unit'])
                                            ->where('landlord_id', $user->id)
                                            ->when($apartmentId, function($query) use ($apartmentId) {
-                                               return $query->whereHas('unit', function($q) use ($apartmentId) {
-                                                   $q->where('apartment_id', $apartmentId);
+                                               return $query->whereHas('unit', function($query) use ($apartmentId) {
+                                                   $query->where('apartment_id', $apartmentId);
                                                });
                                            })
                                            ->active()
@@ -144,9 +145,10 @@ class RfidController extends Controller
             return redirect()->route('landlord.security', ['apartment_id' => $request->apartment_id])
                            ->with('success', 'RFID card assigned successfully!');
                            
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to assign RFID card: ' . $e->getMessage()]);
+            Log::error('Failed to assign RFID card', ['exception' => $exception]);
+            return back()->withErrors(['error' => 'Failed to assign RFID card. Please contact support.']);
         }
     }
     
@@ -252,8 +254,8 @@ class RfidController extends Controller
         // Get active tenant assignments for the same apartment (excluding current tenant if any)
         $tenantAssignments = TenantAssignment::with(['tenant', 'unit'])
                                            ->where('landlord_id', $user->id)
-                                           ->whereHas('unit', function($q) use ($card) {
-                                               $q->where('apartment_id', $card->apartment_id);
+                                           ->whereHas('unit', function($query) use ($card) {
+                                               $query->where('apartment_id', $card->apartment_id);
                                            })
                                            ->when($card->activeTenantAssignment, function($query) use ($card) {
                                                // Exclude the currently assigned tenant
@@ -283,8 +285,8 @@ class RfidController extends Controller
         // Verify the tenant assignment belongs to this landlord and apartment
         $tenantAssignment = TenantAssignment::where('id', $request->tenant_assignment_id)
                                           ->where('landlord_id', $user->id)
-                                          ->whereHas('unit', function($q) use ($card) {
-                                              $q->where('apartment_id', $card->apartment_id);
+                                          ->whereHas('unit', function($query) use ($card) {
+                                              $query->where('apartment_id', $card->apartment_id);
                                           })
                                           ->first();
         
@@ -324,9 +326,10 @@ class RfidController extends Controller
             return redirect()->route('landlord.security', ['apartment_id' => $card->apartment_id])
                            ->with('success', 'RFID card reassigned successfully to ' . $tenantAssignment->tenant->name . '!');
                            
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to reassign RFID card: ' . $e->getMessage()]);
+            Log::error('Failed to reassign RFID card', ['exception' => $exception]);
+            return back()->withErrors(['error' => 'Failed to reassign RFID card. Please contact support.']);
         }
     }
     
@@ -409,10 +412,11 @@ class RfidController extends Controller
                 'direct_mode' => true
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Failed to initiate scan', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to initiate scan: ' . $e->getMessage()
+                'error' => 'Failed to initiate scan. Please try again.'
             ], 500);
         }
     }
@@ -528,10 +532,11 @@ class RfidController extends Controller
             
             return response()->json($result);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('RFID processing failed', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Processing failed: ' . $e->getMessage()
+                'error' => 'Processing failed. Please try again.'
             ], 500);
         }
     }
@@ -587,10 +592,11 @@ class RfidController extends Controller
                 'age_seconds' => $age
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Failed to get latest Card UID', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to get latest Card UID: ' . $e->getMessage()
+                'error' => 'Failed to get latest Card UID. Please try again.'
             ], 500);
         }
     }
@@ -605,7 +611,8 @@ class RfidController extends Controller
         $limit = max(1, min(50, $limit));
 
         $logs = \App\Models\AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
-            ->when($apartmentId, fn($q) => $q->where('apartment_id', $apartmentId))
+            ->whereHas('apartment', fn($query) => $query->where('landlord_id', auth()->id()))
+            ->when($apartmentId, fn($query) => $query->where('apartment_id', $apartmentId))
             ->orderBy('access_time', 'desc')
             ->limit($limit)
             ->get();
@@ -646,10 +653,11 @@ class RfidController extends Controller
                 'test_mode' => true
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Failed to generate Card UID', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to generate Card UID: ' . $e->getMessage()
+                'error' => 'Failed to generate Card UID. Please try again.'
             ], 500);
         }
     }
@@ -695,10 +703,11 @@ class RfidController extends Controller
                 'timeout' => $timeout
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Failed to create scan request', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to create scan request: ' . $e->getMessage()
+                'error' => 'Failed to create scan request. Please try again.'
             ], 500);
         }
     }
@@ -708,6 +717,13 @@ class RfidController extends Controller
      */
     public function checkScanRequestStatus($scanId)
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid scan ID'
+            ], 400);
+        }
+
         try {
             $requestFile = storage_path('app/scan_requests/' . $scanId . '.json');
             
@@ -752,10 +768,11 @@ class RfidController extends Controller
                 'remaining_time' => $remaining
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Scan status check failed', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Status check failed: ' . $e->getMessage()
+                'error' => 'Status check failed. Please try again.'
             ], 500);
         }
     }
@@ -789,10 +806,11 @@ class RfidController extends Controller
                 'timeout' => 15
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+            Log::error('Failed to create scan request', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to create scan request: ' . $e->getMessage()
+                'error' => 'Failed to create scan request. Please try again.'
             ], 500);
         }
     }
@@ -803,6 +821,13 @@ class RfidController extends Controller
      */
     public function scanStatus($scanId)
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid scan ID'
+            ], 400);
+        }
+
         $tempFile = storage_path('app/' . $scanId . '.json');
         
         if (!file_exists($tempFile)) {
@@ -892,6 +917,10 @@ class RfidController extends Controller
         $scanId = $request->input('scan_id');
         $cardUid = $request->input('card_uid');
         $error = $request->input('error');
+
+        if (!$scanId || !preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json(['error' => 'Invalid scan ID'], 400);
+        }
         
         $tempFile = storage_path('app/' . $scanId . '.json');
         

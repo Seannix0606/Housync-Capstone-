@@ -98,8 +98,8 @@ class TenantRfidAssignment extends Model
 
     public function scopeNotExpired($query)
     {
-        return $query->where(function($q) {
-            $q->whereNull('expires_at')
+        return $query->where(function ($subQuery) {
+            $subQuery->whereNull('expires_at')
               ->orWhere('expires_at', '>', now());
         });
     }
