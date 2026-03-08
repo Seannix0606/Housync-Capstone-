@@ -10,6 +10,7 @@ use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RfidController extends Controller
 {
@@ -146,7 +147,8 @@ class RfidController extends Controller
                            
         } catch (\Exception $exception) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to assign RFID card: ' . $exception->getMessage()]);
+            Log::error('Failed to assign RFID card', ['exception' => $exception]);
+            return back()->withErrors(['error' => 'Failed to assign RFID card. Please contact support.']);
         }
     }
     
@@ -326,7 +328,8 @@ class RfidController extends Controller
                            
         } catch (\Exception $exception) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to reassign RFID card: ' . $exception->getMessage()]);
+            Log::error('Failed to reassign RFID card', ['exception' => $exception]);
+            return back()->withErrors(['error' => 'Failed to reassign RFID card. Please contact support.']);
         }
     }
     
@@ -410,9 +413,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Failed to initiate scan', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to initiate scan: ' . $exception->getMessage()
+                'error' => 'Failed to initiate scan. Please try again.'
             ], 500);
         }
     }
@@ -529,9 +533,10 @@ class RfidController extends Controller
             return response()->json($result);
             
         } catch (\Exception $exception) {
+            Log::error('RFID processing failed', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Processing failed: ' . $exception->getMessage()
+                'error' => 'Processing failed. Please try again.'
             ], 500);
         }
     }
@@ -588,9 +593,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Failed to get latest Card UID', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to get latest Card UID: ' . $exception->getMessage()
+                'error' => 'Failed to get latest Card UID. Please try again.'
             ], 500);
         }
     }
@@ -605,6 +611,7 @@ class RfidController extends Controller
         $limit = max(1, min(50, $limit));
 
         $logs = \App\Models\AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
+            ->whereHas('apartment', fn($query) => $query->where('landlord_id', auth()->id()))
             ->when($apartmentId, fn($query) => $query->where('apartment_id', $apartmentId))
             ->orderBy('access_time', 'desc')
             ->limit($limit)
@@ -647,9 +654,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Failed to generate Card UID', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to generate Card UID: ' . $exception->getMessage()
+                'error' => 'Failed to generate Card UID. Please try again.'
             ], 500);
         }
     }
@@ -696,9 +704,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Failed to create scan request', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to create scan request: ' . $exception->getMessage()
+                'error' => 'Failed to create scan request. Please try again.'
             ], 500);
         }
     }
@@ -708,6 +717,13 @@ class RfidController extends Controller
      */
     public function checkScanRequestStatus($scanId)
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid scan ID'
+            ], 400);
+        }
+
         try {
             $requestFile = storage_path('app/scan_requests/' . $scanId . '.json');
             
@@ -753,9 +769,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Scan status check failed', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Status check failed: ' . $exception->getMessage()
+                'error' => 'Status check failed. Please try again.'
             ], 500);
         }
     }
@@ -790,9 +807,10 @@ class RfidController extends Controller
             ]);
             
         } catch (\Exception $exception) {
+            Log::error('Failed to create scan request', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to create scan request: ' . $exception->getMessage()
+                'error' => 'Failed to create scan request. Please try again.'
             ], 500);
         }
     }
@@ -803,6 +821,13 @@ class RfidController extends Controller
      */
     public function scanStatus($scanId)
     {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid scan ID'
+            ], 400);
+        }
+
         $tempFile = storage_path('app/' . $scanId . '.json');
         
         if (!file_exists($tempFile)) {
@@ -892,6 +917,10 @@ class RfidController extends Controller
         $scanId = $request->input('scan_id');
         $cardUid = $request->input('card_uid');
         $error = $request->input('error');
+
+        if (!$scanId || !preg_match('/^[A-Za-z0-9_-]+$/', (string) $scanId)) {
+            return response()->json(['error' => 'Invalid scan ID'], 400);
+        }
         
         $tempFile = storage_path('app/' . $scanId . '.json');
         

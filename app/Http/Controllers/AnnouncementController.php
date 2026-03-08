@@ -207,6 +207,8 @@ class AnnouncementController extends Controller
         }
 
         $announcement = Announcement::active()
+            ->where('user_id', $activeAssignment->landlord_id)
+            ->whereIn('audience', ['tenant', 'all', 'everyone'])
             ->where(function ($query) use ($activeAssignment) {
                 $query->whereNull('property_id')
                   ->orWhere('property_id', $activeAssignment->unit?->property_id);

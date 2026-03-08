@@ -38,6 +38,7 @@ class GenerateRecurringBills extends Command
 
         $created = 0;
         $skipped = 0;
+        $hadFailure = false;
 
         foreach ($assignments as $assignment) {
             // Skip if bill already exists for this period
@@ -99,6 +100,7 @@ class GenerateRecurringBills extends Command
                 $created++;
                 $this->line("  Created: {$assignment->tenant?->name} - {$invoiceNumber} - ₱" . number_format($amount, 2));
             } catch (\Exception $exception) {
+                $hadFailure = true;
                 Log::error('Failed to generate recurring bill', [
                     'assignment_id' => $assignment->id,
                     'error' => $exception->getMessage(),
@@ -110,6 +112,6 @@ class GenerateRecurringBills extends Command
         $this->newLine();
         $this->info("Done! Created: {$created}, Skipped: {$skipped}");
 
-        return self::SUCCESS;
+        return $hadFailure ? self::FAILURE : self::SUCCESS;
     }
 }

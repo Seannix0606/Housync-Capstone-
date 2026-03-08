@@ -169,15 +169,22 @@ class Conversation extends Model
      */
     public static function getOrCreateDirect($userId1, $userId2, $apartmentId = null)
     {
-        // Find existing conversation
-        $conversation = static::where('type', 'direct')
+        // Find existing conversation (scoped by apartment when provided)
+        $query = static::where('type', 'direct')
             ->whereHas('participants', function ($query) use ($userId1) {
                 $query->where('user_id', $userId1);
             })
             ->whereHas('participants', function ($query) use ($userId2) {
                 $query->where('user_id', $userId2);
-            })
-            ->first();
+            });
+
+        if ($apartmentId !== null) {
+            $query->where('apartment_id', $apartmentId);
+        } else {
+            $query->whereNull('apartment_id');
+        }
+
+        $conversation = $query->first();
 
         if ($conversation) {
             return $conversation;

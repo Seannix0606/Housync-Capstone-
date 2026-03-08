@@ -110,9 +110,10 @@ class UnitController extends Controller
                 'unit' => $unit
             ], 201);
         } catch (\Exception $exception) {
+            \Illuminate\Support\Facades\Log::error('Failed to create unit', ['exception' => $exception]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create unit: ' . $exception->getMessage()
+                'message' => 'Failed to create unit.'
             ], 500);
         }
     }

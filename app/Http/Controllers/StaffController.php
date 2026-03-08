@@ -9,6 +9,7 @@ use App\Models\StaffProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class StaffController extends Controller
@@ -127,7 +128,8 @@ class StaffController extends Controller
         } catch (\Illuminate\Validation\ValidationException $exception) {
             return back()->withErrors($exception->errors())->withInput();
         } catch (\Exception $exception) {
-            return back()->with('error', 'Failed to add staff member: ' . $exception->getMessage())->withInput();
+            Log::error('Failed to add staff member', ['exception' => $exception]);
+            return back()->with('error', 'Failed to add staff member. Please try again.')->withInput();
         }
     }
 
@@ -186,7 +188,8 @@ class StaffController extends Controller
         } catch (\Illuminate\Validation\ValidationException $exception) {
             return back()->withErrors($exception->errors())->withInput();
         } catch (\Exception $exception) {
-            return back()->with('error', 'Failed to assign staff: ' . $exception->getMessage())->withInput();
+            Log::error('Failed to assign staff', ['exception' => $exception]);
+            return back()->with('error', 'Failed to assign staff. Please try again.')->withInput();
         }
     }
 

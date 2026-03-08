@@ -399,7 +399,8 @@ Route::get('/health', function () {
     try {
         $dbConnected = DB::connection()->getPdo() ? 'connected' : 'disconnected';
     } catch (\Exception $exception) {
-        $dbConnected = 'disconnected: ' . $exception->getMessage();
+        \Illuminate\Support\Facades\Log::error('Health check DB connection failed', ['exception' => $exception]);
+        $dbConnected = 'disconnected';
     }
     
     return response()->json([
