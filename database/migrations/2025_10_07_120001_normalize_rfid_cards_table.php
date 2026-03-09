@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -13,10 +13,10 @@ return new class extends Migration
     public function up(): void
     {
         $driver = DB::connection()->getDriverName();
-        
+
         // First, migrate existing data to the new tenant_rfid_assignments table
         $this->migrateExistingData();
-        
+
         // Remove the tenant_assignment_id column from rfid_cards table
         if ($driver === 'sqlite') {
             // SQLite doesn't support DROP COLUMN directly
@@ -41,7 +41,7 @@ return new class extends Migration
             } catch (\Exception $e) {
                 // Foreign key might not exist - continue
             }
-            
+
             Schema::table('rfid_cards', function (Blueprint $table) {
                 // Drop the column
                 $table->dropColumn('tenant_assignment_id');
@@ -60,11 +60,11 @@ return new class extends Migration
             $table->foreign('tenant_assignment_id')->references('id')->on('tenant_assignments')->onDelete('set null');
             $table->index(['tenant_assignment_id', 'status']);
         });
-        
+
         // Migrate data back from tenant_rfid_assignments to rfid_cards
         $this->migrateDataBack();
     }
-    
+
     /**
      * Migrate existing RFID card assignments to the new normalized structure
      */
@@ -74,7 +74,7 @@ return new class extends Migration
         $cardsWithAssignments = DB::table('rfid_cards')
             ->whereNotNull('tenant_assignment_id')
             ->get();
-            
+
         foreach ($cardsWithAssignments as $card) {
             DB::table('tenant_rfid_assignments')->insert([
                 'rfid_card_id' => $card->id,
@@ -88,7 +88,7 @@ return new class extends Migration
             ]);
         }
     }
-    
+
     /**
      * Migrate data back for rollback
      */
@@ -98,7 +98,7 @@ return new class extends Migration
         $assignments = DB::table('tenant_rfid_assignments')
             ->where('status', 'active')
             ->get();
-            
+
         foreach ($assignments as $assignment) {
             DB::table('rfid_cards')
                 ->where('id', $assignment->rfid_card_id)

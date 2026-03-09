@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Models\StaffAssignment;
+use App\Models\User;
 use Illuminate\Console\Command;
 
 class UpdateExistingStaffTypes extends Command
@@ -36,6 +36,7 @@ class UpdateExistingStaffTypes extends Command
 
         if ($staffUsers->isEmpty()) {
             $this->info('No staff members need updating.');
+
             return;
         }
 

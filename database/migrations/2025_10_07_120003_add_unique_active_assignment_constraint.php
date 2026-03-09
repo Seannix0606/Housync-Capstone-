@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -14,7 +12,7 @@ return new class extends Migration
     {
         // Add a partial unique index to ensure only one active assignment per card
         // This uses raw SQL because Laravel doesn't support partial unique indexes directly
-        
+
         if (DB::getDriverName() === 'mysql') {
             // For MySQL, we'll use a trigger or application logic since partial indexes aren't fully supported
             // For now, we'll rely on application logic in the TenantRfidAssignment model

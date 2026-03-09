@@ -1,22 +1,22 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SuperAdminController;
-use App\Http\Controllers\LandlordController;
-use App\Http\Controllers\TenantAssignmentController;
-use App\Http\Controllers\StaffController;
-use App\Http\Controllers\RfidController;
-use App\Http\Controllers\ChatController;
-use App\Http\Controllers\MaintenanceController;
-use App\Http\Controllers\BillingController;
-use App\Http\Controllers\ExploreController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ExploreController;
+use App\Http\Controllers\LandlordController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RfidController;
+use App\Http\Controllers\StaffController;
+use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\TenantAssignmentController;
+use App\Http\Controllers\UnitController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,13 +24,13 @@ use App\Http\Controllers\ReportController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', fn() => redirect()->route('login'));
+Route::get('/', fn () => redirect()->route('login'));
 
 // Authentication
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login');
     Route::post('/login', 'login')->name('login.post');
-    Route::get('/register', fn() => view('register'))->name('register');
+    Route::get('/register', fn () => view('register'))->name('register');
     Route::post('/register', 'register')->name('register.post');
     Route::post('/logout', 'logout')->name('logout');
 });
@@ -56,12 +56,12 @@ Route::controller(LandlordController::class)->prefix('landlord')->name('landlord
 */
 
 Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
-    
+
     Route::controller(SuperAdminController::class)->group(function () {
         // Dashboard & Properties
         Route::get('/dashboard', 'dashboard')->name('dashboard');
         Route::get('/apartments', 'apartments')->name('apartments');
-        
+
         // User Management
         Route::get('/users', 'users')->name('users');
         Route::get('/users/create', 'createUser')->name('create-user');
@@ -69,14 +69,14 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
         Route::get('/users/{id}', 'editUser')->name('edit-user');
         Route::put('/users/{id}', 'updateUser')->name('update-user');
         Route::delete('/users/{id}', 'deleteUser')->name('delete-user');
-        
+
         // Landlord Verification
         Route::get('/pending-landlords', 'pendingLandlords')->name('pending-landlords');
         Route::post('/approve-landlord/{id}', 'approveLandlord')->name('approve-landlord');
         Route::post('/reject-landlord/{id}', 'rejectLandlord')->name('reject-landlord');
         Route::get('/landlords/{id}/documents', 'reviewLandlordDocuments')->name('landlord-docs');
         Route::post('/landlord-documents/{docId}/verify', 'verifyLandlordDocument')->name('verify-landlord-document');
-        
+
         // Settings
         Route::get('/settings', 'settings')->name('settings');
         Route::post('/settings', 'updateSettings')->name('settings.update');
@@ -99,7 +99,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::get('/tenants', 'tenants')->name('tenants');
         Route::get('/tenant-history', 'tenantHistory')->name('tenant-history');
         Route::get('/tenant-history/export-csv', 'exportTenantHistoryCSV')->name('tenant-history.export-csv');
-        
+
         // Settings
         Route::get('/settings', 'settings')->name('settings');
         Route::put('/settings', 'updateSettings')->name('settings.update');
@@ -125,7 +125,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::get('/units/{id}/details', 'getUnitDetails')->name('unit-details')->whereNumber('id');
         Route::put('/units/{id}', 'updateUnit')->name('update-unit')->whereNumber('id');
         Route::delete('/units/{id}', 'deleteUnit')->name('delete-unit')->whereNumber('id');
-        
+
         // Apartment-specific Unit Operations
         Route::get('/apartments/{apartmentId}/units/create', 'createUnit')->name('create-unit-for-apartment')->whereNumber('apartmentId');
         Route::get('/apartments/{apartmentId}/units/create-multiple', 'createMultipleUnits')->name('create-multiple-units')->whereNumber('apartmentId');
@@ -135,7 +135,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::post('/apartments/{apartmentId}/units/finalize-bulk', 'finalizeBulkUnits')->name('finalize-bulk-units')->whereNumber('apartmentId');
         Route::post('/apartments/{apartmentId}/units/json', 'storeApartmentUnit')->name('store-apartment-unit-json')->whereNumber('apartmentId');
     });
-    
+
     // Tenant Assignments
     Route::controller(TenantAssignmentController::class)->group(function () {
         Route::get('/tenant-assignments', 'index')->name('tenant-assignments');
@@ -150,7 +150,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::post('/tenant-assignments/{id}/approve', 'approveApplication')->name('approve-application');
         Route::post('/tenant-assignments/{id}/reject', 'rejectApplication')->name('reject-application');
     });
-    
+
     // Staff Management
     Route::controller(StaffController::class)->group(function () {
         Route::get('/staff', 'index')->name('staff');
@@ -164,7 +164,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::delete('/staff/{id}', 'destroy')->name('delete-staff');
         Route::get('/staff/{id}/credentials', 'getCredentials')->name('get-staff-credentials');
     });
-    
+
     // Billing & Payments
     Route::controller(BillingController::class)->group(function () {
         Route::get('/payments', 'landlordIndex')->name('payments');
@@ -175,7 +175,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::post('/billing/{id}/mark-paid', 'markAsPaid')->name('billing.mark-paid');
         Route::delete('/billing/{id}', 'destroy')->name('billing.destroy');
     });
-    
+
     // RFID Security
     Route::controller(RfidController::class)->prefix('security')->name('security.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -187,7 +187,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::post('/cards/{id}/reassign', 'reassign')->name('reassign-card');
         Route::get('/access-logs', 'accessLogs')->name('access-logs');
     });
-    
+
     // Chat & Messaging
     Route::controller(ChatController::class)->group(function () {
         Route::get('/messages', 'landlordIndex')->name('chat');
@@ -201,7 +201,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::get('/api/unread-count', 'getUnreadCount')->name('chat.unread-count');
         Route::get('/api/tenants-list', 'getTenantsList')->name('chat.tenants-list');
     });
-    
+
     // Maintenance
     Route::controller(MaintenanceController::class)->prefix('maintenance')->name('maintenance.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -245,7 +245,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 */
 
 Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(function () {
-    
+
     // Dashboard & Profile
     Route::controller(TenantAssignmentController::class)->group(function () {
         Route::get('/dashboard', 'tenantDashboard')->name('dashboard');
@@ -259,14 +259,14 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::post('/apply/{propertyId}', 'applyForProperty')->name('apply');
         Route::post('/apply-unit/{unitId}', 'applyForUnit')->name('apply.unit');
     });
-    
+
     // Payments
     Route::controller(BillingController::class)->group(function () {
         Route::get('/payments', 'tenantIndex')->name('payments');
         Route::get('/payments/{id}', 'tenantShowBill')->name('payments.show');
         Route::post('/payments/{id}/submit-proof', 'submitPaymentProof')->name('payments.submit-proof');
     });
-    
+
     // Maintenance
     Route::controller(MaintenanceController::class)->prefix('maintenance')->name('maintenance.')->group(function () {
         Route::get('/', 'tenantIndex')->name('index');
@@ -284,7 +284,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::get('/', 'tenantIndex')->name('index');
         Route::get('/{id}', 'tenantShow')->name('show');
     });
-    
+
     // Chat & Messaging
     Route::controller(ChatController::class)->group(function () {
         Route::get('/messages', 'tenantIndex')->name('chat');
@@ -306,7 +306,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
 */
 
 Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(function () {
-    
+
     // Dashboard & Profile
     Route::controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'staffDashboard')->name('dashboard');
@@ -314,7 +314,7 @@ Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(functi
         Route::post('/update-password', 'updatePassword')->name('update-password');
         Route::post('/assignments/{id}/complete', 'completeAssignment')->name('complete-assignment');
     });
-    
+
     // Maintenance
     Route::controller(MaintenanceController::class)->prefix('maintenance')->name('maintenance.')->group(function () {
         Route::get('/', 'staffIndex')->name('index');
@@ -329,7 +329,7 @@ Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(functi
         Route::get('/', 'staffIndex')->name('index');
         Route::get('/{id}', 'staffShow')->name('show');
     });
-    
+
     // Chat & Messaging
     Route::controller(ChatController::class)->group(function () {
         Route::get('/messages', 'staffIndex')->name('chat');
@@ -355,7 +355,7 @@ Route::middleware(['role:super_admin'])->prefix('admin')->name('admin.')->group(
         Route::get('/filter', 'filter')->name('filter');
         Route::get('/stats', 'getStats')->name('stats');
         Route::get('/types', 'getUnitTypes')->name('types');
-});
+    });
 });
 
 /*
@@ -379,12 +379,14 @@ Route::middleware(['auth'])->controller(NotificationController::class)->prefix('
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
-    if (!$user) return redirect()->route('login');
-    
-    return match($user->role) {
+    if (! $user) {
+        return redirect()->route('login');
+    }
+
+    return match ($user->role) {
         'super_admin' => redirect()->route('super-admin.dashboard'),
         'landlord' => redirect()->route(
-            $user->status === 'approved' ? 'landlord.dashboard' : 
+            $user->status === 'approved' ? 'landlord.dashboard' :
             ($user->status === 'pending' ? 'landlord.pending' : 'landlord.rejected')
         ),
         'tenant' => redirect()->route('tenant.dashboard'),
@@ -406,7 +408,7 @@ Route::get('/health', function () {
         \Illuminate\Support\Facades\Log::error('Health check DB connection failed', ['exception' => $exception]);
         $dbConnected = 'disconnected';
     }
-    
+
     return response()->json([
         'status' => 'healthy',
         'timestamp' => now(),
@@ -414,7 +416,7 @@ Route::get('/health', function () {
         'version' => app()->version(),
         'app_key' => config('app.key') ? 'set' : 'missing',
         'app_debug' => config('app.debug'),
-        'app_env' => config('app.env')
+        'app_env' => config('app.env'),
     ]);
 });
 
@@ -430,7 +432,7 @@ Route::get('/debug', function () {
         'database' => [
             'default' => config('database.default'),
             'host' => config('database.connections.mysql.host'),
-            'database' => config('database.connections.mysql.database')
-        ]
+            'database' => config('database.connections.mysql.database'),
+        ],
     ]);
 });
