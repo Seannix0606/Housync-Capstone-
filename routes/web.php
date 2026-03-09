@@ -122,7 +122,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::put('/settings', 'updateSettings')->name('settings.update');
         Route::put('/settings/password', 'updatePassword')->name('settings.password');
     });
-        
+
     // Apartments (Properties)
     Route::controller(\App\Http\Controllers\Landlord\PropertyController::class)->group(function () {
         Route::get('/apartments', 'apartments')->name('apartments');
@@ -134,7 +134,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::get('/apartments/{id}/details', 'getApartmentDetails')->name('apartment-details')->whereNumber('id');
         Route::get('/apartments/{id}/units', 'getApartmentUnits')->name('apartment-units')->whereNumber('id');
     });
-    
+
     Route::controller(LandlordController::class)->group(function () {
         // Units
     });

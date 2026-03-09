@@ -10,12 +10,11 @@ use App\Models\TenantAssignment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\SupabaseService;
-use Illuminate\Auth\Events\Registered;
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use App\Services\SupabaseService;
 
 class LandlordController extends Controller
 {
@@ -127,27 +126,27 @@ class LandlordController extends Controller
         try {
             $coverPath = null;
             if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService();
-                $filename = 'property-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-                $path = 'properties/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+                $path = 'properties/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $coverPath = $uploadResult['url'];
                 } else {
                     Log::error('Failed to upload cover image', ['result' => $uploadResult]);
-                    throw new \Exception('Failed to upload cover image: ' . ($uploadResult['message'] ?? 'Unknown error'));
+                    throw new \Exception('Failed to upload cover image: '.($uploadResult['message'] ?? 'Unknown error'));
                 }
             }
 
             $galleryPaths = [];
             if ($request->hasFile('gallery')) {
                 foreach ($request->file('gallery') as $index => $file) {
-                    $supabase = new SupabaseService();
-                    $filename = 'property-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $path = 'properties/gallery/' . $filename;
+                    $supabase = new SupabaseService;
+                    $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                    $path = 'properties/gallery/'.$filename;
                     $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                    
+
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];
                     }
@@ -183,7 +182,8 @@ class LandlordController extends Controller
 
             return redirect()->route('landlord.apartments')->with('success', $successMessage);
         } catch (\Exception $e) {
-            Log::error('Error creating property: ' . $e->getMessage());
+            Log::error('Error creating property: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create property. Please try again.');
         }
     }
@@ -272,7 +272,8 @@ class LandlordController extends Controller
 
             return redirect()->route('landlord.apartments')->with('success', 'Property updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Error updating property: ' . $e->getMessage());
+            Log::error('Error updating property: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to update property. Please try again.');
         }
     }
@@ -337,6 +338,7 @@ class LandlordController extends Controller
             return redirect()->route('landlord.apartments')->with('success', "Property '{$propertyName}' deleted successfully.");
         } catch (\Exception $e) {
             Log::error('Error deleting property', ['property_id' => $id, 'error' => $e->getMessage()]);
+
             return back()->with('error', 'Failed to delete property. Please try again.');
         }
     }
@@ -353,10 +355,10 @@ class LandlordController extends Controller
             $query = $property->units()->with('property');
             $statsQuery = $property->units();
         } else {
-            $query = Unit::whereHas('property', function($q) use ($landlord) {
+            $query = Unit::whereHas('property', function ($q) use ($landlord) {
                 $q->where('landlord_id', $landlord->id);
             })->with('property');
-            $statsQuery = Unit::whereHas('property', function($q) use ($landlord) {
+            $statsQuery = Unit::whereHas('property', function ($q) use ($landlord) {
                 $q->where('landlord_id', $landlord->id);
             });
         }
@@ -553,7 +555,7 @@ class LandlordController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
-        if (!$request->has('units') || empty($request->input('units'))) {
+        if (! $request->has('units') || empty($request->input('units'))) {
             return back()->with('error', 'No units data received. Please try again.');
         }
 
@@ -632,9 +634,10 @@ class LandlordController extends Controller
             }
 
             return redirect()->route('landlord.units', $propertyId)->with('success', $message);
-            
+
         } catch (\Exception $e) {
-            Log::error('Error finalizing bulk units: ' . $e->getMessage());
+            Log::error('Error finalizing bulk units: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create units. Please try again.');
         }
     }
@@ -721,8 +724,8 @@ class LandlordController extends Controller
 
             return redirect()->route('landlord.units')->with('success', 'Unit updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Error updating unit: ' . $e->getMessage());
-            
+            Log::error('Error updating unit: '.$e->getMessage());
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to update unit.'], 500);
             }
@@ -750,7 +753,8 @@ class LandlordController extends Controller
 
             return back()->with('success', "Unit '{$unitNumber}' deleted successfully.");
         } catch (\Exception $e) {
-            Log::error('Error deleting unit: ' . $e->getMessage());
+            Log::error('Error deleting unit: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete unit. Please try again.');
         }
     }
@@ -834,7 +838,7 @@ class LandlordController extends Controller
     {
         $landlordId = Auth::id();
         $tenants = User::where('role', 'tenant')
-            ->whereHas('tenantAssignments', function($q) use ($landlordId) {
+            ->whereHas('tenantAssignments', function ($q) use ($landlordId) {
                 $q->where('landlord_id', $landlordId);
             })->get();
 
@@ -849,7 +853,7 @@ class LandlordController extends Controller
             ->with(['tenant', 'unit.property']);
 
         if ($request->filled('property_id')) {
-            $query->whereHas('unit.property', function($q) use ($request) {
+            $query->whereHas('unit.property', function ($q) use ($request) {
                 $q->where('id', $request->property_id);
             });
         }
@@ -860,9 +864,9 @@ class LandlordController extends Controller
 
         if ($request->filled('tenant_name')) {
             $searchTerm = $request->tenant_name;
-            $query->whereHas('tenant', function($q) use ($searchTerm) {
+            $query->whereHas('tenant', function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('email', 'like', "%{$searchTerm}%");
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -884,8 +888,8 @@ class LandlordController extends Controller
         $landlord = Auth::user();
         $properties = $landlord->properties()->orderBy('name')->get();
         $apartments = $properties; // Backward compatibility
-        
-        $units = Unit::whereHas('property', function($q) use ($landlordId) {
+
+        $units = Unit::whereHas('property', function ($q) use ($landlordId) {
             $q->where('landlord_id', $landlordId);
         })->with('property')->orderBy('unit_number')->get();
 
@@ -908,7 +912,7 @@ class LandlordController extends Controller
 
         // Apply same filters as tenantHistory
         if ($request->filled('property_id')) {
-            $query->whereHas('unit.property', function($q) use ($request) {
+            $query->whereHas('unit.property', function ($q) use ($request) {
                 $q->where('id', $request->property_id);
             });
         }
@@ -1071,7 +1075,8 @@ class LandlordController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Unit created successfully.', 'unit' => $unit]);
         } catch (\Exception $e) {
-            Log::error('Error creating unit: ' . $e->getMessage());
+            Log::error('Error creating unit: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Failed to create unit.'], 500);
         }
     }
