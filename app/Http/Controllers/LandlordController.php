@@ -197,7 +197,7 @@ class LandlordController extends Controller
         return view('landlord.edit-apartment', compact('apartment'));
     }
 
-    public function updateApartment(Request $request, $id)
+    public function updateApartment(\App\Http\Requests\Landlord\UpdatePropertyRequest $request, $id)
     {
         // Sanitize phone number - remove all non-digit characters
         if ($request->has('contact_phone') && $request->contact_phone) {
@@ -210,30 +210,7 @@ class LandlordController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
-            'address' => 'required|string|max:500',
-            'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:255',
-            'postal_code' => 'nullable|string|max:20',
-            'description' => 'nullable|string|max:1000',
-            'total_units' => 'required|integer|min:1',
-            'floors' => 'nullable|integer|min:1',
-            'bedrooms' => 'nullable|integer|min:1',
-            'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
-            'parking_spaces' => 'nullable|integer|min:0',
-            'contact_person' => 'nullable|string|max:255',
-            'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
-            'contact_email' => 'nullable|email|max:255',
-            'amenities' => 'nullable|array',
-            'status' => 'required|in:active,inactive,maintenance',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-        ]);
-
         try {
-            $currentUnitCount = $property->units()->count();
             $newTotalUnits = $request->total_units;
 
             $floors = $request->property_type === 'house' ? null : $request->floors;
@@ -247,7 +224,7 @@ class LandlordController extends Controller
                 'state' => $request->state,
                 'postal_code' => $request->postal_code,
                 'description' => $request->description,
-                'total_units' => $request->total_units,
+                'total_units' => $newTotalUnits,
                 'floors' => $floors,
                 'bedrooms' => $bedrooms,
                 'year_built' => $request->year_built,
