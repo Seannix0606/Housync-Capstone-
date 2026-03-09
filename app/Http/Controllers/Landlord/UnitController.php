@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Property;
 use App\Models\Unit;
+use App\Models\User;
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Services\SupabaseService;
 
 class UnitController extends Controller
 {
@@ -17,18 +17,18 @@ class UnitController extends Controller
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
-        
+
         $sortBy = $request->get('sort', 'property_unit');
-        
+
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
             $query = $property->units()->with('property');
             $statsQuery = $property->units();
         } else {
-            $query = Unit::whereHas('property', function($query) use ($landlord) {
+            $query = Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->with('property');
-            $statsQuery = Unit::whereHas('property', function($query) use ($landlord) {
+            $statsQuery = Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             });
         }
@@ -40,27 +40,27 @@ class UnitController extends Controller
             $statsQuery->where('property_id', $selectedPropertyId);
             $propertyId = $selectedPropertyId;
         }
-        
+
         $stats = [
             'total_units' => $statsQuery->count(),
             'available_units' => (clone $statsQuery)->where('status', 'available')->count(),
             'occupied_units' => (clone $statsQuery)->where('status', 'occupied')->count(),
             'monthly_revenue' => (clone $statsQuery)->where('status', 'occupied')->sum('rent_amount') ?? 0,
         ];
-        
+
         switch ($sortBy) {
             case 'property_unit':
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->orderBy('units.floor_number')
-                      ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
-                      ->orderBy('units.unit_number')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->orderBy('units.floor_number')
+                    ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
+                    ->orderBy('units.unit_number')
+                    ->select('units.*');
                 break;
             case 'property':
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->select('units.*');
                 break;
             case 'unit_number':
                 $query->orderByRaw('CAST(unit_number AS UNSIGNED)')->orderBy('unit_number');
@@ -79,18 +79,18 @@ class UnitController extends Controller
                 break;
             default:
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
+                    ->select('units.*');
         }
-        
+
         $units = $query->paginate(20);
         $properties = $landlord->properties()->orderBy('name')->get();
-        
+
         // Backward compatibility
         $apartments = $properties;
         $apartmentId = $propertyId;
-        
+
         return view('landlord.units', compact('units', 'apartments', 'properties', 'apartmentId', 'propertyId', 'stats'));
     }
 
@@ -101,10 +101,12 @@ class UnitController extends Controller
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
             $apartment = $property; // Backward compatibility
+
             return view('landlord.create-unit', compact('apartment', 'property'));
         } else {
             $properties = $landlord->properties()->get();
             $apartments = $properties;
+
             return view('landlord.select-property-for-unit', compact('apartments', 'properties'));
         }
     }
@@ -116,7 +118,7 @@ class UnitController extends Controller
         $property = $landlord->properties()->findOrFail($propertyId);
 
         $request->validate([
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,' . $propertyId,
+            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
             'rent_amount' => 'required|numeric|min:0',
             'status' => 'required|in:available,maintenance',
@@ -135,30 +137,30 @@ class UnitController extends Controller
 
         $coverPath = null;
         if ($request->hasFile('cover_image')) {
-            $supabase = new SupabaseService();
-            $filename = 'unit-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-            $path = 'units/' . $filename;
+            $supabase = new SupabaseService;
+            $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+            $path = 'units/'.$filename;
             $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-            
+
             if ($uploadResult['success']) {
                 $coverPath = $uploadResult['url'];
             } else {
                 return back()->withInput()->with('error', 'Failed to upload cover image.');
             }
         }
-        
+
         $galleryPaths = [];
         if ($request->hasFile('gallery')) {
             foreach ($request->file('gallery') as $index => $file) {
-                $supabase = new SupabaseService();
-                $filename = 'unit-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $path = 'units/gallery/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                $path = 'units/gallery/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $galleryPaths[] = $uploadResult['url'];
                 } else {
-                    return back()->withInput()->with('error', 'Failed to upload gallery image ' . ($index + 1) . ': ' . ($uploadResult['message'] ?? 'Unknown error'));
+                    return back()->withInput()->with('error', 'Failed to upload gallery image '.($index + 1).': '.($uploadResult['message'] ?? 'Unknown error'));
                 }
             }
         }
@@ -211,7 +213,7 @@ class UnitController extends Controller
                 'default_rent' => $request->default_rent,
                 'default_bedrooms' => $request->default_bedrooms,
                 'default_bathrooms' => $request->default_bathrooms,
-            ]
+            ],
         ]);
 
         return redirect()->route('landlord.bulk-edit-units', $propertyId);
@@ -235,7 +237,7 @@ class UnitController extends Controller
         $apartment = $property;
         $bulkParams = session('bulk_creation_params', []);
         $existingUnitsCount = $property->units()->count();
-        
+
         return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount'));
     }
 
@@ -253,7 +255,7 @@ class UnitController extends Controller
             'post_data_size' => strlen(serialize($request->all())),
         ]);
 
-        if (!$request->has('units') || empty($request->input('units'))) {
+        if (! $request->has('units') || empty($request->input('units'))) {
             return back()->with('error', 'No units data received. Please try again.');
         }
 
@@ -277,19 +279,20 @@ class UnitController extends Controller
             $existingUnitNumbers = $property->units()->pluck('unit_number')->toArray();
             $unitsToInsert = [];
             $now = now();
-            
+
             $dedupedUnits = collect($request->units)->unique('unit_number')->values()->all();
-            
+
             foreach ($dedupedUnits as $unitData) {
                 if (in_array($unitData['unit_number'], $existingUnitNumbers)) {
                     $unitsSkipped++;
                     $skippedUnitNumbers[] = $unitData['unit_number'];
+
                     continue;
                 }
-                
-                $isFurnished = isset($unitData['is_furnished']) && 
+
+                $isFurnished = isset($unitData['is_furnished']) &&
                     ($unitData['is_furnished'] === 'true' || $unitData['is_furnished'] === true || $unitData['is_furnished'] === '1');
-                
+
                 $unitsToInsert[] = [
                     'property_id' => $propertyId,
                     'unit_number' => $unitData['unit_number'],
@@ -308,49 +311,50 @@ class UnitController extends Controller
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
-                
+
                 $unitsCreated++;
             }
-            
+
             \Illuminate\Support\Facades\DB::transaction(function () use ($unitsToInsert, $property) {
-                if (!empty($unitsToInsert)) {
+                if (! empty($unitsToInsert)) {
                     $chunks = array_chunk($unitsToInsert, 100);
                     foreach ($chunks as $chunk) {
                         \DB::table('units')->insert($chunk);
                     }
                 }
-                
+
                 $property->update(['total_units' => $property->units()->count()]);
                 session()->forget('bulk_creation_params');
             });
-            
+
             // Build success message with skipped unit info
             $message = "Successfully created {$unitsCreated} units!";
             if ($unitsSkipped > 0) {
-                $message .= " ({$unitsSkipped} units skipped - already exist: " . implode(', ', array_slice($skippedUnitNumbers, 0, 10));
+                $message .= " ({$unitsSkipped} units skipped - already exist: ".implode(', ', array_slice($skippedUnitNumbers, 0, 10));
                 if (count($skippedUnitNumbers) > 10) {
                     $message .= '...';
                 }
                 $message .= ')';
             }
-            
+
             return redirect()->route('landlord.units', $propertyId)->with('success', $message);
-            
+
         } catch (\Exception $exception) {
-            Log::error('Error finalizing bulk units: ' . $exception->getMessage());
+            Log::error('Error finalizing bulk units: '.$exception->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create units. Please try again.');
         }
     }
 
     public function updateUnit(Request $request, $id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
 
         try {
             $request->validate([
-                'unit_number' => 'required|string|max:50|unique:units,unit_number,' . $unit->id . ',id,property_id,' . $unit->property_id,
+                'unit_number' => 'required|string|max:50|unique:units,unit_number,'.$unit->id.',id,property_id,'.$unit->property_id,
                 'unit_type' => 'required|string|max:100',
                 'rent_amount' => 'required|numeric|min:0',
                 'status' => 'required|in:available,occupied,maintenance',
@@ -389,34 +393,34 @@ class UnitController extends Controller
             ];
 
             if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService();
-                $filename = 'unit-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-                $path = 'units/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+                $path = 'units/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
                 } else {
-                    throw new \Exception('Failed to upload cover image: ' . ($uploadResult['message'] ?? 'Unknown error'));
+                    throw new \Exception('Failed to upload cover image: '.($uploadResult['message'] ?? 'Unknown error'));
                 }
             }
 
             if ($request->hasFile('gallery')) {
-                $supabase = new SupabaseService();
+                $supabase = new SupabaseService;
                 $galleryPaths = $unit->gallery ?? [];
-                
+
                 foreach ($request->file('gallery') as $index => $file) {
-                    $filename = 'unit-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $path = 'units/gallery/' . $filename;
+                    $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                    $path = 'units/gallery/'.$filename;
                     $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                    
+
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];
                     } else {
-                        throw new \Exception('Failed to upload gallery image ' . ($index + 1) . ': ' . ($uploadResult['message'] ?? 'Unknown error'));
+                        throw new \Exception('Failed to upload gallery image '.($index + 1).': '.($uploadResult['message'] ?? 'Unknown error'));
                     }
                 }
-                
+
                 $updateData['gallery'] = array_slice($galleryPaths, 0, 12);
             }
 
@@ -428,48 +432,49 @@ class UnitController extends Controller
 
             return redirect()->route('landlord.units')->with('success', 'Unit updated successfully.');
         } catch (\Exception $exception) {
-            Log::error('Error updating unit: ' . $exception->getMessage());
-            
+            Log::error('Error updating unit: '.$exception->getMessage());
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to update unit.'], 500);
             }
-            
+
             return back()->with('error', 'Failed to update unit. Please try again.');
         }
     }
 
     public function deleteUnit($id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
-        
+
         try {
             $activeAssignments = $unit->tenantAssignments()->whereIn('status', ['active', 'pending'])->count();
-                
+
             if ($activeAssignments > 0) {
                 return back()->with('error', 'Cannot delete unit with active tenant assignments.');
             }
-            
+
             $unitNumber = $unit->unit_number;
             $unit->tenantAssignments()->delete();
             $unit->delete();
-            
+
             return back()->with('success', "Unit '{$unitNumber}' deleted successfully.");
         } catch (\Exception $exception) {
-            Log::error('Error deleting unit: ' . $exception->getMessage());
+            Log::error('Error deleting unit: '.$exception->getMessage());
+
             return back()->with('error', 'Failed to delete unit. Please try again.');
         }
     }
 
     public function getUnitDetails($id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->with(['property', 'tenantAssignments.tenant'])->findOrFail($id);
-        
+
         $currentAssignment = $unit->tenantAssignments()->where('status', 'active')->with('tenant')->first();
-        
+
         return response()->json([
             'id' => $unit->id,
             'unit_number' => $unit->unit_number,
@@ -505,7 +510,7 @@ class UnitController extends Controller
         $property = $landlord->properties()->findOrFail($propertyId);
 
         $request->validate([
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,' . $propertyId,
+            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
             'rent_amount' => 'required|numeric|min:0',
             'bedrooms' => 'required|integer|min:0',
@@ -537,7 +542,8 @@ class UnitController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Unit created successfully.', 'unit' => $unit]);
         } catch (\Exception $exception) {
-            Log::error('Error creating unit: ' . $exception->getMessage());
+            Log::error('Error creating unit: '.$exception->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Failed to create unit.'], 500);
         }
     }

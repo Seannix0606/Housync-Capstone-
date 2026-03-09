@@ -23,7 +23,7 @@ class UpdatePropertyRequest extends FormRequest
         // Sanitize phone number - remove all non-digit characters
         if ($this->has('contact_phone') && $this->contact_phone) {
             $this->merge([
-                'contact_phone' => preg_replace('/[^0-9]/', '', $this->contact_phone)
+                'contact_phone' => preg_replace('/[^0-9]/', '', $this->contact_phone),
             ]);
         }
     }
@@ -37,7 +37,7 @@ class UpdatePropertyRequest extends FormRequest
     {
         $propertyId = $this->route('id');
         $currentUnitCount = 0;
-        
+
         if ($propertyId) {
             $property = \App\Models\Property::find($propertyId);
             if ($property) {
@@ -56,11 +56,11 @@ class UpdatePropertyRequest extends FormRequest
             'total_units' => [
                 'required',
                 'integer',
-                'min:' . max(1, $currentUnitCount)
+                'min:'.max(1, $currentUnitCount),
             ],
             'floors' => 'nullable|integer|min:1',
             'bedrooms' => 'nullable|integer|min:1',
-            'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
             'parking_spaces' => 'nullable|integer|min:0',
             'contact_person' => 'nullable|string|max:255',
             'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
