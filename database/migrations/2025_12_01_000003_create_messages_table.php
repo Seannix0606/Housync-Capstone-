@@ -23,7 +23,7 @@ return new class extends Migration
             $table->json('metadata')->nullable(); // For additional data like file info, system message data
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Indexes for faster queries
             $table->index(['conversation_id', 'created_at']);
             $table->index(['sender_id', 'created_at']);
@@ -39,6 +39,3 @@ return new class extends Migration
         Schema::dropIfExists('messages');
     }
 };
-
-
-

@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('units', function (Blueprint $table) {
-            if (!Schema::hasColumn('units', 'cover_image')) {
+            if (! Schema::hasColumn('units', 'cover_image')) {
                 $table->string('cover_image')->nullable()->after('notes');
             }
-            if (!Schema::hasColumn('units', 'gallery')) {
+            if (! Schema::hasColumn('units', 'gallery')) {
                 $table->json('gallery')->nullable()->after('cover_image');
             }
         });
@@ -30,5 +30,3 @@ return new class extends Migration
         });
     }
 };
-
-

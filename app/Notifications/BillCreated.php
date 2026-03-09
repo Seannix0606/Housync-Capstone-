@@ -28,7 +28,7 @@ class BillCreated extends Notification
             'amount' => $this->bill->amount,
             'type_label' => ucfirst($this->bill->type),
             'due_date' => $this->bill->due_date?->format('M d, Y'),
-            'message' => "New {$this->bill->type} bill ({$this->bill->invoice_number}) for ₱" . number_format($this->bill->amount, 2) . " due on " . ($this->bill->due_date?->format('M d, Y') ?? 'N/A') . ".",
+            'message' => "New {$this->bill->type} bill ({$this->bill->invoice_number}) for ₱".number_format($this->bill->amount, 2).' due on '.($this->bill->due_date?->format('M d, Y') ?? 'N/A').'.',
             'url' => route('tenant.payments.show', $this->bill->id),
         ];
     }

@@ -21,7 +21,7 @@ return new class extends Migration
                 'bank_statement',
                 'character_reference',
                 'rental_history',
-                'other'
+                'other',
             ]);
             $table->string('file_name');
             $table->string('file_path');

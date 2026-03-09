@@ -14,11 +14,11 @@ return [
     // Serial port configuration
     'com_port' => env('RFID_COM_PORT', 'COM3'),
     'baud_rate' => env('RFID_BAUD_RATE', 115200),
-    
+
     // Scan timeout settings
     'scan_timeout' => env('RFID_SCAN_TIMEOUT', 15), // seconds
     'read_delay' => env('RFID_READ_DELAY', 2000), // milliseconds
-    
+
     // ESP32 commands
     'commands' => [
         'ping' => 'PING',
@@ -26,7 +26,7 @@ return [
         'scan_stop' => 'SCAN_STOP',
         'status' => 'STATUS',
     ],
-    
+
     // Response patterns
     'responses' => [
         'pong' => 'PONG',
