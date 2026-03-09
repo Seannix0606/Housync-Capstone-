@@ -109,6 +109,7 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 */
 
 Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('landlord.')->group(function () {
+    
     // Dashboard, Settings & Tenants
     Route::controller(LandlordController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard');
@@ -120,8 +121,10 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::get('/settings', 'settings')->name('settings');
         Route::put('/settings', 'updateSettings')->name('settings.update');
         Route::put('/settings/password', 'updatePassword')->name('settings.password');
-
-        // Apartments (Properties)
+    });
+        
+    // Apartments (Properties)
+    Route::controller(\App\Http\Controllers\Landlord\PropertyController::class)->group(function () {
         Route::get('/apartments', 'apartments')->name('apartments');
         Route::get('/apartments/create', 'createApartment')->name('create-apartment');
         Route::post('/apartments', 'storeApartment')->name('store-apartment');
@@ -130,7 +133,9 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::delete('/apartments/{id}', 'deleteApartment')->name('delete-apartment');
         Route::get('/apartments/{id}/details', 'getApartmentDetails')->name('apartment-details')->whereNumber('id');
         Route::get('/apartments/{id}/units', 'getApartmentUnits')->name('apartment-units')->whereNumber('id');
-
+    });
+    
+    Route::controller(LandlordController::class)->group(function () {
         // Units
         Route::get('/units/create', 'createUnit')->name('create-unit');
         Route::get('/units/{apartmentId?}', 'units')->name('units')->whereNumber('apartmentId');
