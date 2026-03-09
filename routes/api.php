@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// ESP32 RFID API Routes (with rate limiting for security)
-Route::middleware(['throttle:60,1'])->group(function () {
+// ESP32 RFID API Routes (with rate limiting and ESP32 API Key security)
+Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
     Route::post('/rfid/verify', [RfidController::class, 'verifyAccess'])->name('api.rfid.verify');
     Route::post('/rfid-scan', [RfidController::class, 'scanCardDirect'])->name('api.rfid-scan'); // For ESP32Reader.php Activity Logs
     Route::post('/rfid/scan/direct', [RfidController::class, 'scanCardDirect'])->name('api.rfid.scan-direct');
