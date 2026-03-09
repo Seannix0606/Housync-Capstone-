@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Landlord\StorePropertyRequest;
 use App\Models\LandlordDocument;
 use App\Models\LandlordProfile;
 use App\Models\Property;
@@ -9,6 +10,7 @@ use App\Models\TenantAssignment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\SupabaseService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -98,32 +100,12 @@ class LandlordController extends Controller
         return view('landlord.create-apartment');
     }
 
-    public function storeApartment(Request $request)
+    public function storeApartment(StorePropertyRequest $request)
     {
         Log::info('Property creation request received', [
             'data' => $request->all(),
             'method' => $request->method(),
             'url' => $request->url(),
-        ]);
-
-        // Sanitize phone number - remove all non-digit characters
-        if ($request->has('contact_phone') && $request->contact_phone) {
-            $request->merge(['contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone)]);
-        }
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
-            'address' => 'required|string|max:500',
-            'description' => 'nullable|string|max:1000',
-            'contact_person' => 'nullable|string|max:255',
-            'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
-            'contact_email' => 'nullable|email|max:255',
-            'amenities' => 'nullable|array',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'floors' => 'nullable|integer|min:1',
-            'bedrooms' => 'nullable|integer|min:1',
         ]);
 
         try {
@@ -217,6 +199,13 @@ class LandlordController extends Controller
 
     public function updateApartment(Request $request, $id)
     {
+        // Sanitize phone number - remove all non-digit characters
+        if ($request->has('contact_phone') && $request->contact_phone) {
+            $request->merge([
+                'contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone),
+            ]);
+        }
+
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
@@ -846,6 +835,8 @@ class LandlordController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'landlord',
         ]);
+
+        event(new Registered($landlord));
 
         LandlordProfile::updateOrCreate(
             ['user_id' => $landlord->id],
