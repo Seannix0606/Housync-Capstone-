@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Landlord\StorePropertyRequest;
+use Illuminate\Auth\Events\Registered;
 
 class LandlordController extends Controller
 {
@@ -98,7 +100,7 @@ class LandlordController extends Controller
         return view('landlord.create-apartment');
     }
 
-    public function storeApartment(\App\Http\Requests\Landlord\StorePropertyRequest $request)
+    public function storeApartment(StorePropertyRequest $request)
     {
         Log::info('Property creation request received', [
             'data' => $request->all(),
@@ -197,6 +199,13 @@ class LandlordController extends Controller
 
     public function updateApartment(Request $request, $id)
     {
+        // Sanitize phone number - remove all non-digit characters
+        if ($request->has('contact_phone') && $request->contact_phone) {
+            $request->merge([
+                'contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone)
+            ]);
+        }
+
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
@@ -826,6 +835,8 @@ class LandlordController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'landlord',
         ]);
+
+        event(new Registered($landlord));
 
         LandlordProfile::updateOrCreate(
             ['user_id' => $landlord->id],

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -109,7 +110,7 @@ class AuthController extends Controller
             ]
         );
 
-        event(new \Illuminate\Auth\Events\Registered($user));
+        event(new Registered($user));
 
         Auth::login($user);
 

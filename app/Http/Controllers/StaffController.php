@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Events\Registered;
 
 class StaffController extends Controller
 {
@@ -115,6 +116,8 @@ class StaffController extends Controller
                 'address' => $request->address,
                 'status' => 'active',
             ]);
+
+            event(new Registered($staff));
 
             return redirect()->route('landlord.staff')
                 ->with('success', 'Staff member added successfully!')
