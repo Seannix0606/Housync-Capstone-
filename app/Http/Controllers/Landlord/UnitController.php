@@ -157,6 +157,8 @@ class UnitController extends Controller
                 
                 if ($uploadResult['success']) {
                     $galleryPaths[] = $uploadResult['url'];
+                } else {
+                    return back()->withInput()->with('error', 'Failed to upload gallery image ' . ($index + 1) . ': ' . ($uploadResult['message'] ?? 'Unknown error'));
                 }
             }
         }
@@ -276,7 +278,9 @@ class UnitController extends Controller
             $unitsToInsert = [];
             $now = now();
             
-            foreach ($request->units as $unitData) {
+            $dedupedUnits = collect($request->units)->unique('unit_number')->values()->all();
+            
+            foreach ($dedupedUnits as $unitData) {
                 if (in_array($unitData['unit_number'], $existingUnitNumbers)) {
                     $unitsSkipped++;
                     $skippedUnitNumbers[] = $unitData['unit_number'];
@@ -308,15 +312,17 @@ class UnitController extends Controller
                 $unitsCreated++;
             }
             
-            if (!empty($unitsToInsert)) {
-                $chunks = array_chunk($unitsToInsert, 100);
-                foreach ($chunks as $chunk) {
-                    \DB::table('units')->insert($chunk);
+            \Illuminate\Support\Facades\DB::transaction(function () use ($unitsToInsert, $property) {
+                if (!empty($unitsToInsert)) {
+                    $chunks = array_chunk($unitsToInsert, 100);
+                    foreach ($chunks as $chunk) {
+                        \DB::table('units')->insert($chunk);
+                    }
                 }
-            }
-            
-            $property->update(['total_units' => $property->units()->count()]);
-            session()->forget('bulk_creation_params');
+                
+                $property->update(['total_units' => $property->units()->count()]);
+                session()->forget('bulk_creation_params');
+            });
             
             // Build success message with skipped unit info
             $message = "Successfully created {$unitsCreated} units!";
@@ -390,6 +396,8 @@ class UnitController extends Controller
                 
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
+                } else {
+                    throw new \Exception('Failed to upload cover image: ' . ($uploadResult['message'] ?? 'Unknown error'));
                 }
             }
 
@@ -404,6 +412,8 @@ class UnitController extends Controller
                     
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];
+                    } else {
+                        throw new \Exception('Failed to upload gallery image ' . ($index + 1) . ': ' . ($uploadResult['message'] ?? 'Unknown error'));
                     }
                 }
                 
