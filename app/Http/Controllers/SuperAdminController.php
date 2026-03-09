@@ -53,12 +53,23 @@ class SuperAdminController extends Controller
     {
         $query = User::with('approvedBy');
         
-        // Search by name or email
+        // Search by name (in profiles) or email
         if (request('search')) {
             $search = request('search');
-            $query->where(function($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+            $query->where(function ($query) use ($search) {
+                $query->where('email', 'like', '%'.$search.'%')
+                    ->orWhereHas('landlordProfile', function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('tenantProfile', function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('staffProfile', function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%');
+                    })
+                    ->orWhereHas('superAdminProfile', function ($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%');
+                    });
             });
         }
         
@@ -253,12 +264,51 @@ class SuperAdminController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $user->update($request->only([
-            'name', 'email', 'role', 'phone', 'address', 'business_info'
-        ]));
+        // Update the main user record
+        $user->update($request->only(['email', 'role']));
 
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
+        }
+
+        // Prepare profile data based on role
+        $profileData = $request->only(['name', 'phone', 'address']);
+        
+        if ($user->role === 'landlord' && $request->filled('business_info')) {
+            $profileData['business_info'] = $request->business_info;
+        }
+
+        // Update or create the corresponding profile
+        switch ($user->role) {
+            case 'landlord':
+                LandlordProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $profileData
+                );
+                break;
+            case 'tenant':
+                TenantProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $profileData
+                );
+                break;
+            case 'staff':
+                // For staff, we might need staff_type if they are switching to staff from another role,
+                // but the form might not provide it. We'll set a default if it's missing.
+                if (!isset($profileData['staff_type'])) {
+                    $profileData['staff_type'] = 'maintenance'; // or whatever default makes sense
+                }
+                StaffProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $profileData
+                );
+                break;
+            case 'super_admin':
+                SuperAdminProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $profileData
+                );
+                break;
         }
 
         return redirect()->route('super-admin.users')->with('success', 'User updated successfully.');
