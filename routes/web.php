@@ -26,6 +26,23 @@ use App\Http\Controllers\ReportController;
 
 Route::get('/', fn() => redirect()->route('login'));
 
+// Email Verification Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->route('dashboard'); 
+    })->middleware(['signed'])->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('message', 'Verification link sent!');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
+
 // Authentication
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login');
@@ -91,7 +108,7 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->group(function () {
+Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('landlord.')->group(function () {
     
     // Dashboard, Settings & Tenants
     Route::controller(LandlordController::class)->group(function () {
@@ -240,7 +257,7 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(function () {
+Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.')->group(function () {
     
     // Dashboard & Profile
     Route::controller(TenantAssignmentController::class)->group(function () {
@@ -301,7 +318,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['role:staff'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['role:staff', 'verified'])->prefix('staff')->name('staff.')->group(function () {
     
     // Dashboard & Profile
     Route::controller(StaffController::class)->group(function () {

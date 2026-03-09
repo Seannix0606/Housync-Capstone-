@@ -109,6 +109,8 @@ class AuthController extends Controller
             ]
         );
 
+        event(new \Illuminate\Auth\Events\Registered($user));
+
         Auth::login($user);
 
         return redirect()->route('tenant.dashboard');
