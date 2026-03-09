@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
+use App\Models\Property;
 use App\Models\TenantAssignment;
 use App\Models\TenantDocument;
+use App\Models\Unit;
 use App\Models\User;
-use App\Models\Property;
 use App\Services\TenantAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TenantAssignmentController extends Controller
 {
@@ -35,7 +35,7 @@ class TenantAssignmentController extends Controller
 
         return view('landlord.tenant-assignments', compact('assignments', 'stats', 'filters'));
     }
-    
+
     public function store(Request $request, $unitId)
     {
         // Enhanced validation rules
@@ -58,7 +58,7 @@ class TenantAssignmentController extends Controller
 
         try {
             // Use database transaction to ensure data consistency
-            $result = DB::transaction(function() use ($request, $unitId) {
+            $result = DB::transaction(function () use ($request, $unitId) {
                 return $this->assignmentService->assignTenantToUnit(
                     $unitId,
                     $request->all(),
@@ -75,7 +75,7 @@ class TenantAssignmentController extends Controller
                     'lease_start_date' => $request->lease_start_date,
                     'lease_end_date' => $request->lease_end_date,
                     'rent_amount' => $request->rent_amount,
-                    'timestamp' => now()
+                    'timestamp' => now(),
                 ]);
 
                 return redirect()->route('landlord.tenant-assignments')
@@ -90,7 +90,7 @@ class TenantAssignmentController extends Controller
                 'unit_id' => $unitId,
                 'file_count' => is_countable($request->file('documents')) ? count($request->file('documents')) : 0,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->withInput()->with('error', 'Failed to assign tenant. Please try again.');
@@ -119,7 +119,7 @@ class TenantAssignmentController extends Controller
 
         try {
             // Use database transaction with race condition protection
-            $result = DB::transaction(function() use ($request, $assignmentId) {
+            $result = DB::transaction(function () use ($request, $assignmentId) {
                 // Fetch the vacated assignment within landlord scope (lock to avoid concurrent reassignments)
                 $assignment = TenantAssignment::where('landlord_id', Auth::id())
                     ->where('id', $assignmentId)
@@ -133,17 +133,17 @@ class TenantAssignmentController extends Controller
 
                 // Get the old unit to free it up
                 $oldUnit = $assignment->unit;
-                
+
                 // Race condition protection: Lock the target unit and check availability
-                $newUnit = Unit::whereHas('property', function($query) {
+                $newUnit = Unit::whereHas('property', function ($query) {
                     $query->where('landlord_id', Auth::id());
                 })
-                ->where('id', $request->unit_id)
-                ->where('status', 'available')
-                ->lockForUpdate() // This prevents race conditions
-                ->first();
+                    ->where('id', $request->unit_id)
+                    ->where('status', 'available')
+                    ->lockForUpdate() // This prevents race conditions
+                    ->first();
 
-                if (!$newUnit) {
+                if (! $newUnit) {
                     throw new \Exception('Selected unit is not available or does not belong to you.');
                 }
 
@@ -173,7 +173,7 @@ class TenantAssignmentController extends Controller
                 return [
                     'assignment' => $assignment,
                     'old_unit' => $oldUnit,
-                    'new_unit' => $newUnit
+                    'new_unit' => $newUnit,
                 ];
             });
 
@@ -188,7 +188,7 @@ class TenantAssignmentController extends Controller
                 'lease_start_date' => $request->lease_start_date,
                 'lease_end_date' => $request->lease_end_date,
                 'rent_amount' => $request->rent_amount,
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return redirect()->route('landlord.tenant-assignments')
@@ -200,7 +200,7 @@ class TenantAssignmentController extends Controller
                 'assignment_id' => $assignmentId,
                 'unit_id' => $request->unit_id,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->withInput()->with('error', 'Tenant reassignment failed. Please contact support.');
@@ -213,6 +213,7 @@ class TenantAssignmentController extends Controller
     public function show($id)
     {
         $assignment = $this->assignmentService->getAssignmentDetails($id, Auth::id());
+
         return view('landlord.assignment-details', compact('assignment'));
     }
 
@@ -250,7 +251,7 @@ class TenantAssignmentController extends Controller
                 'old_status' => $oldStatus,
                 'new_status' => $request->status,
                 'reason' => $request->reason ?? 'No reason provided',
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('success', 'Assignment status updated successfully.');
@@ -260,7 +261,7 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('error', 'Failed to update assignment status. Please try again.');
@@ -295,10 +296,10 @@ class TenantAssignmentController extends Controller
     {
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
-        
+
         // Get the active assignment if one exists (optional now)
         $assignment = $tenant->tenantAssignments()->with(['unit.apartment', 'documents'])->first();
-        
+
         // Get tenant's personal documents (uploaded before assignment)
         $personalDocuments = $tenant->documents()->orderBy('created_at', 'desc')->get();
 
@@ -319,7 +320,7 @@ class TenantAssignmentController extends Controller
             'request_size' => $request->header('Content-Length'),
             'user_agent' => $request->header('User-Agent'),
         ]);
-    
+
         // Enhanced validation rules
         try {
             $request->validate([
@@ -341,50 +342,50 @@ class TenantAssignmentController extends Controller
             ]);
             throw $exception;
         }
-    
+
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
-        
+
         try {
             $uploadedDocuments = [];
-            
+
             // --- START FIX: Determine Storage Mechanism ---
             // Force local storage when in local environment, regardless of Supabase config
             $useSupabase = config('app.env') !== 'local' && config('services.supabase.key');
-    
+
             if ($useSupabase) {
-                $supabase = new \App\Services\SupabaseService();
+                $supabase = new \App\Services\SupabaseService;
                 Log::info('Using Supabase for document upload.');
             } else {
                 Log::info('Using Local Storage (public disk) for document upload.');
             }
             $supabaseInstance = $useSupabase ? $supabase : null;
-            DB::transaction(function() use ($request, $tenant, $useSupabase, $supabaseInstance, &$uploadedDocuments) {
+            DB::transaction(function () use ($request, $tenant, $useSupabase, $supabaseInstance, &$uploadedDocuments) {
                 $files = $request->file('documents', []);
                 if (empty($files)) {
                     throw new \Exception('No files uploaded');
                 }
-                
+
                 $documentTypes = $request->input('document_types', []);
                 if (count($files) !== count($documentTypes)) {
                     throw new \Exception('Number of files must match number of document types');
                 }
-                
+
                 foreach ($files as $index => $file) {
                     $documentType = $documentTypes[$index];
-                    
+
                     // Generate unique filename
                     $extension = $file->getClientOriginalExtension();
-                    $fileName = 'tenant-doc-' . $tenant->id . '-' . time() . '-' . $index . '-' . uniqid() . '.' . $extension;
+                    $fileName = 'tenant-doc-'.$tenant->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
                     $uploadResult = ['success' => false, 'message' => 'Upload failed'];
-    
+
                     if ($useSupabase) {
-                        $path = 'tenant-documents/' . $fileName;
+                        $path = 'tenant-documents/'.$fileName;
                         // Upload to Supabase
                         $uploadResult = $supabaseInstance->uploadFile('house-sync', $path, $file->getRealPath());
-                        
+
                         // Enhanced error handling for Supabase uploads
-                        if (!$uploadResult['success']) {
+                        if (! $uploadResult['success']) {
                             Log::error('Supabase upload failed', [
                                 'tenant_id' => $tenant->id,
                                 'file_name' => $fileName,
@@ -392,22 +393,22 @@ class TenantAssignmentController extends Controller
                                 'mime_type' => $file->getMimeType(),
                                 'supabase_error' => $uploadResult['error'] ?? 'Unknown Supabase error',
                                 'supabase_response' => $uploadResult['response'] ?? null,
-                                'status_code' => $uploadResult['status_code'] ?? null
+                                'status_code' => $uploadResult['status_code'] ?? null,
                             ]);
                         }
                     } else {
                         // Upload to local disk: storage/app/public/tenant-documents
                         $storagePath = 'tenant-documents';
                         $filePathOnDisk = $file->storeAs($storagePath, $fileName, 'public');
-                        
+
                         $uploadResult = [
                             'success' => true,
                             // This path will be asset('storage/' . path) handled by document_url()
-                            'url' => $filePathOnDisk, 
-                            'message' => 'Uploaded to local storage'
+                            'url' => $filePathOnDisk,
+                            'message' => 'Uploaded to local storage',
                         ];
                     }
-    
+
                     // --- START FIX: Remove debug echo statement ---
                     // The debug echo statements were the cause of the page refresh issue.
                     // Log the result instead of echoing to the browser.
@@ -415,10 +416,10 @@ class TenantAssignmentController extends Controller
                         'tenant_id' => $tenant->id,
                         'index' => $index,
                         'type' => $documentType,
-                        'result_summary' => ['success' => $uploadResult['success'], 'message' => $uploadResult['message']]
+                        'result_summary' => ['success' => $uploadResult['success'], 'message' => $uploadResult['message']],
                     ]);
                     // --- END FIX ---
-                    
+
                     // Only create record if successful
                     if ($uploadResult['success']) {
                         $document = TenantDocument::create([
@@ -431,47 +432,47 @@ class TenantAssignmentController extends Controller
                             'uploaded_at' => now(),
                             'verification_status' => 'pending',
                         ]);
-    
+
                         $uploadedDocuments[] = $document;
                     } else {
                         Log::error('Failed to upload tenant document', [
                             'tenant_id' => $tenant->id,
                             'index' => $index,
-                            'result' => $uploadResult
+                            'result' => $uploadResult,
                         ]);
-                        throw new \Exception('Failed to upload document: ' . ($uploadResult['message'] ?? 'Unknown error'));
+                        throw new \Exception('Failed to upload document: '.($uploadResult['message'] ?? 'Unknown error'));
                     }
                 }
             });
-    
+
             // Audit log for successful document upload
             Log::info('Personal documents uploaded successfully', [
                 'tenant_id' => $tenant->id,
                 'tenant_name' => $tenant->name,
                 'documents_count' => count($uploadedDocuments),
                 'document_types' => $request->document_types,
-                'total_size' => array_sum(array_map(fn($doc) => $doc->file_size, $uploadedDocuments)),
-                'timestamp' => now()
+                'total_size' => array_sum(array_map(fn ($doc) => $doc->file_size, $uploadedDocuments)),
+                'timestamp' => now(),
             ]);
-    
+
             return back()->with('success', 'Documents uploaded successfully! They will be available when you apply for properties.');
-    
+
         } catch (\Illuminate\Validation\ValidationException $exception) {
             // Handle validation errors specifically
-            $errorCode = 'DOC_VALIDATION_' . strtoupper(substr(md5($exception->getMessage() . time()), 0, 8));
-            
+            $errorCode = 'DOC_VALIDATION_'.strtoupper(substr(md5($exception->getMessage().time()), 0, 8));
+
             Log::error('Document upload validation failed', [
                 'error_code' => $errorCode,
                 'tenant_id' => $tenant->id,
                 'validation_errors' => $exception->errors(),
             ]);
-            
+
             return back()->withErrors($exception->errors())->with('error', "Validation failed. Please check the form and try again. Error Code: {$errorCode}");
-            
+
         } catch (\Exception $exception) {
             // Generate error code for tracking
-            $errorCode = 'DOC_UPLOAD_' . strtoupper(substr(md5($exception->getMessage() . time()), 0, 8));
-            
+            $errorCode = 'DOC_UPLOAD_'.strtoupper(substr(md5($exception->getMessage().time()), 0, 8));
+
             // Enhanced error logging with more details
             $files = $request->file('documents', []);
             $fileDetails = [];
@@ -484,18 +485,18 @@ class TenantAssignmentController extends Controller
                     'extension' => $file->getClientOriginalExtension(),
                 ];
             }
-            
+
             Log::error('Personal document upload failed', [
                 'error_code' => $errorCode,
                 'tenant_id' => $tenant->id,
                 'error' => $exception->getMessage(),
                 'files_count' => count($files),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
-    
+
             // Determine user-friendly error message based on error type
             $userMessage = $this->getUserFriendlyErrorMessage($exception, $errorCode);
-    
+
             return back()->with('error', $userMessage);
         }
     }
@@ -506,16 +507,16 @@ class TenantAssignmentController extends Controller
     private function getUserFriendlyErrorMessage(\Exception $exception, string $errorCode)
     {
         $baseMessage = "Failed to upload documents. Error Code: {$errorCode}";
-        
+
         // Check for specific error patterns
         if (str_contains($exception->getMessage(), 'No files uploaded')) {
             return "Please select at least one document to upload. {$baseMessage}";
         }
-        
+
         if (str_contains($exception->getMessage(), 'Number of files must match')) {
             return "Please ensure each file has a corresponding document type selected. {$baseMessage}";
         }
-        
+
         if (str_contains($exception->getMessage(), 'Failed to upload document')) {
             $uploadError = $exception->getMessage();
             if (str_contains($uploadError, 'Supabase')) {
@@ -536,21 +537,22 @@ class TenantAssignmentController extends Controller
             if (str_contains($uploadError, '500') || str_contains($uploadError, 'Internal Server Error')) {
                 return "Server error occurred. Please try again in a few minutes. {$baseMessage}";
             }
+
             return "File upload failed. Please check your file size (max 5MB) and format (PDF, JPG, PNG). {$baseMessage}";
         }
-        
+
         if (str_contains($exception->getMessage(), 'validation')) {
             return "File validation failed. Please ensure files are PDF, JPG, or PNG format and under 5MB. {$baseMessage}";
         }
-        
+
         if (str_contains($exception->getMessage(), 'database')) {
             return "Database error occurred. Please try again. If the problem persists, contact support. {$baseMessage}";
         }
-        
+
         if (str_contains($exception->getMessage(), 'permission')) {
             return "Permission denied. Please ensure you have the right to upload documents. {$baseMessage}";
         }
-        
+
         // Default message for unknown errors
         return "An unexpected error occurred during upload. Please try again. If the problem persists, contact support with error code: {$errorCode}";
     }
@@ -558,12 +560,12 @@ class TenantAssignmentController extends Controller
     public function downloadDocument($documentId)
     {
         $document = TenantDocument::with(['tenant'])->findOrFail($documentId);
-        
+
         // Check if user has access to this document
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $hasAccess = false;
-        
+
         if ($user->isLandlord()) {
             // Landlord can view if document belongs to their tenant
             // We need to check through tenant assignments
@@ -577,8 +579,8 @@ class TenantAssignmentController extends Controller
                 $hasAccess = true;
             }
         }
-        
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'Unauthorized access to document');
         }
 
@@ -588,12 +590,12 @@ class TenantAssignmentController extends Controller
             return redirect($document->file_path);
         } else {
             // It's a local storage path, serve the file
-            $filePath = storage_path('app/public/' . $document->file_path);
-            
-            if (!file_exists($filePath)) {
+            $filePath = storage_path('app/public/'.$document->file_path);
+
+            if (! file_exists($filePath)) {
                 abort(404, 'File not found');
             }
-            
+
             return response()->file($filePath);
         }
     }
@@ -605,11 +607,11 @@ class TenantAssignmentController extends Controller
     {
         try {
             $document = TenantDocument::with(['tenantAssignment.tenant', 'tenant'])->findOrFail($documentId);
-            
+
             // Check if user is the tenant who uploaded this document
             // Check both tenant_id (for profile documents) and assignment tenant_id
-            if ($document->tenant_id !== Auth::id() && 
-                (!$document->tenantAssignment || $document->tenantAssignment->tenant_id !== Auth::id())) {
+            if ($document->tenant_id !== Auth::id() &&
+                (! $document->tenantAssignment || $document->tenantAssignment->tenant_id !== Auth::id())) {
                 abort(403, 'Unauthorized access to document.');
             }
 
@@ -619,14 +621,14 @@ class TenantAssignmentController extends Controller
             $fileSize = $document->file_size;
 
             // Use database transaction for document deletion
-            DB::transaction(function() use ($document, $assignment) {
+            DB::transaction(function () use ($document, $assignment) {
                 // Delete the document record
                 $document->delete();
 
                 // Update assignment status based on remaining documents (if assignment exists)
                 if ($assignment) {
                     $remainingDocuments = $assignment->documents()->count();
-                    
+
                     if ($remainingDocuments === 0) {
                         // No documents left, mark as not uploaded
                         $assignment->update([
@@ -637,7 +639,7 @@ class TenantAssignmentController extends Controller
                         // Check if all remaining documents are verified
                         $pendingDocuments = $assignment->documents()->where('verification_status', 'pending')->count();
                         $allVerified = $pendingDocuments === 0;
-                        
+
                         $assignment->update([
                             'documents_uploaded' => true,
                             'documents_verified' => $allVerified,
@@ -659,7 +661,7 @@ class TenantAssignmentController extends Controller
                 'file_size' => $fileSize,
                 'verification_status' => $document->verification_status,
                 'remaining_documents' => $assignment ? $assignment->documents()->count() : 0,
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('success', 'Document deleted successfully.');
@@ -669,7 +671,7 @@ class TenantAssignmentController extends Controller
                 'tenant_id' => Auth::id(),
                 'document_id' => $documentId,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('error', 'Failed to delete document. Please try again.');
@@ -687,7 +689,7 @@ class TenantAssignmentController extends Controller
 
         return response()->json([
             'email' => $assignment->tenant->email,
-            'password' => $assignment->generated_password ?? 'Password not available'
+            'password' => $assignment->generated_password ?? 'Password not available',
         ]);
     }
 
@@ -696,11 +698,11 @@ class TenantAssignmentController extends Controller
      */
     public function getAvailableUnits()
     {
-        $units = Unit::whereHas('property', function($query) {
+        $units = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->where('status', 'available')
-        ->with('property')
-        ->get();
+            ->with('property')
+            ->get();
 
         return response()->json($units);
     }
@@ -712,7 +714,7 @@ class TenantAssignmentController extends Controller
     {
         try {
             // Use database transaction for assignment deletion
-            $result = DB::transaction(function() use ($id) {
+            $result = DB::transaction(function () use ($id) {
                 $assignment = TenantAssignment::where('landlord_id', Auth::id())
                     ->with(['tenant.documents', 'unit'])
                     ->findOrFail($id);
@@ -734,7 +736,7 @@ class TenantAssignmentController extends Controller
                 // Update the unit status back to available
                 $assignment->unit->update([
                     'status' => 'available',
-                    'tenant_count' => 0
+                    'tenant_count' => 0,
                 ]);
 
                 // Delete the assignment only
@@ -745,7 +747,7 @@ class TenantAssignmentController extends Controller
                     'tenant_id' => $tenantId,
                     'unit_id' => $unitId,
                     'documents_count' => $documentsCount,
-                    'total_file_size' => $totalFileSize
+                    'total_file_size' => $totalFileSize,
                 ];
             });
 
@@ -758,7 +760,7 @@ class TenantAssignmentController extends Controller
                 'unit_id' => $result['unit_id'],
                 'documents_deleted' => $result['documents_count'],
                 'total_file_size_deleted' => $result['total_file_size'],
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return redirect()->route('landlord.tenant-assignments')
@@ -769,7 +771,7 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('error', 'Failed to delete tenant assignment. Please try again.');
@@ -784,15 +786,15 @@ class TenantAssignmentController extends Controller
         try {
             /** @var \App\Models\User $tenant */
             $tenant = Auth::user();
-            
-            if (!$tenant) {
+
+            if (! $tenant) {
                 return redirect()->route('login')->with('error', 'Please log in to access your profile.');
             }
-            
+
             $assignment = $tenant->tenantAssignments()
                 ->with([
-                    'unit.apartment.landlord', 
-                    'landlord'
+                    'unit.apartment.landlord',
+                    'landlord',
                 ])
                 ->where('status', 'active')
                 ->first();
@@ -816,11 +818,11 @@ class TenantAssignmentController extends Controller
             }
 
             return view('tenant-profile', compact('tenant', 'assignment', 'rfidCards', 'personalDocuments'));
-            
+
         } catch (\Exception $exception) {
             Log::error('Tenant profile error', [
                 'user_id' => Auth::id(),
-                'error' => $exception->getMessage()
+                'error' => $exception->getMessage(),
             ]);
 
             return redirect()->route('tenant.dashboard')->with('error', 'Unable to load profile. Please try again.');
@@ -837,28 +839,28 @@ class TenantAssignmentController extends Controller
         try {
             /** @var \App\Models\User $tenant */
             $tenant = Auth::user();
-            
-            if (!$tenant) {
+
+            if (! $tenant) {
                 return redirect()->route('login')->with('error', 'Please log in to access your lease information.');
             }
-            
+
             $assignment = $tenant->tenantAssignments()
                 ->with([
-                    'unit.apartment.landlord', 
+                    'unit.apartment.landlord',
                     'documents',
-                    'landlord'
+                    'landlord',
                 ])
                 ->where('status', 'active')
                 ->first();
 
             return view('tenant-lease', compact('tenant', 'assignment'));
-            
+
         } catch (\Exception $exception) {
             Log::error('Tenant lease error', [
                 'user_id' => Auth::id(),
-                'error' => $exception->getMessage()
+                'error' => $exception->getMessage(),
             ]);
-            
+
             return redirect()->route('tenant.dashboard')->with('error', 'Unable to load lease information. Please try again.');
         }
     }
@@ -871,8 +873,8 @@ class TenantAssignmentController extends Controller
         try {
             /** @var \App\Models\User $tenant */
             $tenant = Auth::user();
-            
-            if (!$tenant) {
+
+            if (! $tenant) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
@@ -881,9 +883,9 @@ class TenantAssignmentController extends Controller
                 ->where('status', 'active')
                 ->first();
 
-            if (!$assignment) {
+            if (! $assignment) {
                 return response()->json([
-                    'error' => 'No active assignment found.'
+                    'error' => 'No active assignment found.',
                 ], 403);
             }
 
@@ -893,20 +895,20 @@ class TenantAssignmentController extends Controller
             ]);
 
             // Verify current password
-            if (!Hash::check($request->current_password, $tenant->password)) {
+            if (! Hash::check($request->current_password, $tenant->password)) {
                 return response()->json(['error' => 'Current password is incorrect.'], 400);
             }
 
             // Update password
             $tenant->update([
-                'password' => Hash::make($request->new_password)
+                'password' => Hash::make($request->new_password),
             ]);
 
             // Log the password change
             Log::info('Tenant password updated', [
                 'tenant_id' => $tenant->id,
                 'tenant_email' => $tenant->email,
-                'updated_at' => now()
+                'updated_at' => now(),
             ]);
 
             return response()->json(['success' => 'Password updated successfully!']);
@@ -914,7 +916,7 @@ class TenantAssignmentController extends Controller
         } catch (\Exception $exception) {
             Log::error('Password update error', [
                 'tenant_id' => Auth::id(),
-                'error' => $exception->getMessage()
+                'error' => $exception->getMessage(),
             ]);
 
             return response()->json(['error' => 'An error occurred while updating your password.'], 500);
@@ -928,14 +930,14 @@ class TenantAssignmentController extends Controller
     {
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
-        
+
         // Check if tenant has uploaded personal documents
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
-        
+
         if ($personalDocuments->isEmpty()) {
             return back()->with('error', 'You must upload your personal documents before applying for a property. Please visit your profile or upload documents page to add required documents.');
         }
-        
+
         // Validate the application data (no documents required in form anymore)
         $request->validate([
             'name' => 'required|string|max:255',
@@ -948,40 +950,40 @@ class TenantAssignmentController extends Controller
 
         try {
             $tenant = Auth::user();
-            
+
             // Get the property from explore page
             $property = \App\Models\Property::findOrFail($propertyId);
-            
+
             // First, try to get the unit directly linked to this property (via slug)
             $unit = $property->getUnit();
-            
+
             // If no direct link, try to find an available unit from this landlord's apartments
-            if (!$unit || $unit->status !== 'available') {
-                $unit = Unit::whereHas('property', function($query) use ($property) {
+            if (! $unit || $unit->status !== 'available') {
+                $unit = Unit::whereHas('property', function ($query) use ($property) {
                     $query->where('landlord_id', $property->landlord_id);
                 })
-                ->where('status', 'available')
-                ->with('property.landlord')
-                ->first();
+                    ->where('status', 'available')
+                    ->with('property.landlord')
+                    ->first();
             }
-            
-            if (!$unit) {
+
+            if (! $unit) {
                 Log::warning('No available units found for application', [
                     'tenant_id' => $tenant->id,
                     'property_id' => $propertyId,
                     'landlord_id' => $property->landlord_id,
-                    'timestamp' => now()
+                    'timestamp' => now(),
                 ]);
-                
+
                 // Provide more helpful error message with next steps
                 return back()->with('error', 'This property listing does not have units configured yet. This may be a showcase listing. Please contact the landlord directly to inquire about availability.');
             }
-            
+
             // Ensure apartment relationship is loaded
-            if (!$unit->relationLoaded('apartment')) {
+            if (! $unit->relationLoaded('apartment')) {
                 $unit->load('apartment.landlord');
             }
-            
+
             // Check if tenant already has an application for this specific unit
             $existingApplicationForUnit = TenantAssignment::where('tenant_id', $tenant->id)
                 ->where('unit_id', $unit->id)
@@ -991,15 +993,15 @@ class TenantAssignmentController extends Controller
             if ($existingApplicationForUnit) {
                 return back()->with('error', 'You already have an active or pending application for this unit.');
             }
-            
+
             Log::info('Found unit for application', [
                 'unit_id' => $unit->id,
                 'property_id' => $unit->property_id,
-                'landlord_id' => $property->landlord_id
+                'landlord_id' => $property->landlord_id,
             ]);
 
             // Create the tenant assignment with pending_approval status
-            DB::transaction(function() use ($request, $unit, $tenant, $property, $personalDocuments) {
+            DB::transaction(function () use ($request, $unit, $tenant) {
                 // Update user info if provided (profile-centric)
                 if ($tenant->tenantProfile) {
                     $tenant->tenantProfile->update([
@@ -1037,7 +1039,7 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => $unit->property->landlord_id,
                 'property_name' => $unit->property->name,
                 'documents_count' => $personalDocuments->count(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return redirect()->route('explore')
@@ -1048,7 +1050,7 @@ class TenantAssignmentController extends Controller
                 'tenant_id' => Auth::id(),
                 'property_id' => $propertyId,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('error', 'Failed to submit application. Please try again.');
@@ -1062,14 +1064,14 @@ class TenantAssignmentController extends Controller
     {
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
-        
+
         // Check if tenant has uploaded personal documents
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
-        
+
         if ($personalDocuments->isEmpty()) {
             return back()->with('error', 'You must upload your personal documents before applying for a unit. Please visit your profile or upload documents page to add required documents.');
         }
-        
+
         // Validate the application data
         $request->validate([
             'name' => 'required|string|max:255',
@@ -1084,11 +1086,11 @@ class TenantAssignmentController extends Controller
         try {
             // Get the unit directly
             $unit = Unit::with(['property.landlord'])->findOrFail($unitId);
-            
+
             if ($unit->status !== 'available') {
                 return back()->with('error', 'This unit is no longer available for application.');
             }
-            
+
             // Check if tenant already has an application for this specific unit
             $existingApplicationForUnit = TenantAssignment::where('tenant_id', $tenant->id)
                 ->where('unit_id', $unit->id)
@@ -1098,16 +1100,16 @@ class TenantAssignmentController extends Controller
             if ($existingApplicationForUnit) {
                 return back()->with('error', 'You already have an active or pending application for this unit.');
             }
-            
+
             Log::info('Tenant applying for unit directly', [
                 'tenant_id' => $tenant->id,
                 'unit_id' => $unit->id,
                 'property_id' => $unit->property_id,
-                'landlord_id' => $unit->property->landlord_id
+                'landlord_id' => $unit->property->landlord_id,
             ]);
 
             // Create the tenant assignment with pending_approval status
-            DB::transaction(function() use ($request, $unit, $tenant, $personalDocuments) {
+            DB::transaction(function () use ($request, $unit, $tenant) {
                 // Update user info if provided (profile-centric)
                 if ($tenant->tenantProfile) {
                     $tenant->tenantProfile->update([
@@ -1142,7 +1144,7 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => $unit->property->landlord_id,
                 'property_name' => $unit->property->name,
                 'documents_count' => $personalDocuments->count(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return redirect()->route('explore')
@@ -1153,7 +1155,7 @@ class TenantAssignmentController extends Controller
                 'tenant_id' => Auth::id(),
                 'unit_id' => $unitId,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return back()->with('error', 'Failed to submit application. Please try again.');
@@ -1166,7 +1168,7 @@ class TenantAssignmentController extends Controller
     public function approveApplication($id)
     {
         try {
-            DB::transaction(function() use ($id) {
+            DB::transaction(function () use ($id) {
                 $assignment = TenantAssignment::where('landlord_id', Auth::id())
                     ->where('status', 'pending_approval')
                     ->with(['unit', 'tenant'])
@@ -1182,19 +1184,19 @@ class TenantAssignmentController extends Controller
                 // Update unit status to occupied
                 $assignment->unit->update([
                     'status' => 'occupied',
-                    'tenant_count' => 1
+                    'tenant_count' => 1,
                 ]);
             });
 
             Log::info('Tenant application approved', [
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Application approved successfully'
+                'message' => 'Application approved successfully',
             ]);
 
         } catch (\Exception $exception) {
@@ -1202,12 +1204,12 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to approve application'
+                'message' => 'Failed to approve application',
             ], 500);
         }
     }
@@ -1218,7 +1220,7 @@ class TenantAssignmentController extends Controller
     public function rejectApplication(Request $request, $id)
     {
         try {
-            DB::transaction(function() use ($request, $id) {
+            DB::transaction(function () use ($request, $id) {
                 $assignment = TenantAssignment::where('landlord_id', Auth::id())
                     ->where('status', 'pending_approval')
                     ->with(['unit', 'tenant.documents'])
@@ -1229,7 +1231,7 @@ class TenantAssignmentController extends Controller
 
                 // Store rejection reason in notes
                 $assignment->update([
-                    'notes' => 'Application rejected. Reason: ' . ($request->reason ?? 'No reason provided'),
+                    'notes' => 'Application rejected. Reason: '.($request->reason ?? 'No reason provided'),
                 ]);
 
                 // Delete the assignment only
@@ -1240,12 +1242,12 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
                 'reason' => $request->reason ?? 'No reason provided',
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Application rejected successfully'
+                'message' => 'Application rejected successfully',
             ]);
 
         } catch (\Exception $exception) {
@@ -1253,13 +1255,13 @@ class TenantAssignmentController extends Controller
                 'landlord_id' => Auth::id(),
                 'assignment_id' => $id,
                 'error' => $exception->getMessage(),
-                'timestamp' => now()
+                'timestamp' => now(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to reject application'
+                'message' => 'Failed to reject application',
             ], 500);
         }
     }
-} 
+}

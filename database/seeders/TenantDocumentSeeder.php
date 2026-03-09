@@ -29,8 +29,8 @@ class TenantDocumentSeeder extends Seeder
                         'document_type' => $type,
                     ],
                     [
-                        'file_name' => $label . '.pdf',
-                        'file_path' => 'tenant-documents/sample_' . $type . '.pdf',
+                        'file_name' => $label.'.pdf',
+                        'file_path' => 'tenant-documents/sample_'.$type.'.pdf',
                         'file_size' => rand(100000, 500000), // Random file size between 100KB-500KB
                         'mime_type' => 'application/pdf',
                         'verification_status' => 'verified',
@@ -60,4 +60,4 @@ class TenantDocumentSeeder extends Seeder
             );
         }
     }
-} 
+}

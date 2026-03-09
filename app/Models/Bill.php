@@ -104,14 +104,11 @@ class Bill extends Model
 
     public function getFormattedAmountAttribute(): string
     {
-        return '₱' . number_format($this->amount, 2);
+        return '₱'.number_format($this->amount, 2);
     }
 
     public function getFormattedBalanceAttribute(): string
     {
-        return '₱' . number_format($this->balance, 2);
+        return '₱'.number_format($this->balance, 2);
     }
 }
-
-
-

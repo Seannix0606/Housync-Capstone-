@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\RfidController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RfidController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,21 +30,21 @@ Route::middleware(['throttle:60,1'])->group(function () {
     Route::post('/rfid/test', [RfidController::class, 'testConnection'])->name('api.rfid.test');
     // Debug endpoint for testing deactivated card behavior
     Route::post('/rfid/test-deactivated', [RfidController::class, 'testDeactivatedCard'])->name('api.rfid.test-deactivated');
-    Route::get('/system-info', function() {
+    Route::get('/system-info', function () {
         return response()->json([
             'success' => true,
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'database_connected' => true,
-            'timestamp' => now()->toISOString()
+            'timestamp' => now()->toISOString(),
         ]);
     })->name('api.system-info'); // For ESP32Reader.php connection test
 });
 
 // Public storage serving route (no authentication required)
 Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-    
+    $fullPath = storage_path('app/public/'.$path);
+
     // Debug info
     if (request()->has('debug')) {
         return response()->json([
@@ -54,18 +54,18 @@ Route::get('/storage/{path}', function ($path) {
             'is_file' => is_file($fullPath),
             'is_readable' => is_readable($fullPath),
             'size' => file_exists($fullPath) ? filesize($fullPath) : 'N/A',
-            'mime' => file_exists($fullPath) ? mime_content_type($fullPath) : 'N/A'
+            'mime' => file_exists($fullPath) ? mime_content_type($fullPath) : 'N/A',
         ]);
     }
-    
-    if (!file_exists($fullPath)) {
+
+    if (! file_exists($fullPath)) {
         abort(404, "File not found: $fullPath");
     }
-    
+
     $mimeType = mime_content_type($fullPath);
+
     return response()->file($fullPath, [
         'Content-Type' => $mimeType,
-        'Cache-Control' => 'public, max-age=3600'
+        'Cache-Control' => 'public, max-age=3600',
     ]);
 })->where('path', '.*')->name('api.storage.fallback');
-

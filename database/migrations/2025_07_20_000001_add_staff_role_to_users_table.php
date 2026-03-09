@@ -26,4 +26,4 @@ return new class extends Migration
             $table->enum('role', ['super_admin', 'landlord', 'tenant'])->default('tenant')->change();
         });
     }
-}; 
+};

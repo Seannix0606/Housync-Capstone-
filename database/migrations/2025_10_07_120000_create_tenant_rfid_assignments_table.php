@@ -20,16 +20,16 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive', 'revoked'])->default('active');
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             // Foreign key constraints
             $table->foreign('rfid_card_id')->references('id')->on('rfid_cards')->onDelete('cascade');
             $table->foreign('tenant_assignment_id')->references('id')->on('tenant_assignments')->onDelete('cascade');
-            
+
             // Indexes for performance
             $table->index(['rfid_card_id', 'status']);
             $table->index(['tenant_assignment_id', 'status']);
             $table->index(['status', 'assigned_at']);
-            
+
             // Note: We'll use application logic to ensure only one active assignment per card
             // A database constraint for this would be complex since we only want to restrict 'active' status
         });

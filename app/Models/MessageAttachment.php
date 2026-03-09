@@ -45,38 +45,40 @@ class MessageAttachment extends Model
         if (str_starts_with($this->file_path, 'http')) {
             return $this->file_path;
         }
-        return url('api/storage/' . $this->file_path);
+
+        return url('api/storage/'.$this->file_path);
     }
 
     public function getThumbnailUrlAttribute()
     {
-        if (!$this->thumbnail_path) {
+        if (! $this->thumbnail_path) {
             return null;
         }
         if (str_starts_with($this->thumbnail_path, 'http')) {
             return $this->thumbnail_path;
         }
-        return url('api/storage/' . $this->thumbnail_path);
+
+        return url('api/storage/'.$this->thumbnail_path);
     }
 
     public function getFormattedSizeAttribute()
     {
         $bytes = $this->file_size;
-        
+
         if ($bytes >= 1073741824) {
-            return number_format($bytes / 1073741824, 2) . ' GB';
+            return number_format($bytes / 1073741824, 2).' GB';
         } elseif ($bytes >= 1048576) {
-            return number_format($bytes / 1048576, 2) . ' MB';
+            return number_format($bytes / 1048576, 2).' MB';
         } elseif ($bytes >= 1024) {
-            return number_format($bytes / 1024, 2) . ' KB';
+            return number_format($bytes / 1024, 2).' KB';
         } else {
-            return $bytes . ' bytes';
+            return $bytes.' bytes';
         }
     }
 
     public function getIsImageAttribute()
     {
-        return in_array($this->file_type, ['image', 'photo']) || 
+        return in_array($this->file_type, ['image', 'photo']) ||
                str_starts_with($this->mime_type, 'image/');
     }
 
@@ -85,7 +87,7 @@ class MessageAttachment extends Model
     {
         return $query->where(function ($query) {
             $query->where('file_type', 'image')
-              ->orWhere('mime_type', 'like', 'image/%');
+                ->orWhere('mime_type', 'like', 'image/%');
         });
     }
 
@@ -94,6 +96,3 @@ class MessageAttachment extends Model
         return $query->where('file_type', 'document');
     }
 }
-
-
-

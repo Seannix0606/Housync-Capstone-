@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('tenant_documents', function (Blueprint $table) {
             // Drop foreign key constraint first
             $table->dropForeign(['tenant_assignment_id']);
-            
+
             // Drop index if it exists
             $table->dropIndex(['tenant_assignment_id', 'document_type']);
-            
+
             // Drop the column
             $table->dropColumn('tenant_assignment_id');
         });
@@ -31,8 +31,8 @@ return new class extends Migration
         Schema::table('tenant_documents', function (Blueprint $table) {
             // Re-add the column (nullable since we removed it)
             $table->foreignId('tenant_assignment_id')->nullable()->after('tenant_id')
-                  ->constrained('tenant_assignments')->onDelete('cascade');
-            
+                ->constrained('tenant_assignments')->onDelete('cascade');
+
             // Re-add index
             $table->index(['tenant_assignment_id', 'document_type']);
         });

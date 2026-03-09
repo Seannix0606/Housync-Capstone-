@@ -4,15 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Property;
 use App\Models\User;
-use App\Models\LandlordProfile;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class PropertySeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * 
+     *
      * Note: Properties are now landlord buildings (formerly apartments).
      * Public listings come from Units, not this table.
      */
@@ -20,12 +18,13 @@ class PropertySeeder extends Seeder
     {
         // Find landlords to create properties for
         $landlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', function($query) {
+            ->whereHas('landlordProfile', function ($query) {
                 $query->where('status', 'approved');
             })->get();
 
         if ($landlords->isEmpty()) {
             $this->command->info('No approved landlords found. Skipping property seeding.');
+
             return;
         }
 
@@ -69,6 +68,6 @@ class PropertySeeder extends Seeder
             );
         }
 
-        $this->command->info('Created ' . count($properties) . ' sample properties.');
+        $this->command->info('Created '.count($properties).' sample properties.');
     }
 }

@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Payment;
-use App\Models\Unit;
-use App\Models\User;
 use App\Models\TenantAssignment;
-use App\Models\ActivityLog;
+use App\Models\User;
 use App\Notifications\BillCreated;
-use App\Notifications\PaymentRecorded;
 use App\Notifications\PaymentProofSubmitted;
+use App\Notifications\PaymentRecorded;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -44,10 +43,10 @@ class BillingController extends Controller
 
         // Simple summary cards (use null coalescing to avoid errors on empty data)
         $summary = [
-            'total_amount'      => Bill::forLandlord($landlordId)->sum('amount') ?? 0,
-            'total_collected'   => Bill::forLandlord($landlordId)->sum('amount_paid') ?? 0,
+            'total_amount' => Bill::forLandlord($landlordId)->sum('amount') ?? 0,
+            'total_collected' => Bill::forLandlord($landlordId)->sum('amount_paid') ?? 0,
             'total_outstanding' => Bill::forLandlord($landlordId)->sum('balance') ?? 0,
-            'pending_count'     => Bill::forLandlord($landlordId)->where('status', 'unpaid')->orWhere('status', 'partially_paid')->count(),
+            'pending_count' => Bill::forLandlord($landlordId)->where('status', 'unpaid')->orWhere('status', 'partially_paid')->count(),
         ];
 
         // Get active tenant assignments for the "Create Bill" dropdown
@@ -65,7 +64,7 @@ class BillingController extends Controller
     public function create()
     {
         $landlordId = Auth::id();
-        
+
         // Get active tenant assignments
         $tenantAssignments = TenantAssignment::where('landlord_id', $landlordId)
             ->where('status', 'active')
@@ -105,17 +104,17 @@ class BillingController extends Controller
             ->with(['tenant', 'unit'])
             ->first();
 
-        if (!$assignment) {
+        if (! $assignment) {
             return back()->with('error', 'Invalid tenant assignment selected.');
         }
 
         try {
             // Generate invoice number
-            $invoiceNumber = 'INV-' . strtoupper(Str::random(8));
-            
+            $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
+
             // Ensure unique invoice number
             while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
-                $invoiceNumber = 'INV-' . strtoupper(Str::random(8));
+                $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
             }
 
             $bill = Bill::create([
@@ -125,7 +124,7 @@ class BillingController extends Controller
                 'unit_id' => $assignment->unit_id,
                 'invoice_number' => $invoiceNumber,
                 'type' => $request->type,
-                'description' => $request->description ?? ucfirst($request->type) . ' bill for ' . $assignment->unit->unit_number,
+                'description' => $request->description ?? ucfirst($request->type).' bill for '.$assignment->unit->unit_number,
                 'billing_period_start' => $request->billing_period_start,
                 'billing_period_end' => $request->billing_period_end,
                 'amount' => $request->amount,
@@ -149,16 +148,17 @@ class BillingController extends Controller
                 $assignment->tenant->notify(new BillCreated($bill));
             }
 
-            ActivityLog::log('bill_created', "Created bill {$invoiceNumber} for ₱" . number_format($request->amount, 2), $bill);
+            ActivityLog::log('bill_created', "Created bill {$invoiceNumber} for ₱".number_format($request->amount, 2), $bill);
 
             return redirect()->route('landlord.payments')
-                ->with('success', "Bill #{$invoiceNumber} created successfully for ₱" . number_format($request->amount, 2));
+                ->with('success', "Bill #{$invoiceNumber} created successfully for ₱".number_format($request->amount, 2));
 
         } catch (\Exception $exception) {
             Log::error('Failed to create bill', [
                 'error' => $exception->getMessage(),
                 'landlord_id' => $landlordId,
             ]);
+
             return back()->with('error', 'Failed to create bill. Please try again.');
         }
     }
@@ -169,7 +169,7 @@ class BillingController extends Controller
     public function show($id)
     {
         $landlordId = Auth::id();
-        
+
         $bill = Bill::forLandlord($landlordId)
             ->with(['tenant', 'unit.property', 'payments'])
             ->findOrFail($id);
@@ -196,7 +196,7 @@ class BillingController extends Controller
 
         // Validate payment amount
         if ($request->amount > $bill->balance) {
-            return back()->with('error', 'Payment amount cannot exceed the outstanding balance of ₱' . number_format($bill->balance, 2));
+            return back()->with('error', 'Payment amount cannot exceed the outstanding balance of ₱'.number_format($bill->balance, 2));
         }
 
         try {
@@ -216,7 +216,7 @@ class BillingController extends Controller
                 // Update bill
                 $newAmountPaid = $bill->amount_paid + $request->amount;
                 $newBalance = $bill->amount - $newAmountPaid;
-                
+
                 $newStatus = 'unpaid';
                 if ($newBalance <= 0) {
                     $newStatus = 'paid';
@@ -243,15 +243,16 @@ class BillingController extends Controller
                 }
             }
 
-            ActivityLog::log('payment_recorded', "Recorded payment of ₱" . number_format($request->amount, 2) . " for bill {$bill->invoice_number}", $bill);
+            ActivityLog::log('payment_recorded', 'Recorded payment of ₱'.number_format($request->amount, 2)." for bill {$bill->invoice_number}", $bill);
 
-            return back()->with('success', 'Payment of ₱' . number_format($request->amount, 2) . ' recorded successfully.');
+            return back()->with('success', 'Payment of ₱'.number_format($request->amount, 2).' recorded successfully.');
 
         } catch (\Exception $exception) {
             Log::error('Failed to record payment', [
                 'error' => $exception->getMessage(),
                 'bill_id' => $billId,
             ]);
+
             return back()->with('error', 'Failed to record payment. Please try again.');
         }
     }
@@ -295,6 +296,7 @@ class BillingController extends Controller
 
         } catch (\Exception $exception) {
             Log::error('Failed to mark bill as paid', ['error' => $exception->getMessage(), 'bill_id' => $billId]);
+
             return back()->with('error', 'Failed to update bill. Please try again.');
         }
     }
@@ -314,12 +316,13 @@ class BillingController extends Controller
         try {
             $invoiceNumber = $bill->invoice_number;
             $bill->delete();
-            
+
             return redirect()->route('landlord.payments')
                 ->with('success', "Bill #{$invoiceNumber} deleted successfully.");
 
         } catch (\Exception $exception) {
             Log::error('Failed to delete bill', ['error' => $exception->getMessage(), 'bill_id' => $billId]);
+
             return back()->with('error', 'Failed to delete bill. Please try again.');
         }
     }
@@ -338,10 +341,10 @@ class BillingController extends Controller
             ->get();
 
         $summary = [
-            'total_due'       => $bills->sum('balance'),
-            'total_paid'      => $bills->sum('amount_paid'),
-            'upcoming_count'  => $bills->where('status', 'unpaid')->count(),
-            'overdue_count'   => $bills->where('status', 'overdue')->count(),
+            'total_due' => $bills->sum('balance'),
+            'total_paid' => $bills->sum('amount_paid'),
+            'upcoming_count' => $bills->where('status', 'unpaid')->count(),
+            'overdue_count' => $bills->where('status', 'overdue')->count(),
         ];
 
         return view('tenant.payments', compact('bills', 'summary'));
@@ -353,7 +356,7 @@ class BillingController extends Controller
     public function tenantShowBill($id)
     {
         $tenantId = Auth::id();
-        
+
         $bill = Bill::forTenant($tenantId)
             ->with(['unit.property', 'landlord', 'payments'])
             ->findOrFail($id);
@@ -409,12 +412,13 @@ class BillingController extends Controller
                 $landlord->notify(new PaymentProofSubmitted($payment, $bill));
             }
 
-            ActivityLog::log('payment_proof_submitted', "Submitted payment proof of ₱" . number_format($request->amount, 2), $bill);
+            ActivityLog::log('payment_proof_submitted', 'Submitted payment proof of ₱'.number_format($request->amount, 2), $bill);
 
             return back()->with('success', 'Payment proof submitted! Your landlord will verify it shortly.');
 
         } catch (\Exception $exception) {
             Log::error('Failed to submit payment proof', ['error' => $exception->getMessage()]);
+
             return back()->with('error', 'Failed to submit payment proof. Please try again.');
         }
     }
@@ -471,7 +475,7 @@ class BillingController extends Controller
                 }
             }
 
-            ActivityLog::log('payment_verified', "Verified payment of ₱" . number_format($payment->amount, 2), $bill);
+            ActivityLog::log('payment_verified', 'Verified payment of ₱'.number_format($payment->amount, 2), $bill);
 
             return back()->with('success', 'Payment verified successfully.');
         }

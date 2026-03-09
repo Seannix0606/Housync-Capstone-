@@ -21,7 +21,7 @@ return new class extends Migration
             $table->bigInteger('file_size'); // in bytes
             $table->string('thumbnail_path')->nullable(); // For image previews
             $table->timestamps();
-            
+
             $table->index('file_type');
         });
     }
@@ -34,6 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('message_attachments');
     }
 };
-
-
-

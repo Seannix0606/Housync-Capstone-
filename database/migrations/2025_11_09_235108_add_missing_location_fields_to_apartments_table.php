@@ -13,24 +13,24 @@ return new class extends Migration
     {
         Schema::table('apartments', function (Blueprint $table) {
             // Add property_type if it doesn't exist
-            if (!Schema::hasColumn('apartments', 'property_type')) {
+            if (! Schema::hasColumn('apartments', 'property_type')) {
                 $table->enum('property_type', ['apartment', 'condominium', 'townhouse', 'house', 'duplex', 'others'])->nullable()->after('name');
             }
             // Add location fields
-            if (!Schema::hasColumn('apartments', 'city')) {
+            if (! Schema::hasColumn('apartments', 'city')) {
                 $table->string('city')->nullable()->after('address');
             }
-            if (!Schema::hasColumn('apartments', 'state')) {
+            if (! Schema::hasColumn('apartments', 'state')) {
                 $table->string('state')->nullable()->after('city');
             }
-            if (!Schema::hasColumn('apartments', 'postal_code')) {
+            if (! Schema::hasColumn('apartments', 'postal_code')) {
                 $table->string('postal_code')->nullable()->after('state');
             }
             // Add property details
-            if (!Schema::hasColumn('apartments', 'year_built')) {
+            if (! Schema::hasColumn('apartments', 'year_built')) {
                 $table->integer('year_built')->nullable()->after('bedrooms');
             }
-            if (!Schema::hasColumn('apartments', 'parking_spaces')) {
+            if (! Schema::hasColumn('apartments', 'parking_spaces')) {
                 $table->integer('parking_spaces')->nullable()->after('year_built');
             }
         });

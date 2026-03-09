@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('units', function (Blueprint $table) {
             $table->unsignedBigInteger('apartment_id')->nullable();
             $table->dropColumn('owner_name'); // Remove owner_name as it will be through apartment->landlord
-            
+
             $table->foreign('apartment_id')->references('id')->on('apartments')->onDelete('cascade');
         });
     }
