@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\TenantProfile;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,6 @@ class AuthController extends Controller
                 // Log the super admin login attempt
                 Log::info('Super admin login attempt', [
                     'user_id' => $user->id,
-                    'user_email' => $user->email,
                     'user_role' => $user->role,
                     'user_status' => $user->status,
                     'redirect_route' => route('super-admin.dashboard'),
@@ -109,9 +109,11 @@ class AuthController extends Controller
             ]
         );
 
+        event(new Registered($user));
+
         Auth::login($user);
 
-        return redirect()->route('tenant.dashboard');
+        return redirect()->route('verification.notice');
     }
 
     /**
