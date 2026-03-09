@@ -23,4 +23,3 @@ class Amenity extends Model
         return $this->belongsToMany(Property::class, 'property_amenity');
     }
 }
-

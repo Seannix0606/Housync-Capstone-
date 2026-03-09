@@ -46,8 +46,8 @@ class Conversation extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'conversation_participants')
-                    ->withPivot(['role', 'last_read_at', 'unread_count', 'is_muted'])
-                    ->withTimestamps();
+            ->withPivot(['role', 'last_read_at', 'unread_count', 'is_muted'])
+            ->withTimestamps();
     }
 
     public function messages()
@@ -109,33 +109,34 @@ class Conversation extends Model
     public function getUnreadCountFor($userId)
     {
         $participant = $this->participants()->where('user_id', $userId)->first();
+
         return $participant ? $participant->unread_count : 0;
     }
 
     public function markAsReadFor($userId)
     {
         $this->participants()
-             ->where('user_id', $userId)
-             ->update([
-                 'unread_count' => 0,
-                 'last_read_at' => now()
-             ]);
-        
+            ->where('user_id', $userId)
+            ->update([
+                'unread_count' => 0,
+                'last_read_at' => now(),
+            ]);
+
         // Mark all messages as read
         $this->messages()
-             ->where('sender_id', '!=', $userId)
-             ->where('is_read', false)
-             ->update(['is_read' => true, 'read_at' => now()]);
+            ->where('sender_id', '!=', $userId)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
     }
 
     public function incrementUnreadFor($excludeUserId = null)
     {
         $query = $this->participants();
-        
+
         if ($excludeUserId) {
             $query->where('user_id', '!=', $excludeUserId);
         }
-        
+
         $query->increment('unread_count');
     }
 
@@ -209,7 +210,7 @@ class Conversation extends Model
     public static function createMaintenanceTicket($subject, $unitId, $tenantId, $landlordId, $priority = 'normal')
     {
         $unit = Unit::find($unitId);
-        
+
         $conversation = static::create([
             'type' => 'maintenance_ticket',
             'subject' => $subject,
@@ -225,4 +226,3 @@ class Conversation extends Model
         return $conversation;
     }
 }
-

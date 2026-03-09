@@ -63,7 +63,7 @@ class AnnouncementController extends Controller
                 ->where('landlord_id', $landlordId)
                 ->first();
 
-            if (!$property) {
+            if (! $property) {
                 return back()->with('error', 'Invalid property selected.');
             }
         }
@@ -172,7 +172,7 @@ class AnnouncementController extends Controller
             ->with('unit.property')
             ->first();
 
-        if (!$activeAssignment) {
+        if (! $activeAssignment) {
             return view('tenant.announcements.index', ['announcements' => collect(), 'activeAssignment' => null]);
         }
 
@@ -183,7 +183,7 @@ class AnnouncementController extends Controller
             ->active()
             ->where(function ($query) use ($propertyId) {
                 $query->whereNull('property_id')
-                  ->orWhere('property_id', $propertyId);
+                    ->orWhere('property_id', $propertyId);
             })
             ->whereIn('audience', ['all_tenants', 'property_tenants', 'everyone'])
             ->orderByDesc('is_pinned')
@@ -202,7 +202,7 @@ class AnnouncementController extends Controller
             ->with('unit.property')
             ->first();
 
-        if (!$activeAssignment) {
+        if (! $activeAssignment) {
             abort(403);
         }
 
@@ -211,7 +211,7 @@ class AnnouncementController extends Controller
             ->whereIn('audience', ['tenant', 'all', 'everyone'])
             ->where(function ($query) use ($activeAssignment) {
                 $query->whereNull('property_id')
-                  ->orWhere('property_id', $activeAssignment->unit?->property_id);
+                    ->orWhere('property_id', $activeAssignment->unit?->property_id);
             })
             ->findOrFail($id);
 
@@ -225,7 +225,7 @@ class AnnouncementController extends Controller
         $staffId = Auth::id();
         $staffProfile = Auth::user()->staffProfile;
 
-        if (!$staffProfile || !$staffProfile->created_by_landlord_id) {
+        if (! $staffProfile || ! $staffProfile->created_by_landlord_id) {
             return view('staff.announcements.index', ['announcements' => collect()]);
         }
 
@@ -245,7 +245,7 @@ class AnnouncementController extends Controller
     {
         $staffProfile = Auth::user()->staffProfile;
 
-        if (!$staffProfile || !$staffProfile->created_by_landlord_id) {
+        if (! $staffProfile || ! $staffProfile->created_by_landlord_id) {
             abort(403);
         }
 
