@@ -18,7 +18,7 @@ class PropertyFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company() . ' Apartments',
+            'name' => fake()->company().' Apartments',
             'slug' => fake()->slug(),
             'property_type' => 'apartment',
             'address' => fake()->streetAddress(),

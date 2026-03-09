@@ -32,10 +32,10 @@ class ExploreTest extends TestCase
         $response = $this->get('/explore');
 
         $response->assertStatus(200);
-        
+
         // Assert active unit's property is present (assuming it renders something identifiable like property name)
         $response->assertSee($activeProperty->name);
-        
+
         // Assert inactive unit's property is NOT present
         $response->assertDontSee($inactiveProperty->name);
     }
@@ -43,14 +43,14 @@ class ExploreTest extends TestCase
     public function test_guest_can_view_property_detail_page()
     {
         $property = Property::factory()->create([
-            'status' => 'active', 
+            'status' => 'active',
             'is_active' => true,
-            'slug' => 'test-active-property'
+            'slug' => 'test-active-property',
         ]);
 
         $unit = Unit::factory()->create([
             'property_id' => $property->id,
-            'status' => 'available'
+            'status' => 'available',
         ]);
 
         $response = $this->get("/property/{$property->slug}");
