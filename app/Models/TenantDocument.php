@@ -100,7 +100,7 @@ class TenantDocument extends Model
 
     public function getVerificationStatusBadgeClassAttribute()
     {
-        return match($this->verification_status) {
+        return match ($this->verification_status) {
             'verified' => 'success',
             'pending' => 'warning',
             'rejected' => 'danger',
@@ -110,7 +110,7 @@ class TenantDocument extends Model
 
     public function getDocumentTypeLabelAttribute()
     {
-        return match($this->document_type) {
+        return match ($this->document_type) {
             'government_id' => 'Government ID',
             'proof_of_income' => 'Proof of Income',
             'employment_contract' => 'Employment Contract',
@@ -126,12 +126,12 @@ class TenantDocument extends Model
     {
         $bytes = $this->file_size;
         $units = ['B', 'KB', 'MB', 'GB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
-        return round($bytes, 2) . ' ' . $units[$i];
+
+        return round($bytes, 2).' '.$units[$i];
     }
 
     /**
@@ -144,9 +144,9 @@ class TenantDocument extends Model
         if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
             return $this->file_path;
         }
-        
+
         // For local storage, generate the proper URL
-        return asset('storage/' . $this->file_path);
+        return asset('storage/'.$this->file_path);
     }
 
     public function isExpired()
@@ -158,4 +158,4 @@ class TenantDocument extends Model
     {
         return $this->expiry_date && $this->expiry_date->diffInDays(now()) <= $days;
     }
-} 
+}

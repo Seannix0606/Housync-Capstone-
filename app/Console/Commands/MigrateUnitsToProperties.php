@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Apartment;
-use App\Models\Unit;
-use App\Models\Property;
 use App\Models\Amenity;
+use App\Models\Apartment;
+use App\Models\Property;
+use App\Models\Unit;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -41,6 +41,7 @@ class MigrateUnitsToProperties extends Command
 
         if ($apartments->isEmpty()) {
             $this->error('No apartments found to migrate.');
+
             return 1;
         }
 
@@ -54,7 +55,7 @@ class MigrateUnitsToProperties extends Command
 
             foreach ($apartment->units as $unit) {
                 $totalUnits++;
-                
+
                 try {
                     $property = $this->migrateUnit($unit, $apartment);
                     $migratedCount++;
@@ -66,12 +67,12 @@ class MigrateUnitsToProperties extends Command
         }
 
         $this->newLine();
-        $this->info("Migration completed!");
+        $this->info('Migration completed!');
         $this->info("Total units found: {$totalUnits}");
         $this->info("Successfully migrated: {$migratedCount}");
 
         if ($migratedCount < $totalUnits) {
-            $this->warn("Failed to migrate: " . ($totalUnits - $migratedCount) . " units");
+            $this->warn('Failed to migrate: '.($totalUnits - $migratedCount).' units');
         }
 
         return 0;
@@ -94,7 +95,7 @@ class MigrateUnitsToProperties extends Command
         // Create or update property
         $property = Property::updateOrCreate(
             [
-                'slug' => Str::slug($title . '-' . $unit->id),
+                'slug' => Str::slug($title.'-'.$unit->id),
             ],
             [
                 'title' => $title,
@@ -154,6 +155,7 @@ class MigrateUnitsToProperties extends Command
     {
         // Try to extract city from address (simple logic)
         $parts = explode(',', $address);
+
         return isset($parts[1]) ? trim($parts[1]) : 'Metro Manila';
     }
 
@@ -186,7 +188,7 @@ class MigrateUnitsToProperties extends Command
 
         // Find matching amenity IDs
         $amenityIds = [];
-        
+
         foreach ($amenityNames as $amenityName) {
             $amenity = Amenity::where('name', 'LIKE', "%{$amenityName}%")
                 ->orWhere('slug', Str::slug($amenityName))
@@ -198,9 +200,8 @@ class MigrateUnitsToProperties extends Command
         }
 
         // Attach amenities
-        if (!empty($amenityIds)) {
+        if (! empty($amenityIds)) {
             $property->amenities()->sync($amenityIds);
         }
     }
 }
-

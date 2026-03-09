@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('unread_count')->default(0);
             $table->boolean('is_muted')->default(false);
             $table->timestamps();
-            
+
             // Unique constraint to prevent duplicate participants
             $table->unique(['conversation_id', 'user_id']);
             $table->index(['user_id', 'unread_count']);
@@ -35,6 +35,3 @@ return new class extends Migration
         Schema::dropIfExists('conversation_participants');
     }
 };
-
-
-

@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\LandlordProfile;
 use App\Models\LandlordDocument;
+use App\Models\LandlordProfile;
 use App\Models\Property;
-use App\Models\Unit;
 use App\Models\TenantAssignment;
+use App\Models\Unit;
+use App\Models\User;
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use App\Services\SupabaseService;
 
 class LandlordController extends Controller
 {
@@ -21,25 +20,25 @@ class LandlordController extends Controller
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user()->load('landlordProfile');
-        
+
         $stats = [
             'total_properties' => $landlord->properties()->count(),
-            'total_units' => Unit::whereHas('property', function($query) use ($landlord) {
+            'total_units' => Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->count(),
-            'occupied_units' => Unit::whereHas('property', function($query) use ($landlord) {
+            'occupied_units' => Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->where('status', 'occupied')->count(),
-            'available_units' => Unit::whereHas('property', function($query) use ($landlord) {
+            'available_units' => Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->where('status', 'available')->count(),
-            'total_revenue' => Unit::whereHas('property', function($query) use ($landlord) {
+            'total_revenue' => Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->where('status', 'occupied')->sum('rent_amount'),
         ];
 
         $properties = $landlord->properties()->with('units')->latest()->take(5)->get();
-        $recentUnits = Unit::whereHas('property', function($query) use ($landlord) {
+        $recentUnits = Unit::whereHas('property', function ($query) use ($landlord) {
             $query->where('landlord_id', $landlord->id);
         })->with('property')->latest()->take(10)->get();
 
@@ -54,10 +53,10 @@ class LandlordController extends Controller
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $query = $landlord->properties()->with('units');
-        
+
         // Sorting
         $sortBy = $request->get('sort', 'name');
-        
+
         switch ($sortBy) {
             case 'name':
                 $query->orderBy('name');
@@ -74,17 +73,23 @@ class LandlordController extends Controller
             default:
                 $query->orderBy('name');
         }
-        
+
         $properties = $query->paginate(15);
-        
+
         // Calculate stats
-        $totalUnits = $properties->sum(function($prop) { return $prop->units->count(); });
-        $occupiedUnits = $properties->sum(function($prop) { return $prop->units->where('status', 'occupied')->count(); });
-        $monthlyRevenue = $properties->sum(function($prop) { return $prop->units->where('status', 'occupied')->sum('rent_amount'); });
-        
+        $totalUnits = $properties->sum(function ($prop) {
+            return $prop->units->count();
+        });
+        $occupiedUnits = $properties->sum(function ($prop) {
+            return $prop->units->where('status', 'occupied')->count();
+        });
+        $monthlyRevenue = $properties->sum(function ($prop) {
+            return $prop->units->where('status', 'occupied')->sum('rent_amount');
+        });
+
         // Backward compatibility
         $apartments = $properties;
-        
+
         return view('landlord.apartments', compact('apartments', 'properties', 'totalUnits', 'occupiedUnits', 'monthlyRevenue'));
     }
 
@@ -125,9 +130,9 @@ class LandlordController extends Controller
             $coverPath = null;
             if ($request->hasFile('cover_image')) {
                 try {
-                    $supabase = new SupabaseService();
-                    $filename = 'property-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-                    $path = 'properties/' . $filename;
+                    $supabase = new SupabaseService;
+                    $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+                    $path = 'properties/'.$filename;
                     $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
 
                     if ($uploadResult['success']) {
@@ -137,9 +142,9 @@ class LandlordController extends Controller
                     }
                 } catch (\Exception $exception) {
                     Log::warning('Supabase upload failed, falling back to local storage', ['error' => $exception->getMessage()]);
-                    $filename = 'apartment-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
+                    $filename = 'apartment-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
                     $path = $request->file('cover_image')->storeAs('apartment-covers', $filename, 'public');
-                    $coverPath = asset('storage/' . $path);
+                    $coverPath = asset('storage/'.$path);
                 }
             }
 
@@ -147,9 +152,9 @@ class LandlordController extends Controller
             if ($request->hasFile('gallery')) {
                 foreach ($request->file('gallery') as $index => $file) {
                     try {
-                        $supabase = $supabase ?? new SupabaseService();
-                        $filename = 'property-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                        $path = 'properties/gallery/' . $filename;
+                        $supabase = $supabase ?? new SupabaseService;
+                        $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                        $path = 'properties/gallery/'.$filename;
                         $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
 
                         if ($uploadResult['success']) {
@@ -159,19 +164,19 @@ class LandlordController extends Controller
                         }
                     } catch (\Exception $exception) {
                         Log::warning('Supabase gallery upload failed, falling back to local', ['index' => $index]);
-                        $filename = 'apartment-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        $filename = 'apartment-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
                         $path = $file->storeAs('apartment-gallery', $filename, 'public');
-                        $galleryPaths[] = asset('storage/' . $path);
+                        $galleryPaths[] = asset('storage/'.$path);
                     }
                 }
             }
 
             /** @var \App\Models\User $landlord */
             $landlord = Auth::user();
-            
+
             $floors = $request->property_type === 'house' ? null : $request->floors;
             $bedrooms = $request->property_type === 'house' ? $request->bedrooms : null;
-            
+
             $property = $landlord->properties()->create([
                 'name' => $request->name,
                 'property_type' => $request->property_type,
@@ -189,13 +194,14 @@ class LandlordController extends Controller
                 'gallery' => $galleryPaths ?: null,
             ]);
 
-            $successMessage = $request->property_type === 'house' 
+            $successMessage = $request->property_type === 'house'
                 ? "House created successfully! You can now add bedrooms as units from the 'My Units' page."
                 : "Property created successfully! You can now add units from the 'My Units' page.";
 
             return redirect()->route('landlord.apartments')->with('success', $successMessage);
         } catch (\Exception $exception) {
-            Log::error('Error creating property: ' . $exception->getMessage());
+            Log::error('Error creating property: '.$exception->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create property. Please try again.');
         }
     }
@@ -205,6 +211,7 @@ class LandlordController extends Controller
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $apartment = $landlord->properties()->findOrFail($id);
+
         return view('landlord.edit-apartment', compact('apartment'));
     }
 
@@ -225,7 +232,7 @@ class LandlordController extends Controller
             'total_units' => 'required|integer|min:1',
             'floors' => 'nullable|integer|min:1',
             'bedrooms' => 'nullable|integer|min:1',
-            'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
             'parking_spaces' => 'nullable|integer|min:0',
             'contact_person' => 'nullable|string|max:255',
             'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
@@ -264,30 +271,30 @@ class LandlordController extends Controller
             ];
 
             if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService();
-                $filename = 'property-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-                $path = 'properties/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+                $path = 'properties/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
                 }
             }
 
             if ($request->hasFile('gallery')) {
-                $supabase = new SupabaseService();
+                $supabase = new SupabaseService;
                 $galleryPaths = $property->gallery ?? [];
-                
+
                 foreach ($request->file('gallery') as $index => $file) {
-                    $filename = 'property-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $path = 'properties/gallery/' . $filename;
+                    $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                    $path = 'properties/gallery/'.$filename;
                     $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                    
+
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];
                     }
                 }
-                
+
                 $galleryPaths = array_slice($galleryPaths, 0, 12);
                 $updateData['gallery'] = $galleryPaths;
             }
@@ -299,7 +306,8 @@ class LandlordController extends Controller
 
             return redirect()->route('landlord.apartments')->with('success', 'Property updated successfully.');
         } catch (\Exception $exception) {
-            Log::error('Error updating property: ' . $exception->getMessage());
+            Log::error('Error updating property: '.$exception->getMessage());
+
             return back()->withInput()->with('error', 'Failed to update property. Please try again.');
         }
     }
@@ -309,61 +317,62 @@ class LandlordController extends Controller
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
-        
+
         try {
             $unitCount = $property->units()->count();
             $forceDelete = $request->boolean('force_delete');
-            
+
             if ($forceDelete) {
                 $request->validate(['password' => 'required|string']);
-                
-                if (!Hash::check($request->password, $landlord->password)) {
+
+                if (! Hash::check($request->password, $landlord->password)) {
                     return back()->with('error', 'Incorrect password. Force delete cancelled.');
                 }
-                
+
                 $activeTenantsCount = $property->units()
-                    ->whereHas('tenantAssignments', function($query) {
+                    ->whereHas('tenantAssignments', function ($query) {
                         $query->whereIn('status', ['active', 'pending']);
                     })->count();
-                
+
                 if ($activeTenantsCount > 0) {
                     return back()->with('error', "Cannot force delete property with active tenant assignments. Found {$activeTenantsCount} unit(s) with active tenants.");
                 }
-                
+
                 $propertyName = $property->name;
-                
+
                 foreach ($property->units as $unit) {
                     $unit->tenantAssignments()->delete();
                 }
-                
+
                 $deletedUnitsCount = $property->units()->count();
                 $property->units()->delete();
                 $property->delete();
-                
+
                 return redirect()->route('landlord.apartments')->with('success', "Property '{$propertyName}' and {$deletedUnitsCount} unit(s) force deleted successfully.");
             }
-            
+
             if ($unitCount > 0) {
                 $activeTenantsCount = $property->units()
-                    ->whereHas('tenantAssignments', function($query) {
+                    ->whereHas('tenantAssignments', function ($query) {
                         $query->whereIn('status', ['active', 'pending']);
                     })->count();
-                
+
                 if ($activeTenantsCount > 0) {
                     return back()->with('error', "Cannot delete property with active tenant assignments. Found {$activeTenantsCount} unit(s) with active tenants.");
                 }
-                
+
                 return back()->with('error', "Cannot delete property with existing units. Found {$unitCount} unit(s). Please delete all units first, or use Force Delete.");
             }
-            
+
             $property->rfidCards()->delete();
-            
+
             $propertyName = $property->name;
             $property->delete();
-            
+
             return redirect()->route('landlord.apartments')->with('success', "Property '{$propertyName}' deleted successfully.");
         } catch (\Exception $exception) {
             Log::error('Error deleting property', ['property_id' => $id, 'error' => $exception->getMessage()]);
+
             return back()->with('error', 'Failed to delete property. Please try again.');
         }
     }
@@ -372,18 +381,18 @@ class LandlordController extends Controller
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
-        
+
         $sortBy = $request->get('sort', 'property_unit');
-        
+
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
             $query = $property->units()->with('property');
             $statsQuery = $property->units();
         } else {
-            $query = Unit::whereHas('property', function($query) use ($landlord) {
+            $query = Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->with('property');
-            $statsQuery = Unit::whereHas('property', function($query) use ($landlord) {
+            $statsQuery = Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             });
         }
@@ -395,27 +404,27 @@ class LandlordController extends Controller
             $statsQuery->where('property_id', $selectedPropertyId);
             $propertyId = $selectedPropertyId;
         }
-        
+
         $stats = [
             'total_units' => $statsQuery->count(),
             'available_units' => (clone $statsQuery)->where('status', 'available')->count(),
             'occupied_units' => (clone $statsQuery)->where('status', 'occupied')->count(),
             'monthly_revenue' => (clone $statsQuery)->where('status', 'occupied')->sum('rent_amount') ?? 0,
         ];
-        
+
         switch ($sortBy) {
             case 'property_unit':
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->orderBy('units.floor_number')
-                      ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
-                      ->orderBy('units.unit_number')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->orderBy('units.floor_number')
+                    ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
+                    ->orderBy('units.unit_number')
+                    ->select('units.*');
                 break;
             case 'property':
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->select('units.*');
                 break;
             case 'unit_number':
                 $query->orderByRaw('CAST(unit_number AS UNSIGNED)')->orderBy('unit_number');
@@ -434,18 +443,18 @@ class LandlordController extends Controller
                 break;
             default:
                 $query->join('properties', 'units.property_id', '=', 'properties.id')
-                      ->orderBy('properties.name')
-                      ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
-                      ->select('units.*');
+                    ->orderBy('properties.name')
+                    ->orderByRaw('CAST(units.unit_number AS UNSIGNED)')
+                    ->select('units.*');
         }
-        
+
         $units = $query->paginate(20);
         $properties = $landlord->properties()->orderBy('name')->get();
-        
+
         // Backward compatibility
         $apartments = $properties;
         $apartmentId = $propertyId;
-        
+
         return view('landlord.units', compact('units', 'apartments', 'properties', 'apartmentId', 'propertyId', 'stats'));
     }
 
@@ -456,10 +465,12 @@ class LandlordController extends Controller
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
             $apartment = $property; // Backward compatibility
+
             return view('landlord.create-unit', compact('apartment', 'property'));
         } else {
             $properties = $landlord->properties()->get();
             $apartments = $properties;
+
             return view('landlord.select-property-for-unit', compact('apartments', 'properties'));
         }
     }
@@ -471,7 +482,7 @@ class LandlordController extends Controller
         $property = $landlord->properties()->findOrFail($propertyId);
 
         $request->validate([
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,' . $propertyId,
+            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
             'rent_amount' => 'required|numeric|min:0',
             'status' => 'required|in:available,maintenance',
@@ -490,26 +501,26 @@ class LandlordController extends Controller
 
         $coverPath = null;
         if ($request->hasFile('cover_image')) {
-            $supabase = new SupabaseService();
-            $filename = 'unit-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-            $path = 'units/' . $filename;
+            $supabase = new SupabaseService;
+            $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+            $path = 'units/'.$filename;
             $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-            
+
             if ($uploadResult['success']) {
                 $coverPath = $uploadResult['url'];
             } else {
                 return back()->withInput()->with('error', 'Failed to upload cover image.');
             }
         }
-        
+
         $galleryPaths = [];
         if ($request->hasFile('gallery')) {
             foreach ($request->file('gallery') as $index => $file) {
-                $supabase = new SupabaseService();
-                $filename = 'unit-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $path = 'units/gallery/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                $path = 'units/gallery/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $galleryPaths[] = $uploadResult['url'];
                 }
@@ -564,7 +575,7 @@ class LandlordController extends Controller
                 'default_rent' => $request->default_rent,
                 'default_bedrooms' => $request->default_bedrooms,
                 'default_bathrooms' => $request->default_bathrooms,
-            ]
+            ],
         ]);
 
         return redirect()->route('landlord.bulk-edit-units', $propertyId);
@@ -588,7 +599,7 @@ class LandlordController extends Controller
         $apartment = $property;
         $bulkParams = session('bulk_creation_params', []);
         $existingUnitsCount = $property->units()->count();
-        
+
         return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount'));
     }
 
@@ -606,7 +617,7 @@ class LandlordController extends Controller
             'post_data_size' => strlen(serialize($request->all())),
         ]);
 
-        if (!$request->has('units') || empty($request->input('units'))) {
+        if (! $request->has('units') || empty($request->input('units'))) {
             return back()->with('error', 'No units data received. Please try again.');
         }
 
@@ -630,17 +641,18 @@ class LandlordController extends Controller
             $existingUnitNumbers = $property->units()->pluck('unit_number')->toArray();
             $unitsToInsert = [];
             $now = now();
-            
+
             foreach ($request->units as $unitData) {
                 if (in_array($unitData['unit_number'], $existingUnitNumbers)) {
                     $unitsSkipped++;
                     $skippedUnitNumbers[] = $unitData['unit_number'];
+
                     continue;
                 }
-                
-                $isFurnished = isset($unitData['is_furnished']) && 
+
+                $isFurnished = isset($unitData['is_furnished']) &&
                     ($unitData['is_furnished'] === 'true' || $unitData['is_furnished'] === true || $unitData['is_furnished'] === '1');
-                
+
                 $unitsToInsert[] = [
                     'property_id' => $propertyId,
                     'unit_number' => $unitData['unit_number'],
@@ -659,47 +671,48 @@ class LandlordController extends Controller
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
-                
+
                 $unitsCreated++;
             }
-            
-            if (!empty($unitsToInsert)) {
+
+            if (! empty($unitsToInsert)) {
                 $chunks = array_chunk($unitsToInsert, 100);
                 foreach ($chunks as $chunk) {
                     \DB::table('units')->insert($chunk);
                 }
             }
-            
+
             $property->update(['total_units' => $property->units()->count()]);
             session()->forget('bulk_creation_params');
-            
+
             // Build success message with skipped unit info
             $message = "Successfully created {$unitsCreated} units!";
             if ($unitsSkipped > 0) {
-                $message .= " ({$unitsSkipped} units skipped - already exist: " . implode(', ', array_slice($skippedUnitNumbers, 0, 10));
+                $message .= " ({$unitsSkipped} units skipped - already exist: ".implode(', ', array_slice($skippedUnitNumbers, 0, 10));
                 if (count($skippedUnitNumbers) > 10) {
                     $message .= '...';
                 }
                 $message .= ')';
             }
-            
+
             return redirect()->route('landlord.units', $propertyId)->with('success', $message);
-            
+
         } catch (\Exception $exception) {
-            Log::error('Error finalizing bulk units: ' . $exception->getMessage());
+            Log::error('Error finalizing bulk units: '.$exception->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create units. Please try again.');
         }
     }
 
     public function updateUnit(Request $request, $id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
 
         try {
             $request->validate([
-                'unit_number' => 'required|string|max:50|unique:units,unit_number,' . $unit->id . ',id,property_id,' . $unit->property_id,
+                'unit_number' => 'required|string|max:50|unique:units,unit_number,'.$unit->id.',id,property_id,'.$unit->property_id,
                 'unit_type' => 'required|string|max:100',
                 'rent_amount' => 'required|numeric|min:0',
                 'status' => 'required|in:available,occupied,maintenance',
@@ -738,30 +751,30 @@ class LandlordController extends Controller
             ];
 
             if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService();
-                $filename = 'unit-' . time() . '-' . uniqid() . '.' . $request->file('cover_image')->getClientOriginalExtension();
-                $path = 'units/' . $filename;
+                $supabase = new SupabaseService;
+                $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
+                $path = 'units/'.$filename;
                 $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
-                
+
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
                 }
             }
 
             if ($request->hasFile('gallery')) {
-                $supabase = new SupabaseService();
+                $supabase = new SupabaseService;
                 $galleryPaths = $unit->gallery ?? [];
-                
+
                 foreach ($request->file('gallery') as $index => $file) {
-                    $filename = 'unit-gallery-' . time() . '-' . $index . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $path = 'units/gallery/' . $filename;
+                    $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
+                    $path = 'units/gallery/'.$filename;
                     $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-                    
+
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];
                     }
                 }
-                
+
                 $updateData['gallery'] = array_slice($galleryPaths, 0, 12);
             }
 
@@ -773,36 +786,37 @@ class LandlordController extends Controller
 
             return redirect()->route('landlord.units')->with('success', 'Unit updated successfully.');
         } catch (\Exception $exception) {
-            Log::error('Error updating unit: ' . $exception->getMessage());
-            
+            Log::error('Error updating unit: '.$exception->getMessage());
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to update unit.'], 500);
             }
-            
+
             return back()->with('error', 'Failed to update unit. Please try again.');
         }
     }
 
     public function deleteUnit($id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
-        
+
         try {
             $activeAssignments = $unit->tenantAssignments()->whereIn('status', ['active', 'pending'])->count();
-                
+
             if ($activeAssignments > 0) {
                 return back()->with('error', 'Cannot delete unit with active tenant assignments.');
             }
-            
+
             $unitNumber = $unit->unit_number;
             $unit->tenantAssignments()->delete();
             $unit->delete();
-            
+
             return back()->with('success', "Unit '{$unitNumber}' deleted successfully.");
         } catch (\Exception $exception) {
-            Log::error('Error deleting unit: ' . $exception->getMessage());
+            Log::error('Error deleting unit: '.$exception->getMessage());
+
             return back()->with('error', 'Failed to delete unit. Please try again.');
         }
     }
@@ -846,14 +860,14 @@ class LandlordController extends Controller
 
         foreach ($request->file('documents') as $index => $file) {
             $docType = $request->document_types[$index] ?? 'other';
-            $supabase = new SupabaseService();
-            
+            $supabase = new SupabaseService;
+
             $extension = $file->getClientOriginalExtension();
-            $fileName = 'landlord-doc-' . $landlord->id . '-' . time() . '-' . $index . '-' . uniqid() . '.' . $extension;
-            $path = 'landlord-documents/' . $fileName;
-            
+            $fileName = 'landlord-doc-'.$landlord->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
+            $path = 'landlord-documents/'.$fileName;
+
             $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-            
+
             if ($uploadResult['success']) {
                 LandlordDocument::create([
                     'landlord_id' => $landlord->id,
@@ -880,6 +894,7 @@ class LandlordController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+
         return view('landlord.rejected', compact('user'));
     }
 
@@ -887,100 +902,101 @@ class LandlordController extends Controller
     {
         $landlordId = Auth::id();
         $tenants = User::where('role', 'tenant')
-            ->whereHas('tenantAssignments', function($query) use ($landlordId) {
+            ->whereHas('tenantAssignments', function ($query) use ($landlordId) {
                 $query->where('landlord_id', $landlordId);
             })->get();
+
         return view('landlord.tenants', compact('tenants'));
     }
 
     public function tenantHistory(Request $request)
     {
         $landlordId = Auth::id();
-        
+
         $query = TenantAssignment::where('landlord_id', $landlordId)
             ->with(['tenant', 'unit.property']);
-        
+
         if ($request->filled('property_id')) {
-            $query->whereHas('unit.property', function($query) use ($request) {
+            $query->whereHas('unit.property', function ($query) use ($request) {
                 $query->where('id', $request->property_id);
             });
         }
-        
+
         if ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
         }
-        
+
         if ($request->filled('tenant_name')) {
             $searchTerm = $request->tenant_name;
-            $query->whereHas('tenant', function($query) use ($searchTerm) {
+            $query->whereHas('tenant', function ($query) use ($searchTerm) {
                 $query->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhere('email', 'like', "%{$searchTerm}%");
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
             });
         }
-        
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         if ($request->filled('date_from')) {
             $query->where('lease_start_date', '>=', $request->date_from);
         }
-        
+
         if ($request->filled('date_to')) {
             $query->where('lease_end_date', '<=', $request->date_to);
         }
-        
+
         $assignments = $query->orderBy('lease_start_date', 'desc')->paginate(20);
-        
+
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $properties = $landlord->properties()->orderBy('name')->get();
         $apartments = $properties; // Backward compatibility
-        
-        $units = Unit::whereHas('property', function($query) use ($landlordId) {
+
+        $units = Unit::whereHas('property', function ($query) use ($landlordId) {
             $query->where('landlord_id', $landlordId);
         })->with('property')->orderBy('unit_number')->get();
-        
+
         $stats = [
             'total_assignments' => TenantAssignment::where('landlord_id', $landlordId)->count(),
             'active_assignments' => TenantAssignment::where('landlord_id', $landlordId)->where('status', 'active')->count(),
             'terminated_assignments' => TenantAssignment::where('landlord_id', $landlordId)->where('status', 'terminated')->count(),
             'total_revenue' => TenantAssignment::where('landlord_id', $landlordId)->where('status', 'active')->sum('rent_amount'),
         ];
-        
+
         return view('landlord.tenant-history', compact('assignments', 'apartments', 'properties', 'units', 'stats'));
     }
 
     public function exportTenantHistoryCSV(Request $request)
     {
         $landlordId = Auth::id();
-        
+
         $query = TenantAssignment::where('landlord_id', $landlordId)
             ->with(['tenant', 'unit.property']);
-        
+
         // Apply same filters as tenantHistory
         if ($request->filled('property_id')) {
-            $query->whereHas('unit.property', function($query) use ($request) {
+            $query->whereHas('unit.property', function ($query) use ($request) {
                 $query->where('id', $request->property_id);
             });
         }
-        
+
         $assignments = $query->orderBy('lease_start_date', 'desc')->get();
-        
-        $filename = 'tenant-history-' . date('Y-m-d') . '.csv';
+
+        $filename = 'tenant-history-'.date('Y-m-d').'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
-        
-        $callback = function() use ($assignments) {
+
+        $callback = function () use ($assignments) {
             $file = fopen('php://output', 'w');
-            
+
             fputcsv($file, [
                 'Tenant Name', 'Email', 'Phone', 'Property Name', 'Unit Number',
-                'Bedrooms', 'Move-in Date', 'Move-out Date', 'Rent Amount', 'Status'
+                'Bedrooms', 'Move-in Date', 'Move-out Date', 'Rent Amount', 'Status',
             ]);
-            
+
             foreach ($assignments as $assignment) {
                 fputcsv($file, [
                     $assignment->tenant->name ?? 'N/A',
@@ -991,14 +1007,14 @@ class LandlordController extends Controller
                     $assignment->unit->bedrooms ?? 'N/A',
                     $assignment->lease_start_date ? $assignment->lease_start_date->format('M d, Y') : 'N/A',
                     $assignment->lease_end_date ? $assignment->lease_end_date->format('M d, Y') : 'N/A',
-                    '₱' . number_format($assignment->rent_amount, 2),
+                    '₱'.number_format($assignment->rent_amount, 2),
                     ucfirst($assignment->status),
                 ]);
             }
-            
+
             fclose($file);
         };
-        
+
         return response()->stream($callback, 200, $headers);
     }
 
@@ -1008,7 +1024,7 @@ class LandlordController extends Controller
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->with('units')->findOrFail($id);
-        
+
         return response()->json([
             'id' => $property->id,
             'name' => $property->name,
@@ -1027,9 +1043,9 @@ class LandlordController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
         $units = $property->units()->orderBy('unit_number')->get();
-        
+
         return response()->json([
-            'units' => $units->map(function($unit) {
+            'units' => $units->map(function ($unit) {
                 return [
                     'id' => $unit->id,
                     'unit_number' => $unit->unit_number,
@@ -1044,18 +1060,18 @@ class LandlordController extends Controller
                     'amenities' => $unit->amenities,
                     'description' => $unit->description,
                 ];
-            })
+            }),
         ]);
     }
 
     public function getUnitDetails($id)
     {
-        $unit = Unit::whereHas('property', function($query) {
+        $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->with(['property', 'tenantAssignments.tenant'])->findOrFail($id);
-        
+
         $currentAssignment = $unit->tenantAssignments()->where('status', 'active')->with('tenant')->first();
-        
+
         return response()->json([
             'id' => $unit->id,
             'unit_number' => $unit->unit_number,
@@ -1091,7 +1107,7 @@ class LandlordController extends Controller
         $property = $landlord->properties()->findOrFail($propertyId);
 
         $request->validate([
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,' . $propertyId,
+            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
             'rent_amount' => 'required|numeric|min:0',
             'bedrooms' => 'required|integer|min:0',
@@ -1123,7 +1139,8 @@ class LandlordController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Unit created successfully.', 'unit' => $unit]);
         } catch (\Exception $exception) {
-            Log::error('Error creating unit: ' . $exception->getMessage());
+            Log::error('Error creating unit: '.$exception->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Failed to create unit.'], 500);
         }
     }
@@ -1155,7 +1172,7 @@ class LandlordController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         try {
             // Update or create landlord profile
             $user->landlordProfile()->updateOrCreate(
@@ -1171,7 +1188,8 @@ class LandlordController extends Controller
 
             return back()->with('success', 'Profile updated successfully.');
         } catch (\Exception $exception) {
-            Log::error('Error updating landlord settings: ' . $exception->getMessage());
+            Log::error('Error updating landlord settings: '.$exception->getMessage());
+
             return back()->with('error', 'Failed to update profile. Please try again.');
         }
     }
@@ -1189,7 +1207,7 @@ class LandlordController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
@@ -1200,7 +1218,8 @@ class LandlordController extends Controller
 
             return back()->with('success', 'Password changed successfully.');
         } catch (\Exception $exception) {
-            Log::error('Error updating landlord password: ' . $exception->getMessage());
+            Log::error('Error updating landlord password: '.$exception->getMessage());
+
             return back()->with('error', 'Failed to update password. Please try again.');
         }
     }

@@ -18,11 +18,12 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         // Check if user is authenticated
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             Log::warning('RoleMiddleware: User not authenticated', [
                 'url' => $request->url(),
-                'required_roles' => $roles
+                'required_roles' => $roles,
             ]);
+
             return redirect()->route('login');
         }
 
@@ -36,16 +37,16 @@ class RoleMiddleware
                 'user_role' => $user->role,
                 'user_status' => $user->status,
                 'required_roles' => $roles,
-                'role_check_passed' => in_array($user->role, $roles)
+                'role_check_passed' => in_array($user->role, $roles),
             ]);
         }
 
         // Check if user has any of the required roles
-        if (!in_array($user->role, $roles)) {
+        if (! in_array($user->role, $roles)) {
             Log::warning('RoleMiddleware: Access denied', [
                 'url' => $request->url(),
                 'user_role' => $user->role,
-                'required_roles' => $roles
+                'required_roles' => $roles,
             ]);
             abort(403, 'Unauthorized. You do not have permission to access this resource.');
         }

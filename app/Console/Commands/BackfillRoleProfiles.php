@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
 use App\Models\LandlordProfile;
-use App\Models\TenantProfile;
 use App\Models\StaffProfile;
 use App\Models\SuperAdminProfile;
+use App\Models\TenantProfile;
+use App\Models\User;
+use Illuminate\Console\Command;
 
 class BackfillRoleProfiles extends Command
 {
@@ -39,9 +39,9 @@ class BackfillRoleProfiles extends Command
             foreach ($users as $user) {
                 switch ($user->role) {
                     case 'landlord':
-                        if (!$user->landlordProfile) {
+                        if (! $user->landlordProfile) {
                             $this->info("Missing landlord profile for user #{$user->id} ({$user->email})");
-                            if (!$dryRun) {
+                            if (! $dryRun) {
                                 LandlordProfile::create([
                                     'user_id' => $user->id,
                                     'name' => $user->name ?? 'User',
@@ -56,9 +56,9 @@ class BackfillRoleProfiles extends Command
                         }
                         break;
                     case 'tenant':
-                        if (!$user->tenantProfile) {
+                        if (! $user->tenantProfile) {
                             $this->info("Missing tenant profile for user #{$user->id} ({$user->email})");
-                            if (!$dryRun) {
+                            if (! $dryRun) {
                                 TenantProfile::create([
                                     'user_id' => $user->id,
                                     'name' => $user->name ?? 'User',
@@ -71,9 +71,9 @@ class BackfillRoleProfiles extends Command
                         }
                         break;
                     case 'staff':
-                        if (!$user->staffProfile) {
+                        if (! $user->staffProfile) {
                             $this->info("Missing staff profile for user #{$user->id} ({$user->email})");
-                            if (!$dryRun) {
+                            if (! $dryRun) {
                                 StaffProfile::create([
                                     'user_id' => $user->id,
                                     'name' => $user->name ?? 'User',
@@ -87,9 +87,9 @@ class BackfillRoleProfiles extends Command
                         }
                         break;
                     case 'super_admin':
-                        if (!$user->superAdminProfile) {
+                        if (! $user->superAdminProfile) {
                             $this->info("Missing super admin profile for user #{$user->id} ({$user->email})");
-                            if (!$dryRun) {
+                            if (! $dryRun) {
                                 SuperAdminProfile::create([
                                     'user_id' => $user->id,
                                     'name' => $user->name ?? 'User',

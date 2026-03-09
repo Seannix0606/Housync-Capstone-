@@ -96,7 +96,7 @@ class StaffAssignment extends Model
 
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'active' => 'success',
             'inactive' => 'warning',
             'terminated' => 'danger',
@@ -111,7 +111,7 @@ class StaffAssignment extends Model
 
     public function getStaffTypeIconAttribute()
     {
-        return match($this->staff_type) {
+        return match ($this->staff_type) {
             'maintenance_worker' => 'mdi-wrench',
             'plumber' => 'mdi-water',
             'electrician' => 'mdi-lightning-bolt',
@@ -123,4 +123,4 @@ class StaffAssignment extends Model
             default => 'mdi-account'
         };
     }
-} 
+}

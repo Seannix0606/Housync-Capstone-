@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('staff_profiles', 'created_by_landlord_id')) {
+        if (! Schema::hasColumn('staff_profiles', 'created_by_landlord_id')) {
             Schema::table('staff_profiles', function (Blueprint $table) {
                 $table->foreignId('created_by_landlord_id')
-                      ->nullable()
-                      ->after('user_id')
-                      ->constrained('users')
-                      ->nullOnDelete();
+                    ->nullable()
+                    ->after('user_id')
+                    ->constrained('users')
+                    ->nullOnDelete();
             });
         }
     }

@@ -70,7 +70,7 @@ class MaintenanceRequest extends Model
                     ? ((int) substr($lastTicket->ticket_number ?? '0000', -4)) + 1
                     : 1;
 
-                $request->ticket_number = 'MR-' . $year . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+                $request->ticket_number = 'MR-'.$year.'-'.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
             }
 
             if (empty($request->property_id) && $request->unit_id) {
@@ -165,7 +165,7 @@ class MaintenanceRequest extends Model
 
     public function getPriorityBadgeClassAttribute()
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'low' => 'success',
             'medium' => 'info',
             'high' => 'warning',
@@ -176,7 +176,7 @@ class MaintenanceRequest extends Model
 
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'warning',
             'assigned' => 'info',
             'in_progress' => 'primary',
@@ -188,7 +188,7 @@ class MaintenanceRequest extends Model
 
     public function getCategoryIconAttribute()
     {
-        return match($this->category) {
+        return match ($this->category) {
             'plumbing' => 'mdi-water',
             'electrical' => 'mdi-lightning-bolt',
             'hvac' => 'mdi-air-conditioner',
@@ -198,4 +198,4 @@ class MaintenanceRequest extends Model
             default => 'mdi-tools'
         };
     }
-} 
+}

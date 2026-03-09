@@ -5,10 +5,10 @@ namespace Database\Seeders;
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 /**
  * This seeder now creates Properties (formerly Apartments)
+ *
  * @deprecated Use PropertySeeder instead
  */
 class ApartmentSeeder extends Seeder
@@ -16,7 +16,9 @@ class ApartmentSeeder extends Seeder
     public function run()
     {
         $landlord = User::where('email', 'landlord@example.com')->first();
-        if (!$landlord) return;
+        if (! $landlord) {
+            return;
+        }
 
         Property::updateOrCreate(
             ['slug' => 'sunset-apartments'],

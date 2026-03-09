@@ -68,12 +68,12 @@ class Apartment extends Model
         }
 
         // Return the API URL with storage path for Railway
-        return url('api/storage/' . $this->cover_image);
+        return url('api/storage/'.$this->cover_image);
     }
 
     public function getGalleryUrlsAttribute(): array
     {
-        if (empty($this->gallery) || !is_array($this->gallery)) {
+        if (empty($this->gallery) || ! is_array($this->gallery)) {
             return [];
         }
 
@@ -82,8 +82,9 @@ class Apartment extends Model
             if (str_starts_with($path, 'http')) {
                 return $path;
             }
+
             // Return the API URL with storage path for Railway
-            return url('api/storage/' . $path);
+            return url('api/storage/'.$path);
         }, $this->gallery);
     }
 
@@ -155,9 +156,12 @@ class Apartment extends Model
     public function getOccupancyRate()
     {
         $totalUnits = $this->units()->count();
-        if ($totalUnits === 0) return 0;
-        
+        if ($totalUnits === 0) {
+            return 0;
+        }
+
         $occupiedUnits = $this->getOccupiedUnitsCount();
+
         return round(($occupiedUnits / $totalUnits) * 100, 2);
     }
 
