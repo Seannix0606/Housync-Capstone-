@@ -249,27 +249,15 @@ class SuperAdminController extends Controller
         return view('super-admin.edit-user', compact('user'));
     }
 
-    public function updateUser(Request $request, $id)
+    public function updateUser(\App\Http\Requests\SuperAdmin\UpdateUserRequest $request, $id)
     {
         $user = User::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|in:super_admin,landlord,tenant',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'business_info' => 'nullable|string|max:1000',
-        ]);
 
         $user->update($request->only([
             'name', 'email', 'role', 'phone', 'address', 'business_info'
         ]));
 
         if ($request->filled('password')) {
-            $request->validate([
-                'password' => 'required|string|min:8|confirmed',
-            ]);
             $user->update(['password' => Hash::make($request->password)]);
         }
 
