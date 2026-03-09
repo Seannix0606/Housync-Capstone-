@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Landlord\StorePropertyRequest;
 use App\Models\LandlordDocument;
 use App\Models\LandlordProfile;
 use App\Models\Property;
@@ -9,12 +10,11 @@ use App\Models\TenantAssignment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\SupabaseService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use App\Http\Requests\Landlord\StorePropertyRequest;
-use Illuminate\Auth\Events\Registered;
 
 class LandlordController extends Controller
 {
@@ -202,7 +202,7 @@ class LandlordController extends Controller
         // Sanitize phone number - remove all non-digit characters
         if ($request->has('contact_phone') && $request->contact_phone) {
             $request->merge([
-                'contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone)
+                'contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone),
             ]);
         }
 

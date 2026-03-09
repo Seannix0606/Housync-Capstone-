@@ -14,7 +14,6 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\TenantAssignmentController;
 use App\Http\Controllers\UnitController;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -35,11 +34,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
         $request->fulfill();
-        return redirect()->route('dashboard'); 
+
+        return redirect()->route('dashboard');
     })->middleware(['signed'])->name('verification.verify');
 
     Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
         $request->user()->sendEmailVerificationNotification();
+
         return back()->with('message', 'Verification link sent!');
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
@@ -110,7 +111,7 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 */
 
 Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('landlord.')->group(function () {
-    
+
     // Dashboard, Settings & Tenants
     Route::controller(LandlordController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard');
@@ -259,7 +260,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 */
 
 Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.')->group(function () {
-    
+
     // Dashboard & Profile
     Route::controller(TenantAssignmentController::class)->group(function () {
         Route::get('/dashboard', 'tenantDashboard')->name('dashboard');
@@ -320,7 +321,7 @@ Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.'
 */
 
 Route::middleware(['role:staff', 'verified'])->prefix('staff')->name('staff.')->group(function () {
-    
+
     // Dashboard & Profile
     Route::controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'staffDashboard')->name('dashboard');

@@ -23,7 +23,7 @@ class StorePropertyRequest extends FormRequest
         // Sanitize phone number - remove all non-digit characters
         if ($this->has('contact_phone') && $this->contact_phone) {
             $this->merge([
-                'contact_phone' => preg_replace('/[^0-9]/', '', $this->contact_phone)
+                'contact_phone' => preg_replace('/[^0-9]/', '', $this->contact_phone),
             ]);
         }
     }
