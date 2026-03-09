@@ -35,6 +35,16 @@ class UpdatePropertyRequest extends FormRequest
      */
     public function rules(): array
     {
+        $propertyId = $this->route('id');
+        $currentUnitCount = 0;
+        
+        if ($propertyId) {
+            $property = \App\Models\Property::find($propertyId);
+            if ($property) {
+                $currentUnitCount = $property->units()->count();
+            }
+        }
+
         return [
             'name' => 'required|string|max:255',
             'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
@@ -43,7 +53,11 @@ class UpdatePropertyRequest extends FormRequest
             'state' => 'nullable|string|max:255',
             'postal_code' => 'nullable|string|max:20',
             'description' => 'nullable|string|max:1000',
-            'total_units' => 'required|integer|min:1',
+            'total_units' => [
+                'required',
+                'integer',
+                'min:' . max(1, $currentUnitCount)
+            ],
             'floors' => 'nullable|integer|min:1',
             'bedrooms' => 'nullable|integer|min:1',
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -54,6 +68,7 @@ class UpdatePropertyRequest extends FormRequest
             'amenities' => 'nullable|array',
             'status' => 'required|in:active,inactive,maintenance',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'gallery' => 'nullable|array|max:12',
             'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
         ];
     }

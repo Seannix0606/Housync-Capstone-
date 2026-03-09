@@ -222,7 +222,6 @@ class LandlordController extends Controller
         $property = $landlord->properties()->findOrFail($id);
 
         try {
-            $currentUnitCount = $property->units()->count();
             $newTotalUnits = $request->total_units;
 
             $floors = $request->property_type === 'house' ? null : $request->floors;
@@ -236,7 +235,7 @@ class LandlordController extends Controller
                 'state' => $request->state,
                 'postal_code' => $request->postal_code,
                 'description' => $request->description,
-                'total_units' => $request->total_units,
+                'total_units' => $newTotalUnits,
                 'floors' => $floors,
                 'bedrooms' => $bedrooms,
                 'year_built' => $request->year_built,
