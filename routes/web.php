@@ -109,7 +109,7 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 */
 
 Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('landlord.')->group(function () {
-    
+
     // Dashboard, Settings & Tenants
     Route::controller(LandlordController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard');
@@ -266,6 +266,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 */
 
 Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.')->group(function () {
+
     // Dashboard & Profile
     Route::controller(TenantAssignmentController::class)->group(function () {
         Route::get('/dashboard', 'tenantDashboard')->name('dashboard');
@@ -326,6 +327,7 @@ Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.'
 */
 
 Route::middleware(['role:staff', 'verified'])->prefix('staff')->name('staff.')->group(function () {
+
     // Dashboard & Profile
     Route::controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'staffDashboard')->name('dashboard');
