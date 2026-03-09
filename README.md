@@ -108,6 +108,33 @@ Housync uses several environment variables to configure its core features and ex
 ### ESP32 RFID Hardware Config
 * `ESP32_API_KEY`: The secret authentication key used to secure communication between the physical ESP32 card reader and the Housync backend. Ensure this matches the hardcoded key on the physical device firmware.
 
+### Mail (Gmail / Yahoo) – Local & Production
+Housync sends verification emails, notifications, and other transactional emails. Configure Gmail or Yahoo for real delivery in both local development and production:
+
+**Gmail:**
+1. Enable 2-Step Verification: [Google Account Security](https://myaccount.google.com/security)
+2. Create an App Password: [App Passwords](https://myaccount.google.com/apppasswords)
+3. Set in `.env`:
+   * `MAIL_MAILER=smtp`
+   * `MAIL_HOST=smtp.gmail.com`
+   * `MAIL_PORT=587`
+   * `MAIL_USERNAME=your-email@gmail.com`
+   * `MAIL_PASSWORD=your-16-char-app-password`
+   * `MAIL_ENCRYPTION=tls`
+
+**Yahoo:**
+1. Enable 2-Step Verification: [Yahoo Account Security](https://login.yahoo.com/account/security)
+2. Create an App Password: [Yahoo App Passwords](https://login.yahoo.com/account/security)
+3. Set in `.env`:
+   * `MAIL_MAILER=smtp`
+   * `MAIL_HOST=smtp.mail.yahoo.com`
+   * `MAIL_PORT=587`
+   * `MAIL_USERNAME=your-email@yahoo.com`
+   * `MAIL_PASSWORD=your-app-password`
+   * `MAIL_ENCRYPTION=tls`
+
+**Log only (no real emails):** Set `MAIL_MAILER=log` to write emails to `storage/logs/laravel.log` instead of sending them.
+
 ---
 
 ## Database Seeding & User Roles
