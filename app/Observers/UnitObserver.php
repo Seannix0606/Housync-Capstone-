@@ -2,9 +2,9 @@
 
 namespace App\Observers;
 
-use App\Models\Unit;
-use App\Models\Property;
 use App\Models\Amenity;
+use App\Models\Property;
+use App\Models\Unit;
 use Illuminate\Support\Str;
 
 class UnitObserver
@@ -31,8 +31,8 @@ class UnitObserver
     public function deleted(Unit $unit): void
     {
         // Find and soft delete the corresponding property
-        $slug = Str::slug($this->generateTitle($unit) . '-' . $unit->id);
-        
+        $slug = Str::slug($this->generateTitle($unit).'-'.$unit->id);
+
         $property = Property::where('slug', $slug)->first();
         if ($property) {
             $property->delete();
@@ -45,13 +45,13 @@ class UnitObserver
     public function restored(Unit $unit): void
     {
         // Restore the corresponding property
-        $slug = Str::slug($this->generateTitle($unit) . '-' . $unit->id);
-        
+        $slug = Str::slug($this->generateTitle($unit).'-'.$unit->id);
+
         $property = Property::withTrashed()->where('slug', $slug)->first();
         if ($property) {
             $property->restore();
         }
-        
+
         $this->syncToProperty($unit);
     }
 
@@ -61,18 +61,18 @@ class UnitObserver
     protected function syncToProperty(Unit $unit)
     {
         // Load apartment relationship if not loaded
-        if (!$unit->relationLoaded('apartment')) {
+        if (! $unit->relationLoaded('apartment')) {
             $unit->load('apartment');
         }
 
         $apartment = $unit->apartment;
-        
-        if (!$apartment) {
+
+        if (! $apartment) {
             return; // Skip if apartment doesn't exist
         }
 
         $title = $this->generateTitle($unit);
-        $slug = Str::slug($title . '-' . $unit->id);
+        $slug = Str::slug($title.'-'.$unit->id);
 
         // Map unit type to property type
         $type = $this->mapUnitTypeToPropertyType($unit->unit_type);
@@ -113,6 +113,7 @@ class UnitObserver
     protected function generateTitle(Unit $unit)
     {
         $apartment = $unit->apartment;
+
         return $apartment ? "{$apartment->name} - Unit {$unit->unit_number}" : "Unit {$unit->unit_number}";
     }
 
@@ -153,12 +154,13 @@ class UnitObserver
 
         // Try to extract city from address
         $parts = explode(',', $address);
-        
+
         // Common pattern: "Street, City, State"
         if (count($parts) >= 2) {
             $city = trim($parts[1]);
             // Remove any state/country info if present
             $cityParts = explode(' ', $city);
+
             return $cityParts[0];
         }
 
@@ -183,7 +185,7 @@ class UnitObserver
         }
 
         // Add furnished if applicable
-        if ($unit->is_furnished && !in_array('Furnished', $amenityNames)) {
+        if ($unit->is_furnished && ! in_array('Furnished', $amenityNames)) {
             $amenityNames[] = 'Furnished';
         }
 
@@ -192,7 +194,7 @@ class UnitObserver
 
         // Find matching amenity IDs
         $amenityIds = [];
-        
+
         foreach ($amenityNames as $amenityName) {
             $amenity = Amenity::where('name', 'LIKE', "%{$amenityName}%")
                 ->orWhere('slug', Str::slug($amenityName))
@@ -204,7 +206,7 @@ class UnitObserver
         }
 
         // Sync amenities (this will add new and remove old ones)
-        if (!empty($amenityIds)) {
+        if (! empty($amenityIds)) {
             $property->amenities()->sync($amenityIds);
         } else {
             // If no amenities, clear them
@@ -240,4 +242,3 @@ class UnitObserver
         return ltrim($path, '/');
     }
 }
-

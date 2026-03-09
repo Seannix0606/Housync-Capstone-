@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\Log;
 class SupabaseService
 {
     protected $client;
+
     protected $url;
+
     protected $key;
+
     protected $serviceKey;
 
     public function __construct()
@@ -24,13 +27,13 @@ class SupabaseService
             'base_uri' => $this->url,
             'headers' => [
                 'apikey' => $this->key,
-                'Authorization' => 'Bearer ' . $this->key,
+                'Authorization' => 'Bearer '.$this->key,
                 'Content-Type' => 'application/json',
             ],
         ]);
     }
 
-    public function from($table, $filters = [], $select = ['*']) 
+    public function from($table, $filters = [], $select = ['*'])
     {
         try {
             $selectQuery = implode(',', $select);
@@ -41,9 +44,11 @@ class SupabaseService
             }
 
             $response = $this->client->get($url);
+
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $exception) {
-            Log::error('Supabase query error: ' . $exception->getMessage());
+            Log::error('Supabase query error: '.$exception->getMessage());
+
             return null;
         }
     }
@@ -54,13 +59,14 @@ class SupabaseService
             $response = $this->client->post("/rest/v1/{$table}", [
                 'json' => $data,
                 'headers' => [
-                    'Prefer' => 'return=representation'
-                ]
+                    'Prefer' => 'return=representation',
+                ],
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $exception) {
-            Log::error('Supabase insert error: ' . $exception->getMessage());
+            Log::error('Supabase insert error: '.$exception->getMessage());
+
             return null;
         }
     }
@@ -78,13 +84,14 @@ class SupabaseService
             $response = $this->client->patch($url, [
                 'json' => $data,
                 'headers' => [
-                    'Prefer' => 'return=representation'
-                ]
+                    'Prefer' => 'return=representation',
+                ],
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $exception) {
-            Log::error('Supabase update error: ' . $exception->getMessage());
+            Log::error('Supabase update error: '.$exception->getMessage());
+
             return null;
         }
     }
@@ -100,9 +107,11 @@ class SupabaseService
             $url = rtrim($url, '&');
 
             $this->client->delete($url);
+
             return true;
         } catch (GuzzleException $exception) {
-            Log::error('Supabase delete error: ' . $exception->getMessage());
+            Log::error('Supabase delete error: '.$exception->getMessage());
+
             return false;
         }
     }
@@ -116,7 +125,7 @@ class SupabaseService
                 if (file_exists($file)) {
                     $fileContents = file_get_contents($file);
                     if ($fileContents === false) {
-                        throw new \Exception('Failed to read file contents from path: ' . $file);
+                        throw new \Exception('Failed to read file contents from path: '.$file);
                     }
                 } else {
                     // It's direct content, not a file path
@@ -125,7 +134,7 @@ class SupabaseService
             } else {
                 $fileContents = $file;
             }
-            
+
             if (empty($fileContents)) {
                 throw new \Exception('File contents are empty');
             }
@@ -134,14 +143,14 @@ class SupabaseService
                 'bucket' => $bucket,
                 'path' => $path,
                 'size' => strlen($fileContents),
-                'url' => $this->url . "/storage/v1/object/{$bucket}/{$path}"
+                'url' => $this->url."/storage/v1/object/{$bucket}/{$path}",
             ]);
 
             $response = $this->client->post("/storage/v1/object/{$bucket}/{$path}", [
                 'body' => $fileContents,
                 'headers' => [
                     'apikey' => $this->key,
-                    'Authorization' => 'Bearer ' . $this->serviceKey,
+                    'Authorization' => 'Bearer '.$this->serviceKey,
                     'Content-Type' => 'application/octet-stream',
                 ],
             ]);
@@ -151,7 +160,7 @@ class SupabaseService
 
             Log::info('Supabase upload response', [
                 'status' => $statusCode,
-                'body' => $body
+                'body' => $body,
             ]);
 
             return [
@@ -159,46 +168,47 @@ class SupabaseService
                 'status_code' => $statusCode,
                 'response' => $body,
                 'url' => $this->getPublicUrl($bucket, $path),
-                'message' => 'File uploaded successfully'
+                'message' => 'File uploaded successfully',
             ];
         } catch (RequestException $exception) {
             $errorMessage = $exception->getMessage();
             $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : null;
             $responseBody = $exception->hasResponse() ? $exception->getResponse()->getBody()->getContents() : null;
-            
+
             Log::error('Supabase upload error', [
                 'message' => $errorMessage,
                 'status_code' => $statusCode,
                 'response' => $responseBody,
                 'bucket' => $bucket,
-                'path' => $path
+                'path' => $path,
             ]);
-            
+
             return [
                 'success' => false,
                 'status_code' => $statusCode,
                 'error' => $errorMessage,
                 'response' => $responseBody,
-                'message' => 'Upload failed: ' . $errorMessage
+                'message' => 'Upload failed: '.$errorMessage,
             ];
         } catch (GuzzleException $exception) {
-            Log::error('Supabase Guzzle error: ' . $exception->getMessage());
-            
+            Log::error('Supabase Guzzle error: '.$exception->getMessage());
+
             return [
                 'success' => false,
                 'error' => $exception->getMessage(),
-                'message' => 'Upload failed: ' . $exception->getMessage()
+                'message' => 'Upload failed: '.$exception->getMessage(),
             ];
         } catch (\Exception $exception) {
-            Log::error('File upload error: ' . $exception->getMessage());
-            
+            Log::error('File upload error: '.$exception->getMessage());
+
             return [
                 'success' => false,
                 'error' => $exception->getMessage(),
-                'message' => 'Upload failed: ' . $exception->getMessage()
+                'message' => 'Upload failed: '.$exception->getMessage(),
             ];
         }
     }
+
     public function getPublicUrl($bucket, $path)
     {
         return "{$this->url}/storage/v1/object/public/{$bucket}/{$path}";
@@ -208,9 +218,11 @@ class SupabaseService
     {
         try {
             $this->client->delete("/storage/v1/object/{$bucket}/{$path}");
+
             return true;
         } catch (GuzzleException $exception) {
-            Log::error('Supabase delete file error: ' . $exception->getMessage());
+            Log::error('Supabase delete file error: '.$exception->getMessage());
+
             return false;
         }
     }
@@ -226,26 +238,28 @@ class SupabaseService
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $exception) {
-            Log::error('Supabase list files error: ' . $exception->getMessage());
+            Log::error('Supabase list files error: '.$exception->getMessage());
+
             return null;
         }
     }
+
     public function query($query)
     {
         try {
-            $response = $this->client->post("/rest/v1/rpc/sql_query", [
+            $response = $this->client->post('/rest/v1/rpc/sql_query', [
                 'json' => ['query' => $query],
                 'headers' => [
                     'apikey' => $this->serviceKey,
-                    'Authorization' => 'Bearer ' . $this->serviceKey,
+                    'Authorization' => 'Bearer '.$this->serviceKey,
                 ],
             ]);
 
             return json_decode($response->getBody()->getContents(), true);
         } catch (GuzzleException $exception) {
-            Log::error('Supabase query error: ' . $exception->getMessage());
+            Log::error('Supabase query error: '.$exception->getMessage());
+
             return null;
         }
     }
 }
-

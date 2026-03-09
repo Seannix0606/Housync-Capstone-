@@ -35,4 +35,3 @@ class AmenitySeeder extends Seeder
         }
     }
 }
-

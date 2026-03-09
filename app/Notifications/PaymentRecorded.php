@@ -31,8 +31,8 @@ class PaymentRecorded extends Notification
             'amount' => $this->payment->amount,
             'bill_status' => $this->bill->status,
             'remaining_balance' => $this->bill->balance,
-            'message' => "Payment of ₱" . number_format($this->payment->amount, 2) . " recorded for bill {$this->bill->invoice_number}. " .
-                ($this->bill->status === 'paid' ? 'Bill is now fully paid.' : "Remaining balance: ₱" . number_format($this->bill->balance, 2) . "."),
+            'message' => 'Payment of ₱'.number_format($this->payment->amount, 2)." recorded for bill {$this->bill->invoice_number}. ".
+                ($this->bill->status === 'paid' ? 'Bill is now fully paid.' : 'Remaining balance: ₱'.number_format($this->bill->balance, 2).'.'),
             'url' => route('tenant.payments.show', $this->bill->id),
         ];
     }

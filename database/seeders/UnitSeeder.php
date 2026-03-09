@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UnitSeeder extends Seeder
@@ -17,7 +16,9 @@ class UnitSeeder extends Seeder
     {
         $property = Property::first();
         $landlord = User::where('role', 'landlord')->first();
-        if (!$property || !$landlord) return;
+        if (! $property || ! $landlord) {
+            return;
+        }
 
         $units = [
             [
@@ -66,7 +67,7 @@ class UnitSeeder extends Seeder
                 'bathrooms' => 2,
                 'is_furnished' => true,
                 'amenities' => ['AC', 'WiFi', 'Cable TV', 'Washing Machine'],
-                'notes' => 'Ready for immediate occupancy'
+                'notes' => 'Ready for immediate occupancy',
             ],
             [
                 'unit_number' => 'Unit 04',
@@ -82,7 +83,7 @@ class UnitSeeder extends Seeder
                 'bathrooms' => 2,
                 'is_furnished' => true,
                 'amenities' => ['AC', 'WiFi', 'Cable TV'],
-                'notes' => 'Great for families'
+                'notes' => 'Great for families',
             ],
             [
                 'unit_number' => 'Unit 05',
@@ -98,7 +99,7 @@ class UnitSeeder extends Seeder
                 'bathrooms' => 1,
                 'is_furnished' => false,
                 'amenities' => ['WiFi', 'Balcony'],
-                'notes' => 'Recently painted and cleaned'
+                'notes' => 'Recently painted and cleaned',
             ],
         ];
 
@@ -106,6 +107,6 @@ class UnitSeeder extends Seeder
             Unit::create($unitData);
         }
 
-        $this->command->info('Created ' . count($units) . ' sample units.');
+        $this->command->info('Created '.count($units).' sample units.');
     }
 }

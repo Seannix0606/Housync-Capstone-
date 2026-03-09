@@ -2,13 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Mail\LeaseExpiryReminderMail;
 use App\Models\TenantAssignment;
-use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class CheckLeaseExpiry extends Command
 {
@@ -32,6 +29,7 @@ class CheckLeaseExpiry extends Command
 
         if ($expiringAssignments->isEmpty()) {
             $this->info('No leases expiring within the specified period.');
+
             return self::SUCCESS;
         }
 
@@ -41,7 +39,7 @@ class CheckLeaseExpiry extends Command
             $daysRemaining = now()->startOfDay()->diffInDays($assignment->lease_end_date);
 
             // Only send on specific milestones: 30, 14, 7, 3, 1 days
-            if (!in_array($daysRemaining, [30, 14, 7, 3, 1])) {
+            if (! in_array($daysRemaining, [30, 14, 7, 3, 1])) {
                 continue;
             }
 

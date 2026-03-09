@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Unit;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 
 class UnitController extends Controller
 {
@@ -48,10 +47,10 @@ class UnitController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($query) use ($search) {
+            $query->where(function ($query) use ($search) {
                 $query->where('unit_number', 'like', "%{$search}%")
-                  ->orWhere('unit_type', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('unit_type', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -68,10 +67,10 @@ class UnitController extends Controller
         $unitTypes = Unit::distinct()->pluck('unit_type')->sort()->values();
 
         return view('units', compact(
-            'units', 
-            'totalUnits', 
-            'occupiedUnits', 
-            'availableUnits', 
+            'units',
+            'totalUnits',
+            'occupiedUnits',
+            'availableUnits',
             'maintenanceUnits',
             'unitTypes'
         ));
@@ -83,7 +82,7 @@ class UnitController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'unit_number' => 'required|string|unique:units,unit_number,NULL,id,apartment_id,' . $request->apartment_id,
+            'unit_number' => 'required|string|unique:units,unit_number,NULL,id,apartment_id,'.$request->apartment_id,
             'apartment_id' => 'required|exists:apartments,id',
             'unit_type' => 'required|string|max:255',
             'rent_amount' => 'required|numeric|min:0',
@@ -103,17 +102,18 @@ class UnitController extends Controller
 
         try {
             $unit = Unit::create($validatedData);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Unit created successfully!',
-                'unit' => $unit
+                'unit' => $unit,
             ], 201);
         } catch (\Exception $exception) {
             \Illuminate\Support\Facades\Log::error('Failed to create unit', ['exception' => $exception]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create unit.'
+                'message' => 'Failed to create unit.',
             ], 500);
         }
     }
@@ -156,10 +156,10 @@ class UnitController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($query) use ($search) {
+            $query->where(function ($query) use ($search) {
                 $query->where('unit_number', 'like', "%{$search}%")
-                  ->orWhere('unit_type', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('unit_type', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -167,7 +167,7 @@ class UnitController extends Controller
 
         return response()->json([
             'success' => true,
-            'units' => $units
+            'units' => $units,
         ]);
     }
 
@@ -192,6 +192,7 @@ class UnitController extends Controller
     public function getUnitTypes(): JsonResponse
     {
         $unitTypes = Unit::distinct()->pluck('unit_type')->sort()->values();
+
         return response()->json($unitTypes);
     }
 }
