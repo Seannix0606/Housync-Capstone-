@@ -56,6 +56,3 @@ class ConversationParticipant extends Model
         return $query->where('is_muted', false);
     }
 }
-
-
-

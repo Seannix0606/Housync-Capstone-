@@ -32,7 +32,7 @@ class PaymentProofSubmitted extends Notification
             'invoice_number' => $this->bill->invoice_number,
             'amount' => $this->payment->amount,
             'tenant_name' => $tenantName,
-            'message' => "{$tenantName} submitted payment proof of ₱" . number_format($this->payment->amount, 2) . " for bill {$this->bill->invoice_number}. Please verify.",
+            'message' => "{$tenantName} submitted payment proof of ₱".number_format($this->payment->amount, 2)." for bill {$this->bill->invoice_number}. Please verify.",
             'url' => route('landlord.billing.show', $this->bill->id),
         ];
     }

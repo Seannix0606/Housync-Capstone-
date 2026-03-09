@@ -47,8 +47,8 @@ class RfidCard extends Model
     public function activeTenantAssignment()
     {
         return $this->hasOne(TenantRfidAssignment::class)
-                    ->where('status', 'active')
-                    ->with('tenantAssignment');
+            ->where('status', 'active')
+            ->with('tenantAssignment');
     }
 
     // Direct relationship to TenantAssignment through TenantRfidAssignment
@@ -79,7 +79,7 @@ class RfidCard extends Model
         return $this->hasMany(AccessLog::class);
     }
 
-    //--
+    // --
     // Scopes
     public function scopeActive($query)
     {
@@ -109,23 +109,25 @@ class RfidCard extends Model
     // Helper methods
     public function isActive()
     {
-        return $this->status === 'active' && 
-               (!$this->expires_at || $this->expires_at->isFuture());
+        return $this->status === 'active' &&
+               (! $this->expires_at || $this->expires_at->isFuture());
     }
 
     public function isExpired()
     {
         return $this->expires_at && $this->expires_at->isPast();
     }
-//--
+
+    // --
     public function isCompromised()
     {
         return in_array($this->status, ['lost', 'stolen']);
     }
-//--
+
+    // --
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'active' => $this->isExpired() ? 'warning' : 'success',
             'inactive' => 'secondary',
             'lost' => 'warning',
@@ -139,18 +141,19 @@ class RfidCard extends Model
         if ($this->status === 'active' && $this->isExpired()) {
             return 'expired';
         }
+
         return $this->status;
     }
 
     // Check if card can grant access
     public function canGrantAccess()
     {
-        if (!$this->isActive()) {
+        if (! $this->isActive()) {
             return false;
         }
 
         $activeAssignment = $this->activeTenantAssignment;
-        if (!$activeAssignment) {
+        if (! $activeAssignment) {
             return false;
         }
 
@@ -161,7 +164,7 @@ class RfidCard extends Model
     public function getAccessDenialReason()
     {
         if ($this->isCompromised()) {
-            return 'card_' . $this->status;
+            return 'card_'.$this->status;
         }
 
         if ($this->status !== 'active') {
@@ -173,7 +176,7 @@ class RfidCard extends Model
         }
 
         $activeAssignment = $this->activeTenantAssignment;
-        if (!$activeAssignment) {
+        if (! $activeAssignment) {
             return 'card_not_assigned';
         }
 

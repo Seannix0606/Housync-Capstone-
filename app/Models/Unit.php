@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Unit Model - Represents a rentable space within a Property
- * 
+ *
  * @property int $id
  * @property string $unit_number
  * @property int $property_id
@@ -85,7 +85,7 @@ class Unit extends Model
             return $this->cover_image;
         }
 
-        return url('api/storage/' . $this->cover_image);
+        return url('api/storage/'.$this->cover_image);
     }
 
     /**
@@ -93,7 +93,7 @@ class Unit extends Model
      */
     public function getGalleryUrlsAttribute()
     {
-        if (empty($this->gallery) || !is_array($this->gallery)) {
+        if (empty($this->gallery) || ! is_array($this->gallery)) {
             return [];
         }
 
@@ -101,7 +101,8 @@ class Unit extends Model
             if (str_starts_with($path, 'http')) {
                 return $path;
             }
-            return url('api/storage/' . $path);
+
+            return url('api/storage/'.$path);
         }, $this->gallery);
     }
 
@@ -110,7 +111,7 @@ class Unit extends Model
      */
     public function getFormattedRentAttribute()
     {
-        return '₱' . number_format($this->rent_amount, 2);
+        return '₱'.number_format($this->rent_amount, 2);
     }
 
     /**
@@ -126,7 +127,7 @@ class Unit extends Model
      */
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'occupied' => 'occupied',
             'available' => 'available',
             'maintenance' => 'maintenance',
@@ -139,7 +140,7 @@ class Unit extends Model
      */
     public function getLeasingTypeLabelAttribute()
     {
-        return match($this->leasing_type) {
+        return match ($this->leasing_type) {
             'separate' => 'Separate Bills',
             'inclusive' => 'All Inclusive',
             default => 'Separate Bills'
@@ -151,7 +152,7 @@ class Unit extends Model
      */
     public function getLeasingTypeDescriptionAttribute()
     {
-        return match($this->leasing_type) {
+        return match ($this->leasing_type) {
             'separate' => 'Tenant pays rent + utilities separately',
             'inclusive' => 'Rent includes all utilities and bills',
             default => 'Tenant pays rent + utilities separately'
@@ -170,6 +171,7 @@ class Unit extends Model
 
     /**
      * Alias for backward compatibility - maps to property()
+     *
      * @deprecated Use property() instead
      */
     public function apartment()
@@ -199,11 +201,11 @@ class Unit extends Model
     public function currentTenant()
     {
         return $this->hasOneThrough(
-            User::class, 
-            TenantAssignment::class, 
-            'unit_id', 
-            'id', 
-            'id', 
+            User::class,
+            TenantAssignment::class,
+            'unit_id',
+            'id',
+            'id',
             'tenant_id'
         )->where('tenant_assignments.status', 'active');
     }

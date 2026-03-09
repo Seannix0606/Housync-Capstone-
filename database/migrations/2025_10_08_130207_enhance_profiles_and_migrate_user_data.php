@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable()->after('approved_by');
         });
 
-        // Step 2: Add missing fields to tenant_profiles  
+        // Step 2: Add missing fields to tenant_profiles
         Schema::table('tenant_profiles', function (Blueprint $table) {
             $table->string('name')->after('user_id')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active')->after('emergency_contact_phone');
@@ -115,7 +115,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // Drop foreign key first
             $table->dropForeign(['approved_by']);
-            
+
             // Drop columns
             $table->dropColumn([
                 'name',  // Now in profiles
@@ -147,7 +147,7 @@ return new class extends Migration
             $table->unsignedBigInteger('approved_by')->nullable()->after('approved_at');
             $table->text('rejection_reason')->nullable()->after('approved_by');
             $table->string('staff_type')->nullable()->after('role');
-            
+
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
         });
 

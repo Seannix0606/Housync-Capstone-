@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
-use App\Models\Property;
 use App\Models\Amenity;
+use App\Models\Property;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 
 class ExploreController extends Controller
@@ -15,7 +15,7 @@ class ExploreController extends Controller
     public function index(Request $request)
     {
         $amenities = Amenity::orderBy('name')->get();
-        
+
         // If this is an AJAX request for filtering
         if ($request->ajax()) {
             return $this->filterUnits($request);
@@ -24,14 +24,14 @@ class ExploreController extends Controller
         // Get available units with their properties
         $units = Unit::with(['property.landlord'])
             ->where('status', 'available')
-            ->whereHas('property', function($query) {
+            ->whereHas('property', function ($query) {
                 $query->where('status', 'active')->where('is_active', true);
             })
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
         $propertyTypes = ['apartment', 'condominium', 'townhouse', 'house', 'duplex'];
-        
+
         // If the user is an authenticated tenant, render within the tenant layout
         if (auth()->check() && auth()->user()->role === 'tenant') {
             return view('tenant.explore', compact('units', 'amenities', 'propertyTypes'));
@@ -46,13 +46,13 @@ class ExploreController extends Controller
     public function filterUnits(Request $request)
     {
         $query = Unit::with(['property.landlord'])
-            ->whereHas('property', function($query) {
+            ->whereHas('property', function ($query) {
                 $query->where('status', 'active')->where('is_active', true);
             });
 
         // Apply filters
         if ($request->filled('type')) {
-            $query->where('unit_type', 'LIKE', '%' . $request->type . '%');
+            $query->where('unit_type', 'LIKE', '%'.$request->type.'%');
         }
 
         if ($request->filled('availability')) {
@@ -80,14 +80,14 @@ class ExploreController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($query) use ($search) {
+            $query->where(function ($query) use ($search) {
                 $query->where('unit_number', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhereHas('property', function($pq) use ($search) {
-                      $pq->where('name', 'LIKE', "%{$search}%")
-                         ->orWhere('address', 'LIKE', "%{$search}%")
-                         ->orWhere('city', 'LIKE', "%{$search}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhereHas('property', function ($pq) use ($search) {
+                        $pq->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('address', 'LIKE', "%{$search}%")
+                            ->orWhere('city', 'LIKE', "%{$search}%");
+                    });
             });
         }
 
@@ -128,7 +128,7 @@ class ExploreController extends Controller
         if (preg_match('/-(\d+)$/', $slug, $matches)) {
             $unitId = (int) $matches[1];
             $unit = Unit::with(['property.landlord'])->find($unitId);
-            
+
             if ($unit) {
                 $relatedUnits = Unit::with(['property'])
                     ->where('property_id', $unit->property_id)
@@ -140,19 +140,19 @@ class ExploreController extends Controller
                 return view('unit-details', compact('unit', 'relatedUnits'));
             }
         }
-        
+
         // Fallback: try to find a property with this slug
-        $property = Property::with(['units' => function($query) {
+        $property = Property::with(['units' => function ($query) {
             $query->where('status', 'available');
         }, 'landlord'])->where('slug', $slug)->first();
-        
+
         if ($property && $property->units->count() > 0) {
             $unit = $property->units->first();
             $relatedUnits = $property->units->where('id', '!=', $unit->id)->take(4);
-            
+
             return view('unit-details', compact('unit', 'relatedUnits', 'property'));
         }
-        
+
         abort(404, 'Unit not found');
     }
 
@@ -161,16 +161,16 @@ class ExploreController extends Controller
      */
     public function showProperty($slug)
     {
-        $property = Property::with(['units' => function($query) {
+        $property = Property::with(['units' => function ($query) {
             $query->where('status', 'available')->orderBy('rent_amount');
         }, 'landlord'])->where('slug', $slug)->firstOrFail();
 
-        $relatedProperties = Property::with(['units' => function($query) {
+        $relatedProperties = Property::with(['units' => function ($query) {
             $query->where('status', 'available');
         }])
             ->where('id', '!=', $property->id)
             ->where('status', 'active')
-            ->whereHas('units', function($query) {
+            ->whereHas('units', function ($query) {
                 $query->where('status', 'available');
             })
             ->limit(4)

@@ -78,7 +78,7 @@ class Message extends Model
         if ($created->isToday()) {
             return $created->format('g:i A');
         } elseif ($created->isYesterday()) {
-            return 'Yesterday ' . $created->format('g:i A');
+            return 'Yesterday '.$created->format('g:i A');
         } elseif ($created->isCurrentWeek()) {
             return $created->format('l g:i A');
         } else {
@@ -94,6 +94,7 @@ class Message extends Model
     public function getSenderAvatarAttribute()
     {
         $name = $this->sender?->name ?? 'U';
+
         return strtoupper(substr($name, 0, 1));
     }
 
@@ -111,7 +112,7 @@ class Message extends Model
     // Helper methods
     public function markAsRead()
     {
-        if (!$this->is_read) {
+        if (! $this->is_read) {
             $this->update([
                 'is_read' => true,
                 'read_at' => now(),
@@ -143,6 +144,3 @@ class Message extends Model
         ]);
     }
 }
-
-
-

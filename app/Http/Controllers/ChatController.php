@@ -6,10 +6,8 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
-use App\Models\User;
 use App\Models\TenantAssignment;
-use App\Events\MessageSent;
-use App\Events\ConversationUpdated;
+use App\Models\User;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,15 +22,15 @@ class ChatController extends Controller
     public function landlordIndex()
     {
         $user = Auth::user();
-        
+
         $conversations = Conversation::forUser($user->id)
             ->with(['latestMessage', 'users', 'apartment', 'unit'])
             ->orderBy('last_message_at', 'desc')
             ->paginate(20);
-        
+
         $totalUnread = ConversationParticipant::where('user_id', $user->id)
             ->sum('unread_count');
-        
+
         return view('landlord.chat.index', compact('conversations', 'totalUnread'));
     }
 
@@ -42,15 +40,15 @@ class ChatController extends Controller
     public function tenantIndex()
     {
         $user = Auth::user();
-        
+
         $conversations = Conversation::forUser($user->id)
             ->with(['latestMessage', 'users', 'apartment', 'unit'])
             ->orderBy('last_message_at', 'desc')
             ->paginate(20);
-        
+
         $totalUnread = ConversationParticipant::where('user_id', $user->id)
             ->sum('unread_count');
-        
+
         return view('tenant.chat.index', compact('conversations', 'totalUnread'));
     }
 
@@ -60,15 +58,15 @@ class ChatController extends Controller
     public function staffIndex()
     {
         $user = Auth::user();
-        
+
         $conversations = Conversation::forUser($user->id)
             ->with(['latestMessage', 'users', 'apartment', 'unit'])
             ->orderBy('last_message_at', 'desc')
             ->paginate(20);
-        
+
         $totalUnread = ConversationParticipant::where('user_id', $user->id)
             ->sum('unread_count');
-        
+
         return view('staff.chat.index', compact('conversations', 'totalUnread'));
     }
 
@@ -78,25 +76,25 @@ class ChatController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        
+
         $conversation = Conversation::with(['messages.sender', 'messages.attachments', 'users', 'apartment', 'unit'])
             ->forUser($user->id)
             ->findOrFail($id);
-        
+
         // Mark conversation as read
         $conversation->markAsReadFor($user->id);
-        
+
         // Get other participants for display
-        $otherParticipants = $conversation->users->filter(fn($u) => $u->id !== $user->id);
-        
+        $otherParticipants = $conversation->users->filter(fn ($u) => $u->id !== $user->id);
+
         // Determine view based on user role
-        $viewPrefix = match($user->role) {
+        $viewPrefix = match ($user->role) {
             'landlord' => 'landlord',
             'tenant' => 'tenant',
             'staff' => 'staff',
             default => 'landlord',
         };
-        
+
         return view("{$viewPrefix}.chat.show", compact('conversation', 'otherParticipants'));
     }
 
@@ -119,13 +117,13 @@ class ChatController extends Controller
             ->where('tenant_id', $tenantId)
             ->exists();
 
-        if (!$validTenant) {
+        if (! $validTenant) {
             return back()->with('error', 'You can only message your own tenants.');
         }
 
         $conversation = Conversation::getOrCreateDirect(
-            $landlord->id, 
-            $tenantId, 
+            $landlord->id,
+            $tenantId,
             $request->apartment_id
         );
 
@@ -154,7 +152,7 @@ class ChatController extends Controller
             ->with('unit.apartment')
             ->first();
 
-        if (!$assignment) {
+        if (! $assignment) {
             return back()->with('error', 'You need an active lease to contact your landlord.');
         }
 
@@ -192,7 +190,7 @@ class ChatController extends Controller
             ->with('unit.apartment')
             ->first();
 
-        if (!$assignment) {
+        if (! $assignment) {
             return back()->with('error', 'You need an active lease to submit a maintenance request.');
         }
 
@@ -209,8 +207,8 @@ class ChatController extends Controller
 
             // Create the initial message with description
             $message = $this->createMessage(
-                $conversation, 
-                $tenant->id, 
+                $conversation,
+                $tenant->id,
                 $request->description,
                 'text',
                 $request->file('attachments')
@@ -227,6 +225,7 @@ class ChatController extends Controller
                 'error' => $exception->getMessage(),
                 'tenant_id' => $tenant->id,
             ]);
+
             return back()->with('error', 'Failed to create ticket. Please try again.');
         }
     }
@@ -244,12 +243,12 @@ class ChatController extends Controller
         } catch (\Illuminate\Validation\ValidationException $exception) {
             return response()->json([
                 'success' => false,
-                'error' => 'Validation failed: ' . implode(', ', $exception->validator->errors()->all()),
+                'error' => 'Validation failed: '.implode(', ', $exception->validator->errors()->all()),
             ], 422);
         }
 
         $user = Auth::user();
-        
+
         try {
             $conversation = Conversation::forUser($user->id)->findOrFail($conversationId);
         } catch (\Exception $exception) {
@@ -280,7 +279,7 @@ class ChatController extends Controller
                     'sender_avatar' => $message->sender_avatar,
                     'formatted_time' => $message->formatted_time,
                     'created_at' => $message->created_at->toISOString(),
-                    'attachments' => $message->attachments->map(fn($a) => [
+                    'attachments' => $message->attachments->map(fn ($a) => [
                         'id' => $a->id,
                         'file_name' => $a->file_name,
                         'file_url' => $a->file_url,
@@ -301,10 +300,10 @@ class ChatController extends Controller
             ]);
 
             if ($request->ajax() || $request->wantsJson()) {
-                $errorMessage = config('app.debug') 
-                    ? 'Failed to send message: ' . $exception->getMessage()
+                $errorMessage = config('app.debug')
+                    ? 'Failed to send message: '.$exception->getMessage()
                     : 'Failed to send message. Please try again.';
-                    
+
                 return response()->json([
                     'success' => false,
                     'error' => $errorMessage,
@@ -322,7 +321,7 @@ class ChatController extends Controller
     {
         $user = Auth::user();
         $lastMessageId = $request->input('last_message_id', 0);
-        
+
         $conversation = Conversation::forUser($user->id)->findOrFail($conversationId);
 
         $messages = $conversation->messages()
@@ -336,7 +335,7 @@ class ChatController extends Controller
 
         return response()->json([
             'success' => true,
-            'messages' => $messages->map(fn($m) => [
+            'messages' => $messages->map(fn ($m) => [
                 'id' => $m->id,
                 'content' => $m->content,
                 'type' => $m->type,
@@ -346,7 +345,7 @@ class ChatController extends Controller
                 'formatted_time' => $m->formatted_time,
                 'created_at' => $m->created_at->toISOString(),
                 'is_mine' => $m->sender_id === $user->id,
-                'attachments' => $m->attachments->map(fn($a) => [
+                'attachments' => $m->attachments->map(fn ($a) => [
                     'id' => $a->id,
                     'file_name' => $a->file_name,
                     'file_url' => $a->file_url,
@@ -364,7 +363,7 @@ class ChatController extends Controller
     public function getConversations(Request $request)
     {
         $user = Auth::user();
-        
+
         $conversations = Conversation::forUser($user->id)
             ->with(['latestMessage', 'users'])
             ->orderBy('last_message_at', 'desc')
@@ -373,8 +372,9 @@ class ChatController extends Controller
 
         return response()->json([
             'success' => true,
-            'conversations' => $conversations->map(function($c) use ($user) {
+            'conversations' => $conversations->map(function ($c) use ($user) {
                 $other = $c->getOtherParticipant($user->id);
+
                 return [
                     'id' => $c->id,
                     'type' => $c->type,
@@ -404,7 +404,7 @@ class ChatController extends Controller
     public function getUnreadCount()
     {
         $user = Auth::user();
-        
+
         $count = ConversationParticipant::where('user_id', $user->id)
             ->sum('unread_count');
 
@@ -420,7 +420,7 @@ class ChatController extends Controller
     public function markAsRead($conversationId)
     {
         $user = Auth::user();
-        
+
         $conversation = Conversation::forUser($user->id)->findOrFail($conversationId);
         $conversation->markAsReadFor($user->id);
 
@@ -437,7 +437,7 @@ class ChatController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         $conversation = Conversation::forUser($user->id)
             ->where('type', 'maintenance_ticket')
             ->findOrFail($conversationId);
@@ -464,12 +464,12 @@ class ChatController extends Controller
     public function getTenantsList()
     {
         $user = Auth::user();
-        
+
         $tenants = TenantAssignment::where('landlord_id', $user->id)
             ->where('status', 'active')
             ->with(['tenant', 'unit.apartment'])
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'id' => $a->tenant->id,
                 'name' => $a->tenant->name,
                 'email' => $a->tenant->email,
@@ -489,7 +489,7 @@ class ChatController extends Controller
     private function createMessage(Conversation $conversation, int $senderId, string $content, string $type = 'text', $attachments = null): Message
     {
         DB::beginTransaction();
-        
+
         try {
             $message = Message::create([
                 'conversation_id' => $conversation->id,
@@ -509,7 +509,7 @@ class ChatController extends Controller
 
             // Update conversation
             $conversation->update(['last_message_at' => now()]);
-            
+
             // Increment unread count for other participants
             $conversation->incrementUnreadFor($senderId);
 
@@ -534,20 +534,20 @@ class ChatController extends Controller
     private function uploadAttachment(Message $message, $file): MessageAttachment
     {
         $useSupabase = config('app.env') !== 'local' || config('services.supabase.key');
-        
-        $fileName = 'chat-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $path = 'chat-attachments/' . $fileName;
-        
+
+        $fileName = 'chat-'.time().'-'.uniqid().'.'.$file->getClientOriginalExtension();
+        $path = 'chat-attachments/'.$fileName;
+
         $fileType = $this->determineFileType($file->getMimeType());
-        
+
         if ($useSupabase) {
-            $supabase = new SupabaseService();
+            $supabase = new SupabaseService;
             $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
-            
-            if (!$uploadResult['success']) {
-                throw new \Exception('Failed to upload attachment: ' . ($uploadResult['message'] ?? 'Unknown error'));
+
+            if (! $uploadResult['success']) {
+                throw new \Exception('Failed to upload attachment: '.($uploadResult['message'] ?? 'Unknown error'));
             }
-            
+
             $filePath = $uploadResult['url'];
         } else {
             $filePath = $file->storeAs('chat-attachments', $fileName, 'public');
@@ -579,5 +579,3 @@ class ChatController extends Controller
         }
     }
 }
-
-
