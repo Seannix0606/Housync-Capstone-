@@ -4,11 +4,10 @@ namespace App\Console\Commands;
 
 use App\Models\Bill;
 use App\Models\TenantAssignment;
-use App\Models\User;
 use App\Notifications\BillCreated;
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class GenerateRecurringBills extends Command
 {
@@ -33,6 +32,7 @@ class GenerateRecurringBills extends Command
 
         if ($assignments->isEmpty()) {
             $this->info('No active tenant assignments found.');
+
             return self::SUCCESS;
         }
 
@@ -51,6 +51,7 @@ class GenerateRecurringBills extends Command
             if ($existingBill) {
                 $skipped++;
                 $this->line("  Skipped: {$assignment->tenant?->name} (Unit {$assignment->unit?->unit_number}) - Bill already exists");
+
                 continue;
             }
 
@@ -59,18 +60,20 @@ class GenerateRecurringBills extends Command
             if ($amount <= 0) {
                 $skipped++;
                 $this->line("  Skipped: {$assignment->tenant?->name} - No rent amount set");
+
                 continue;
             }
 
             if ($dryRun) {
-                $this->line("  [DRY RUN] Would create: {$assignment->tenant?->name} - ₱" . number_format($amount, 2));
+                $this->line("  [DRY RUN] Would create: {$assignment->tenant?->name} - ₱".number_format($amount, 2));
                 $created++;
+
                 continue;
             }
 
-            $invoiceNumber = 'INV-' . strtoupper(Str::random(8));
+            $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
             while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
-                $invoiceNumber = 'INV-' . strtoupper(Str::random(8));
+                $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
             }
 
             try {
@@ -81,7 +84,7 @@ class GenerateRecurringBills extends Command
                     'unit_id' => $assignment->unit_id,
                     'invoice_number' => $invoiceNumber,
                     'type' => $type,
-                    'description' => ucfirst($type) . ' for ' . $billingPeriodStart->format('F Y') . ' - Unit ' . ($assignment->unit?->unit_number ?? 'N/A'),
+                    'description' => ucfirst($type).' for '.$billingPeriodStart->format('F Y').' - Unit '.($assignment->unit?->unit_number ?? 'N/A'),
                     'billing_period_start' => $billingPeriodStart,
                     'billing_period_end' => $billingPeriodEnd,
                     'amount' => $amount,
@@ -98,7 +101,7 @@ class GenerateRecurringBills extends Command
                 }
 
                 $created++;
-                $this->line("  Created: {$assignment->tenant?->name} - {$invoiceNumber} - ₱" . number_format($amount, 2));
+                $this->line("  Created: {$assignment->tenant?->name} - {$invoiceNumber} - ₱".number_format($amount, 2));
             } catch (\Exception $exception) {
                 $hadFailure = true;
                 Log::error('Failed to generate recurring bill', [

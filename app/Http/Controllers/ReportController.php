@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Bill;
 use App\Models\MaintenanceRequest;
-use App\Models\Payment;
 use App\Models\Property;
 use App\Models\TenantAssignment;
-use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

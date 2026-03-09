@@ -16,12 +16,12 @@ class ApartmentObserver
     {
         // When apartment is updated, sync all its units' properties
         $apartment->load('units');
-        
+
         foreach ($apartment->units as $unit) {
-            $slug = Str::slug("{$apartment->name} - Unit {$unit->unit_number}" . '-' . $unit->id);
-            
+            $slug = Str::slug("{$apartment->name} - Unit {$unit->unit_number}".'-'.$unit->id);
+
             $property = Property::where('slug', $slug)->first();
-            
+
             if ($property) {
                 // Update fields that come from the apartment
                 $property->update([
@@ -32,14 +32,14 @@ class ApartmentObserver
                 ]);
 
                 // Update description if unit doesn't have its own
-                if (empty($unit->description) && !empty($apartment->description)) {
+                if (empty($unit->description) && ! empty($apartment->description)) {
                     $property->update([
                         'description' => $apartment->description,
                     ]);
                 }
 
                 // Update image if unit doesn't have its own
-                if (empty($unit->cover_image) && !empty($apartment->cover_image)) {
+                if (empty($unit->cover_image) && ! empty($apartment->cover_image)) {
                     $normalized = $this->normalizeImagePath($apartment->cover_image);
                     $property->update([
                         'image_path' => $normalized,
@@ -57,10 +57,10 @@ class ApartmentObserver
     {
         // Soft delete all properties associated with this apartment's units
         $unitIds = $apartment->units()->pluck('id');
-        
+
         foreach ($unitIds as $unitId) {
             $properties = Property::where('slug', 'LIKE', "%-{$unitId}")->get();
-            
+
             foreach ($properties as $property) {
                 $property->delete();
             }
@@ -74,10 +74,10 @@ class ApartmentObserver
     {
         // Restore all properties associated with this apartment's units
         $unitIds = $apartment->units()->pluck('id');
-        
+
         foreach ($unitIds as $unitId) {
             $properties = Property::withTrashed()->where('slug', 'LIKE', "%-{$unitId}")->get();
-            
+
             foreach ($properties as $property) {
                 $property->restore();
             }
@@ -94,15 +94,17 @@ class ApartmentObserver
         }
 
         $parts = explode(',', $address);
-        
+
         if (count($parts) >= 2) {
             $city = trim($parts[1]);
             $cityParts = explode(' ', $city);
+
             return $cityParts[0];
         }
 
         return 'Metro Manila';
     }
+
     /**
      * Normalize stored image path to be storage-disk relative (no leading storage/ or public/)
      */
@@ -127,4 +129,3 @@ class ApartmentObserver
         return ltrim($path, '/');
     }
 }
-

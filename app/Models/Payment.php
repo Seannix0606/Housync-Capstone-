@@ -66,15 +66,13 @@ class Payment extends Model
         if (str_starts_with($this->proof_image, 'http')) {
             return $this->proof_image;
         }
-        return url('api/storage/' . $this->proof_image);
+
+        return url('api/storage/'.$this->proof_image);
     }
 
     // Helpers
     public function getFormattedAmountAttribute(): string
     {
-        return '₱' . number_format($this->amount, 2);
+        return '₱'.number_format($this->amount, 2);
     }
 }
-
-
-

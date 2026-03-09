@@ -86,14 +86,14 @@ class AccessLog extends Model
     {
         return $query->whereBetween('access_time', [
             now()->startOfWeek(),
-            now()->endOfWeek()
+            now()->endOfWeek(),
         ]);
     }
 
     public function scopeThisMonth($query)
     {
         return $query->whereMonth('access_time', now()->month)
-                    ->whereYear('access_time', now()->year);
+            ->whereYear('access_time', now()->year);
     }
 
     public function scopeBetweenDates($query, $startDate, $endDate)
@@ -119,7 +119,7 @@ class AccessLog extends Model
 
     public function getResultBadgeClassAttribute()
     {
-        return match($this->access_result) {
+        return match ($this->access_result) {
             'granted' => 'success',
             'denied' => 'danger',
             default => 'secondary'
@@ -134,8 +134,10 @@ class AccessLog extends Model
         $raw = $this->raw_data;
         if (is_array($raw) && isset($raw['entry_state'])) {
             $state = strtolower((string) $raw['entry_state']);
+
             return in_array($state, ['in', 'out'], true) ? $state : null;
         }
+
         return null;
     }
 
@@ -147,6 +149,7 @@ class AccessLog extends Model
         if ($this->access_result === 'granted' && $this->entry_state) {
             return strtoupper($this->entry_state);
         }
+
         return ucfirst($this->access_result);
     }
 
@@ -158,12 +161,13 @@ class AccessLog extends Model
         if ($this->access_result === 'granted' && $this->entry_state) {
             return $this->entry_state === 'in' ? 'success' : 'primary';
         }
+
         return $this->result_badge_class;
     }
 
     public function getDenialReasonDisplayAttribute()
     {
-        return match($this->denial_reason) {
+        return match ($this->denial_reason) {
             'card_not_found' => 'Card not registered',
             'card_inactive' => 'Card deactivated',
             'card_expired' => 'Card expired',
@@ -189,13 +193,13 @@ class AccessLog extends Model
     public static function getAccessStats($apartmentId = null, $days = 30)
     {
         $baseQuery = static::query();
-        
+
         if ($apartmentId) {
             $baseQuery->where('apartment_id', $apartmentId);
         }
-        
+
         $baseQuery->where('access_time', '>=', now()->subDays($days));
-        
+
         return [
             'total_attempts' => (clone $baseQuery)->count(),
             'granted' => (clone $baseQuery)->where('access_result', 'granted')->count(),
@@ -207,27 +211,27 @@ class AccessLog extends Model
     public static function getRecentActivity($apartmentId = null, $limit = 10)
     {
         $query = static::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
-                      ->orderBy('access_time', 'desc');
-        
+            ->orderBy('access_time', 'desc');
+
         if ($apartmentId) {
             $query->where('apartment_id', $apartmentId);
         }
-        
+
         return $query->limit($limit)->get();
     }
 
     public static function getDeniedAccessReasons($apartmentId = null, $days = 30)
     {
         $query = static::where('access_result', 'denied')
-                      ->where('access_time', '>=', now()->subDays($days));
-        
+            ->where('access_time', '>=', now()->subDays($days));
+
         if ($apartmentId) {
             $query->where('apartment_id', $apartmentId);
         }
-        
+
         return $query->groupBy('denial_reason')
-                    ->selectRaw('denial_reason, count(*) as count')
-                    ->orderBy('count', 'desc')
-                    ->get();
+            ->selectRaw('denial_reason, count(*) as count')
+            ->orderBy('count', 'desc')
+            ->get();
     }
 }

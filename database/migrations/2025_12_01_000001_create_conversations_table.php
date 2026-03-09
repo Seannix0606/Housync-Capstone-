@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('priority', ['low', 'normal', 'high', 'urgent'])->default('normal');
             $table->timestamp('last_message_at')->nullable();
             $table->timestamps();
-            
+
             // Indexes for faster queries
             $table->index(['type', 'status']);
             $table->index('last_message_at');
@@ -37,6 +37,3 @@ return new class extends Migration
         Schema::dropIfExists('conversations');
     }
 };
-
-
-

@@ -38,16 +38,16 @@ class Announcement extends Model
     public function scopePublished($query)
     {
         return $query->whereNotNull('published_at')
-                     ->where('published_at', '<=', now());
+            ->where('published_at', '<=', now());
     }
 
     public function scopeActive($query)
     {
         return $query->published()
-                     ->where(function ($query) {
-                         $query->whereNull('expires_at')
-                           ->orWhere('expires_at', '>', now());
-                     });
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            });
     }
 
     public function scopePinned($query)
@@ -59,7 +59,7 @@ class Announcement extends Model
     {
         return $query->where(function ($query) use ($propertyId) {
             $query->where('property_id', $propertyId)
-              ->orWhereNull('property_id');
+                ->orWhereNull('property_id');
         });
     }
 
