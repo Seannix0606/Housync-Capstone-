@@ -116,6 +116,10 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
         Route::get('/apartments/{id}/units', 'getApartmentUnits')->name('apartment-units')->whereNumber('id');
         
         // Units
+    });
+
+    // Units
+    Route::controller(\App\Http\Controllers\Landlord\UnitController::class)->group(function () {
         Route::get('/units/create', 'createUnit')->name('create-unit');
         Route::get('/units/{apartmentId?}', 'units')->name('units')->whereNumber('apartmentId');
         Route::get('/units/{id}/details', 'getUnitDetails')->name('unit-details')->whereNumber('id');
