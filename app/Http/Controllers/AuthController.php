@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\TenantProfile;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -108,7 +109,7 @@ class AuthController extends Controller
             ]
         );
 
-        event(new \Illuminate\Auth\Events\Registered($user));
+        event(new Registered($user));
 
         Auth::login($user);
 
