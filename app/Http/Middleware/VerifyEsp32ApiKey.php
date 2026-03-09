@@ -15,23 +15,23 @@ class VerifyEsp32ApiKey
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $expectedKey = env('ESP32_API_KEY');
+        $expectedKey = config('services.esp32.key');
 
         // Check if the server has the key configured
         if (empty($expectedKey)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Server configuration error: ESP32_API_KEY is not set.'
+                'message' => 'Internal Server Error: Application configuration is missing or invalid.'
             ], 500);
         }
 
         // Check if the request contains the correct key
         $providedKey = $request->header('X-ESP32-Key');
 
-        if (empty($providedKey) || $providedKey !== $expectedKey) {
+        if (!is_string($providedKey) || !hash_equals((string) $expectedKey, $providedKey)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized: Invalid or missing X-ESP32-Key header.'
+                'message' => 'Unauthorized: Invalid or missing authorization credentials.'
             ], 401);
         }
 

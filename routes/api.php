@@ -32,10 +32,12 @@ Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
 
 // Public storage serving route (no authentication required)
 Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/'.$path);
+    $basePath = realpath(storage_path('app/public'));
+    $fullPath = realpath($basePath . DIRECTORY_SEPARATOR . $path);
 
-    if (! file_exists($fullPath)) {
-        abort(404, "File not found: $fullPath");
+    // Prevent path traversal and verify it's a valid file within the intended directory
+    if ($fullPath === false || !str_starts_with($fullPath, $basePath) || !is_file($fullPath)) {
+        abort(404, "File not found.");
     }
 
     $mimeType = mime_content_type($fullPath);
