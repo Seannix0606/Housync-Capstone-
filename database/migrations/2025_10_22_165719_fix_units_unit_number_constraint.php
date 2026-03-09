@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('units', function (Blueprint $table) {
             // Drop the global unique constraint on unit_number
             $table->dropUnique(['unit_number']);
-            
+
             // Add a composite unique constraint on (apartment_id, unit_number)
             // This allows the same unit number across different properties
             $table->unique(['apartment_id', 'unit_number'], 'units_apartment_unit_unique');
@@ -29,7 +29,7 @@ return new class extends Migration
         Schema::table('units', function (Blueprint $table) {
             // Drop the composite unique constraint
             $table->dropUnique('units_apartment_unit_unique');
-            
+
             // Restore the global unique constraint on unit_number
             $table->unique('unit_number');
         });

@@ -87,9 +87,9 @@ class TenantAssignment extends Model
 
     public function activeRfidCards()
     {
-        return $this->rfidCards()->whereHas('tenantRfidAssignments', function($query) {
+        return $this->rfidCards()->whereHas('tenantRfidAssignments', function ($query) {
             $query->where('tenant_assignment_id', $this->id)
-                  ->where('status', 'active');
+                ->where('status', 'active');
         });
     }
 
@@ -122,12 +122,11 @@ class TenantAssignment extends Model
 
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'active' => 'success',
             'pending' => 'warning',
             'terminated' => 'danger',
             default => 'secondary'
         };
     }
-
-} 
+}

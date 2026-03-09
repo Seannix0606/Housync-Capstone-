@@ -36,5 +36,3 @@ return new class extends Migration
         // DB::table('users')->where('email', 'admin@housesync.com')->delete();
     }
 };
-
-

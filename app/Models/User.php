@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,13 +17,13 @@ use Illuminate\Notifications\Notifiable;
  * @property \Carbon\Carbon|null $email_verified_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- * 
+ *
  * Delegated to Profile:
  * @property string $status (via profile)
  * @property string|null $phone (via profile)
  * @property string|null $address (via profile)
  */
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -80,6 +80,7 @@ class User extends Authenticatable
 
     /**
      * Alias for backward compatibility
+     *
      * @deprecated Use properties() instead
      */
     public function apartments()
@@ -133,7 +134,7 @@ class User extends Authenticatable
      */
     public function getProfileRelation()
     {
-        return match($this->role) {
+        return match ($this->role) {
             'super_admin' => 'superAdminProfile',
             'landlord' => 'landlordProfile',
             'tenant' => 'tenantProfile',
@@ -147,7 +148,7 @@ class User extends Authenticatable
      */
     public function profile(): ?Model
     {
-        return match($this->role) {
+        return match ($this->role) {
             'super_admin' => $this->superAdminProfile,
             'landlord' => $this->landlordProfile,
             'tenant' => $this->tenantProfile,
@@ -161,16 +162,16 @@ class User extends Authenticatable
     {
         // Ensure profile is loaded
         $relationName = $this->getProfileRelation();
-        if ($relationName && !$this->relationLoaded($relationName)) {
+        if ($relationName && ! $this->relationLoaded($relationName)) {
             $this->load($relationName);
         }
-        
+
         // Try to get name from the profile relationship
         $profile = $this->profile();
         if ($profile && isset($profile->name) && $profile->name !== 'New User') {
             return $profile->name;
         }
-        
+
         // Fallback to the value from users table if it exists and is not "New User"
         return ($value && $value !== 'New User') ? $value : 'User';
     }
@@ -196,6 +197,7 @@ class User extends Authenticatable
         if ($this->isLandlord()) {
             return $this->landlordProfile?->business_info ?? $value;
         }
+
         return $value;
     }
 
@@ -204,6 +206,7 @@ class User extends Authenticatable
         if ($this->isLandlord()) {
             return $this->landlordProfile?->approved_at ?? $value;
         }
+
         return $value;
     }
 
@@ -212,6 +215,7 @@ class User extends Authenticatable
         if ($this->isLandlord()) {
             return $this->landlordProfile?->approved_by ?? $value;
         }
+
         return $value;
     }
 
@@ -220,6 +224,7 @@ class User extends Authenticatable
         if ($this->isLandlord()) {
             return $this->landlordProfile?->rejection_reason ?? $value;
         }
+
         return $value;
     }
 
@@ -229,6 +234,7 @@ class User extends Authenticatable
         if ($this->isStaff()) {
             return $this->staffProfile?->staff_type ?? $value;
         }
+
         return $value;
     }
 
@@ -258,7 +264,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(StaffAssignment::class, 'landlord_id');
     }
-    
+
     // Maintenance requests assigned to staff
     public function assignedMaintenanceRequests()
     {
@@ -274,8 +280,8 @@ class User extends Authenticatable
     public function conversations()
     {
         return $this->belongsToMany(Conversation::class, 'conversation_participants')
-                    ->withPivot(['role', 'last_read_at', 'unread_count', 'is_muted'])
-                    ->withTimestamps();
+            ->withPivot(['role', 'last_read_at', 'unread_count', 'is_muted'])
+            ->withTimestamps();
     }
 
     public function conversationParticipants()
@@ -389,50 +395,50 @@ class User extends Authenticatable
             ]);
         }
     }
-    
+
     /**
      * Boot the model
      */
     protected static function boot()
     {
         parent::boot();
-        
+
         // Auto-load appropriate profile when user is retrieved
         static::retrieved(function ($user) {
             $relationName = $user->getProfileRelation();
-            if ($relationName && !$user->relationLoaded($relationName)) {
+            if ($relationName && ! $user->relationLoaded($relationName)) {
                 $user->load($relationName);
             }
         });
-        
+
         // Create profile when user is created
         static::created(function ($user) {
             $user->createProfileIfNeeded();
         });
     }
-    
+
     /**
      * Create profile if it doesn't exist
      * Note: This should only be called when a name is available
      */
     public function createProfileIfNeeded()
     {
-        $profileClass = match($this->role) {
+        $profileClass = match ($this->role) {
             'super_admin' => SuperAdminProfile::class,
             'landlord' => LandlordProfile::class,
             'tenant' => TenantProfile::class,
             'staff' => StaffProfile::class,
             default => null,
         };
-        
-        if ($profileClass && !$this->profile()) {
+
+        if ($profileClass && ! $this->profile()) {
             // Only create profile if we have a proper name
             if ($this->name && $this->name !== 'New User') {
                 $profileData = [
                     'user_id' => $this->id,
                     'name' => $this->name,
                 ];
-                
+
                 // Add status based on role
                 if ($this->role === 'landlord') {
                     $profileData['status'] = 'pending';
@@ -443,10 +449,9 @@ class User extends Authenticatable
                 } elseif ($this->role === 'super_admin') {
                     $profileData['status'] = 'active';
                 }
-                
+
                 $profileClass::create($profileData);
             }
         }
     }
 }
-

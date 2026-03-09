@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Unit;
 use App\Models\TenantAssignment;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use App\Models\Unit;
+use App\Models\User;
 
 class TenantAssignmentService
 {
@@ -28,7 +26,7 @@ class TenantAssignmentService
                 throw new \Exception('Tenant email is required. Ask the tenant to register first.');
             }
             $tenant = User::where('email', $tenantData['email'])->where('role', 'tenant')->first();
-            if (!$tenant) {
+            if (! $tenant) {
                 throw new \Exception('No tenant account found for this email. Please have the tenant register.');
             }
 
@@ -92,13 +90,13 @@ class TenantAssignmentService
         // Load tenant with their personal documents (not assignment-specific documents)
         $query = TenantAssignment::with([
             'tenant.documents', // Load all tenant documents
-            'unit.apartment'
+            'unit.apartment',
         ]);
-        
+
         if ($landlordId) {
             $query->where('landlord_id', $landlordId);
         }
-        
+
         return $query->findOrFail($assignmentId);
     }
 
@@ -138,4 +136,4 @@ class TenantAssignmentService
             'total_revenue' => $assignments->where('status', 'active')->sum('rent_amount'),
         ];
     }
-} 
+}

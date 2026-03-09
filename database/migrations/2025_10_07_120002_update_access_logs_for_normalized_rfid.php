@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -15,7 +13,7 @@ return new class extends Migration
         // Update access logs to use the new normalized structure
         // This migration ensures access logs reference the correct tenant_assignment_id
         // from the new tenant_rfid_assignments table
-        
+
         $this->updateAccessLogsWithNormalizedData();
     }
 
@@ -27,7 +25,7 @@ return new class extends Migration
         // No rollback needed as this just updates existing data
         // The original data structure is preserved in the access logs
     }
-    
+
     /**
      * Update access logs to reference tenant assignments through the normalized structure
      */

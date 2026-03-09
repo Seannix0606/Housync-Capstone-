@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\LandlordDocument;
 use App\Models\LandlordProfile;
-use App\Models\TenantProfile;
+use App\Models\Property;
+use App\Models\Setting;
 use App\Models\StaffProfile;
 use App\Models\SuperAdminProfile;
-use App\Models\Property;
-use App\Models\LandlordDocument;
-use App\Models\Setting;
+use App\Models\TenantProfile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -28,14 +28,14 @@ class SuperAdminController extends Controller
 
         // Use whereHas to avoid duplicates from JOIN
         $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', function($query) {
+            ->whereHas('landlordProfile', function ($query) {
                 $query->where('status', 'pending');
             })
             ->with('landlordProfile')
             ->latest('users.created_at')
             ->take(5)
             ->get()
-            ->filter(function($landlord) {
+            ->filter(function ($landlord) {
                 // Double-check that status is actually pending
                 return $landlord->landlordProfile && $landlord->landlordProfile->status === 'pending';
             })
@@ -52,7 +52,6 @@ class SuperAdminController extends Controller
     public function users()
     {
         $query = User::with('approvedBy');
-        
         // Search by name (in profiles) or email
         if (request('search')) {
             $search = request('search');
@@ -72,18 +71,19 @@ class SuperAdminController extends Controller
                     });
             });
         }
-        
+
         // Filter by role
         if (request('role')) {
             $query->where('role', request('role'));
         }
-        
+
         // Filter by status
         if (request('status')) {
             $query->where('status', request('status'));
         }
-        
+
         $users = $query->latest()->paginate(15);
+
         return view('super-admin.users', compact('users'));
     }
 
@@ -92,19 +92,19 @@ class SuperAdminController extends Controller
         // Get only landlords with 'pending' status in their profile
         // Use whereHas to avoid duplicates from JOIN
         $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', function($query) {
+            ->whereHas('landlordProfile', function ($query) {
                 $query->where('status', 'pending');
             })
             ->with(['landlordProfile', 'approvedBy', 'landlordDocuments'])
             ->latest('users.created_at')
             ->get()
-            ->filter(function($landlord) {
+            ->filter(function ($landlord) {
                 // Double-check that status is actually pending
                 return $landlord->landlordProfile && $landlord->landlordProfile->status === 'pending';
             })
             ->unique('id')
             ->values();
-        
+
         // Manually paginate the filtered collection
         $currentPage = request()->get('page', 1);
         $perPage = 15;
@@ -116,14 +116,14 @@ class SuperAdminController extends Controller
             $currentPage,
             ['path' => request()->url(), 'query' => request()->query()]
         );
-        
+
         return view('super-admin.pending-landlords', compact('pendingLandlords'));
     }
 
     public function approveLandlord($id)
     {
         $landlord = User::findOrFail($id);
-        
+
         if ($landlord->role !== 'landlord') {
             return back()->with('error', 'User is not a landlord.');
         }
@@ -134,7 +134,7 @@ class SuperAdminController extends Controller
         }
 
         $landlord->approve(Auth::id());
-        
+
         // Refresh the relationship to ensure status is updated
         $landlord->load('landlordProfile');
 
@@ -145,6 +145,7 @@ class SuperAdminController extends Controller
     {
         $landlord = User::where('role', 'landlord')->findOrFail($id);
         $documents = $landlord->landlordDocuments()->latest()->get();
+
         return view('super-admin.review-landlord-docs', compact('landlord', 'documents'));
     }
 
@@ -173,7 +174,7 @@ class SuperAdminController extends Controller
         ]);
 
         $landlord = User::findOrFail($id);
-        
+
         if ($landlord->role !== 'landlord') {
             return back()->with('error', 'User is not a landlord.');
         }
@@ -257,6 +258,7 @@ class SuperAdminController extends Controller
     public function editUser($id)
     {
         $user = User::findOrFail($id);
+
         return view('super-admin.edit-user', compact('user'));
     }
 
@@ -317,44 +319,44 @@ class SuperAdminController extends Controller
     public function deleteUser($id)
     {
         $user = User::findOrFail($id);
-        
+
         if ($user->id === Auth::id()) {
             return back()->with('error', 'You cannot delete your own account.');
         }
 
         $user->delete();
-        
+
         return back()->with('success', 'User deleted successfully.');
     }
 
     public function apartments()
     {
         $query = Property::with('landlord', 'units');
-        
+
         // Search by property name or address
         if (request('search')) {
             $search = request('search');
-            $query->where(function($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('address', 'like', '%' . $search . '%');
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('address', 'like', '%'.$search.'%');
             });
         }
-        
+
         // Filter by status
         if (request('status')) {
             $query->where('status', request('status'));
         }
-        
+
         // Filter by landlord
         if (request('landlord')) {
             $query->where('landlord_id', request('landlord'));
         }
-        
+
         $properties = $query->latest()->paginate(15);
-        
+
         // Backward compatibility
         $apartments = $properties;
-        
+
         return view('super-admin.apartments', compact('apartments', 'properties'));
     }
 
@@ -367,16 +369,17 @@ class SuperAdminController extends Controller
     {
         $settings = Setting::getGrouped();
         $groups = ['general', 'email', 'security', 'features', 'notifications', 'system'];
-        
+
         // Apply dark mode to layout if enabled
         $darkMode = Setting::get('dark_mode', false);
-        
+
         return view('super-admin.settings', compact('settings', 'groups', 'darkMode'));
     }
-    
+
     public function checkDarkMode()
     {
         $darkMode = Setting::get('dark_mode', false);
+
         return response()->json(['darkMode' => $darkMode]);
     }
 
@@ -388,7 +391,7 @@ class SuperAdminController extends Controller
 
         foreach ($request->settings as $key => $value) {
             $setting = Setting::where('key', $key)->first();
-            
+
             if ($setting) {
                 // Handle different types
                 if ($setting->type === 'boolean') {
@@ -412,8 +415,8 @@ class SuperAdminController extends Controller
     public function updateSettingsGroup(Request $request, $group)
     {
         $validGroups = ['general', 'email', 'security', 'features', 'notifications', 'system'];
-        
-        if (!in_array($group, $validGroups)) {
+
+        if (! in_array($group, $validGroups)) {
             return back()->with('error', 'Invalid settings group.');
         }
 
@@ -428,7 +431,7 @@ class SuperAdminController extends Controller
 
         foreach ($request->settings as $key => $value) {
             $setting = Setting::where('key', $key)->where('group', $group)->first();
-            
+
             if ($setting) {
                 // Handle different types
                 if ($setting->type === 'boolean') {
@@ -446,7 +449,7 @@ class SuperAdminController extends Controller
         // Clear cache
         Setting::clearCache();
 
-        return back()->with('success', ucfirst($group) . ' settings updated successfully.');
+        return back()->with('success', ucfirst($group).' settings updated successfully.');
     }
 
     protected function getValidationRule($setting)

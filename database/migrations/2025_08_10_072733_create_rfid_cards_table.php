@@ -23,11 +23,11 @@ return new class extends Migration
             $table->datetime('expires_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('tenant_assignment_id')->references('id')->on('tenant_assignments')->onDelete('set null');
             $table->foreign('landlord_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('apartment_id')->references('id')->on('apartments')->onDelete('cascade');
-            
+
             $table->index(['card_uid', 'status']);
             $table->index(['tenant_assignment_id', 'status']);
         });

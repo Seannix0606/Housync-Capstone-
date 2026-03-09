@@ -2,13 +2,10 @@
 
 namespace App\Events;
 
-use App\Models\Message;
 use App\Models\Conversation;
-use Illuminate\Broadcasting\Channel;
+use App\Models\Message;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -18,6 +15,7 @@ class MessageSent implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Message $message;
+
     public Conversation $conversation;
 
     /**
@@ -37,7 +35,7 @@ class MessageSent implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('conversation.' . $this->conversation->id),
+            new PrivateChannel('conversation.'.$this->conversation->id),
         ];
     }
 
@@ -79,6 +77,3 @@ class MessageSent implements ShouldBroadcastNow
         ];
     }
 }
-
-
-
