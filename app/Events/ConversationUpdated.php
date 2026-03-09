@@ -3,9 +3,7 @@
 namespace App\Events;
 
 use App\Models\Conversation;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -16,6 +14,7 @@ class ConversationUpdated implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Conversation $conversation;
+
     public int $userId;
 
     /**
@@ -35,7 +34,7 @@ class ConversationUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('user.' . $this->userId . '.conversations'),
+            new PrivateChannel('user.'.$this->userId.'.conversations'),
         ];
     }
 
@@ -53,7 +52,7 @@ class ConversationUpdated implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         $otherParticipant = $this->conversation->getOtherParticipant($this->userId);
-        
+
         return [
             'id' => $this->conversation->id,
             'type' => $this->conversation->type,
@@ -73,6 +72,3 @@ class ConversationUpdated implements ShouldBroadcastNow
         ];
     }
 }
-
-
-

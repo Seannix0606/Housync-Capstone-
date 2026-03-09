@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
 use App\Models\Conversation;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +17,7 @@ use App\Models\Conversation;
 // Private channel for individual conversations
 Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
     $conversation = Conversation::find($conversationId);
+
     return $conversation && $conversation->isParticipant($user->id);
 });
 
@@ -24,6 +25,3 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
 Broadcast::channel('user.{userId}.conversations', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
-
-
-
