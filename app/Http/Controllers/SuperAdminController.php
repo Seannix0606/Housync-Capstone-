@@ -275,7 +275,7 @@ class SuperAdminController extends Controller
 
         // Prepare profile data based on role
         $profileData = $request->only(['name', 'phone', 'address']);
-        
+
         if ($user->role === 'landlord' && $request->filled('business_info')) {
             $profileData['business_info'] = $request->business_info;
         }
@@ -297,7 +297,7 @@ class SuperAdminController extends Controller
             case 'staff':
                 // For staff, we might need staff_type if they are switching to staff from another role,
                 // but the form might not provide it. We'll set a default if it's missing.
-                if (!isset($profileData['staff_type'])) {
+                if (! isset($profileData['staff_type'])) {
                     $profileData['staff_type'] = 'maintenance'; // or whatever default makes sense
                 }
                 StaffProfile::updateOrCreate(

@@ -26,7 +26,7 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $userId,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$userId,
             'role' => 'required|in:super_admin,landlord,tenant',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
