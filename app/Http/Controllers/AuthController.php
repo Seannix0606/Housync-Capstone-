@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use App\Models\User;
 use App\Models\Property;
 use App\Models\TenantProfile;
+use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
@@ -38,22 +39,21 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
+
             // Redirect based on user role
             $user = Auth::user();
-            
+
             // Add debugging for super admin case
             if ($user->role === 'super_admin') {
                 // Log the super admin login attempt
                 Log::info('Super admin login attempt', [
                     'user_id' => $user->id,
-                    'user_email' => $user->email,
                     'user_role' => $user->role,
                     'user_status' => $user->status,
-                    'redirect_route' => route('super-admin.dashboard')
+                    'redirect_route' => route('super-admin.dashboard'),
                 ]);
             }
-            
+
             switch ($user->role) {
                 case 'super_admin':
                     return redirect()->route('super-admin.dashboard');
@@ -102,16 +102,18 @@ class AuthController extends Controller
         TenantProfile::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'name' => $request->first_name . ' ' . $request->last_name,
+                'name' => $request->first_name.' '.$request->last_name,
                 'status' => 'active',
                 'phone' => null,
                 'address' => null,
             ]
         );
 
+        event(new Registered($user));
+
         Auth::login($user);
 
-        return redirect()->route('tenant.dashboard');
+        return redirect()->route('verification.notice');
     }
 
     /**
@@ -121,16 +123,16 @@ class AuthController extends Controller
     {
         // Clear any authentication data
         Auth::logout();
-        
+
         // Clear session data
         Session::flush();
-        
+
         // Clear any stored sidebar state
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Logged out successfully']);
         }
-        
+
         // Redirect to login page
         return redirect()->route('login')->with('message', 'You have been logged out successfully.');
     }
-} 
+}

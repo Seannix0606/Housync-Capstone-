@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('contact_email')->nullable();
             $table->enum('status', ['active', 'inactive', 'maintenance'])->default('active');
             $table->timestamps();
-            
+
             $table->foreign('landlord_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

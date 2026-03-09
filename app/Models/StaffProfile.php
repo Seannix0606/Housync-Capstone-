@@ -24,11 +24,9 @@ class StaffProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     public function createdByLandlord()
     {
         return $this->belongsTo(User::class, 'created_by_landlord_id');
     }
 }
-
-

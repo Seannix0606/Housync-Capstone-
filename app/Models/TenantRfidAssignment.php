@@ -29,8 +29,8 @@ class TenantRfidAssignment extends Model
             if ($assignment->status === 'active') {
                 // Deactivate any existing active assignments for this card
                 static::where('rfid_card_id', $assignment->rfid_card_id)
-                      ->where('status', 'active')
-                      ->update(['status' => 'inactive']);
+                    ->where('status', 'active')
+                    ->update(['status' => 'inactive']);
             }
         });
 
@@ -38,9 +38,9 @@ class TenantRfidAssignment extends Model
             if ($assignment->status === 'active' && $assignment->getOriginal('status') !== 'active') {
                 // Deactivate any existing active assignments for this card
                 static::where('rfid_card_id', $assignment->rfid_card_id)
-                      ->where('id', '!=', $assignment->id)
-                      ->where('status', 'active')
-                      ->update(['status' => 'inactive']);
+                    ->where('id', '!=', $assignment->id)
+                    ->where('status', 'active')
+                    ->update(['status' => 'inactive']);
             }
         });
     }
@@ -100,15 +100,15 @@ class TenantRfidAssignment extends Model
     {
         return $query->where(function ($subQuery) {
             $subQuery->whereNull('expires_at')
-              ->orWhere('expires_at', '>', now());
+                ->orWhere('expires_at', '>', now());
         });
     }
 
     // Helper methods
     public function isActive()
     {
-        return $this->status === 'active' && 
-               (!$this->expires_at || $this->expires_at->isFuture());
+        return $this->status === 'active' &&
+               (! $this->expires_at || $this->expires_at->isFuture());
     }
 
     public function isExpired()
@@ -123,7 +123,7 @@ class TenantRfidAssignment extends Model
 
     public function getStatusBadgeClassAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'active' => $this->isExpired() ? 'warning' : 'success',
             'inactive' => 'secondary',
             'revoked' => 'danger',
@@ -136,25 +136,26 @@ class TenantRfidAssignment extends Model
         if ($this->status === 'active' && $this->isExpired()) {
             return 'expired';
         }
+
         return $this->status;
     }
 
     // Check if this assignment can grant access
     public function canGrantAccess()
     {
-        if (!$this->isActive()) {
+        if (! $this->isActive()) {
             return false;
         }
 
         // Check if the tenant assignment is still active
         $tenantAssignment = $this->tenantAssignment;
-        if (!$tenantAssignment || !$tenantAssignment->isActive()) {
+        if (! $tenantAssignment || ! $tenantAssignment->isActive()) {
             return false;
         }
 
         // Check if the RFID card is still active
         $rfidCard = $this->rfidCard;
-        if (!$rfidCard || !$rfidCard->isActive()) {
+        if (! $rfidCard || ! $rfidCard->isActive()) {
             return false;
         }
 
@@ -177,16 +178,16 @@ class TenantRfidAssignment extends Model
         }
 
         $tenantAssignment = $this->tenantAssignment;
-        if (!$tenantAssignment || !$tenantAssignment->isActive()) {
+        if (! $tenantAssignment || ! $tenantAssignment->isActive()) {
             return 'tenant_inactive';
         }
 
         $rfidCard = $this->rfidCard;
-        if (!$rfidCard) {
+        if (! $rfidCard) {
             return 'card_not_found';
         }
 
-        if (!$rfidCard->isActive()) {
+        if (! $rfidCard->isActive()) {
             return $rfidCard->getAccessDenialReason();
         }
 

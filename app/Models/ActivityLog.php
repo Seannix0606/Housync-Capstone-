@@ -33,7 +33,7 @@ class ActivityLog extends Model
     public function scopeForSubject($query, $subjectType, $subjectId)
     {
         return $query->where('subject_type', $subjectType)
-                     ->where('subject_id', $subjectId);
+            ->where('subject_id', $subjectId);
     }
 
     public function scopeByAction($query, $action)

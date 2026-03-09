@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
-use App\Models\User;
 use App\Models\StaffAssignment;
 use App\Models\StaffProfile;
+use App\Models\Unit;
+use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -21,30 +22,30 @@ class StaffController extends Controller
     {
         $filters = $request->only(['status', 'staff_type']);
         $landlordId = Auth::id();
-        
+
         // Get all staff members with their active maintenance tasks
         $staffQuery = User::where('role', 'staff')
-            ->with(['staffProfile', 
-                   'assignedMaintenanceRequests' => function($query) use ($landlordId) {
-                       $query->where('landlord_id', $landlordId)
-                             ->whereNotIn('status', ['completed', 'cancelled'])
-                             ->with(['unit.apartment'])
-                             ->latest();
-                   }]);
-        
+            ->with(['staffProfile',
+                'assignedMaintenanceRequests' => function ($query) use ($landlordId) {
+                    $query->where('landlord_id', $landlordId)
+                        ->whereNotIn('status', ['completed', 'cancelled'])
+                        ->with(['unit.apartment'])
+                        ->latest();
+                }]);
+
         // Apply filters
         if (isset($filters['staff_type']) && $filters['staff_type']) {
-            $staffQuery->whereHas('staffProfile', function($query) use ($filters) {
+            $staffQuery->whereHas('staffProfile', function ($query) use ($filters) {
                 $query->where('staff_type', $filters['staff_type']);
             });
         }
-        
+
         if (isset($filters['status']) && $filters['status']) {
-            $staffQuery->whereHas('staffProfile', function($query) use ($filters) {
+            $staffQuery->whereHas('staffProfile', function ($query) use ($filters) {
                 $query->where('status', $filters['status']);
             });
         }
-        
+
         $staff = $staffQuery->paginate(15);
         $stats = $this->getStaffStats();
 
@@ -56,7 +57,7 @@ class StaffController extends Controller
      */
     public function create($unitId = null)
     {
-        $units = Unit::whereHas('apartment', function($query) {
+        $units = Unit::whereHas('apartment', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->with('apartment')->get();
 
@@ -82,11 +83,11 @@ class StaffController extends Controller
             ]);
 
             // Generate unique email
-            $baseEmail = strtolower(str_replace(' ', '.', $request->name)) . '@staff.housesync.com';
+            $baseEmail = strtolower(str_replace(' ', '.', $request->name)).'@staff.housesync.com';
             $email = $baseEmail;
             $counter = 1;
             while (User::where('email', $email)->exists()) {
-                $email = str_replace('@staff.housesync.com', $counter . '@staff.housesync.com', $baseEmail);
+                $email = str_replace('@staff.housesync.com', $counter.'@staff.housesync.com', $baseEmail);
                 $counter++;
             }
 
@@ -116,19 +117,22 @@ class StaffController extends Controller
                 'status' => 'active',
             ]);
 
+            event(new Registered($staff));
+
             return redirect()->route('landlord.staff')
                 ->with('success', 'Staff member added successfully!')
                 ->with('staff_credentials', [
                     'email' => $email,
                     'password' => $password,
                     'staff_name' => $request->name,
-                    'staff_type' => $request->staff_type
+                    'staff_type' => $request->staff_type,
                 ]);
 
         } catch (\Illuminate\Validation\ValidationException $exception) {
             return back()->withErrors($exception->errors())->withInput();
         } catch (\Exception $exception) {
             Log::error('Failed to add staff member', ['exception' => $exception]);
+
             return back()->with('error', 'Failed to add staff member. Please try again.')->withInput();
         }
     }
@@ -150,7 +154,7 @@ class StaffController extends Controller
             ]);
 
             // Verify landlord owns the unit
-            $unit = Unit::whereHas('apartment', function($query) {
+            $unit = Unit::whereHas('apartment', function ($query) {
                 $query->where('landlord_id', Auth::id());
             })->findOrFail($request->unit_id);
 
@@ -189,6 +193,7 @@ class StaffController extends Controller
             return back()->withErrors($exception->errors())->withInput();
         } catch (\Exception $exception) {
             Log::error('Failed to assign staff', ['exception' => $exception]);
+
             return back()->with('error', 'Failed to assign staff. Please try again.')->withInput();
         }
     }
@@ -272,7 +277,7 @@ class StaffController extends Controller
 
         return response()->json([
             'email' => $assignment->staff->email,
-            'password' => $assignment->generated_password ?? 'Password not available'
+            'password' => $assignment->generated_password ?? 'Password not available',
         ]);
     }
 
@@ -301,7 +306,7 @@ class StaffController extends Controller
     private function getLandlordStaffStats($landlordId)
     {
         $assignments = StaffAssignment::where('landlord_id', $landlordId);
-        
+
         return [
             'total_assignments' => $assignments->count(),
             'active_assignments' => $assignments->where('status', 'active')->count(),
@@ -310,7 +315,7 @@ class StaffController extends Controller
             'total_staff_types' => $assignments->distinct('staff_type')->count(),
         ];
     }
-    
+
     /**
      * Get overall staff statistics
      */
@@ -318,15 +323,15 @@ class StaffController extends Controller
     {
         $totalStaff = User::where('role', 'staff')->count();
         $activeStaff = User::where('role', 'staff')
-            ->whereHas('staffProfile', function($query) {
+            ->whereHas('staffProfile', function ($query) {
                 $query->where('status', 'active');
             })->count();
         $inactiveStaff = User::where('role', 'staff')
-            ->whereHas('staffProfile', function($query) {
+            ->whereHas('staffProfile', function ($query) {
                 $query->where('status', 'inactive');
             })->count();
         $staffTypes = StaffProfile::distinct('staff_type')->count('staff_type');
-        
+
         return [
             'total' => $totalStaff,
             'active' => $activeStaff,
@@ -342,7 +347,7 @@ class StaffController extends Controller
     {
         $staff = Auth::user();
         $staffId = $staff->id;
-        
+
         // Get maintenance requests assigned to this staff member
         $activeMaintenanceRequests = \App\Models\MaintenanceRequest::where('assigned_staff_id', $staffId)
             ->whereNotIn('status', ['completed', 'cancelled'])
@@ -354,7 +359,7 @@ class StaffController extends Controller
 
         // Get current active task (highest priority, not completed)
         $currentTask = $activeMaintenanceRequests->first();
-        
+
         // Get stats
         $stats = [
             'total_assigned' => \App\Models\MaintenanceRequest::where('assigned_staff_id', $staffId)->count(),
@@ -391,7 +396,7 @@ class StaffController extends Controller
     {
         try {
             $staff = Auth::user();
-            
+
             // Find the assignment and verify it belongs to the current staff member
             $assignment = StaffAssignment::where('id', $id)
                 ->where('staff_id', $staff->id)
@@ -399,10 +404,10 @@ class StaffController extends Controller
                 ->with(['unit.apartment', 'landlord'])
                 ->first();
 
-            if (!$assignment) {
+            if (! $assignment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Assignment not found or you do not have permission to complete it.'
+                    'message' => 'Assignment not found or you do not have permission to complete it.',
                 ], 404);
             }
 
@@ -425,7 +430,7 @@ class StaffController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Assignment marked as completed successfully! The landlord has been notified.'
+                'message' => 'Assignment marked as completed successfully! The landlord has been notified.',
             ]);
 
         } catch (\Exception $exception) {
@@ -439,7 +444,7 @@ class StaffController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to complete assignment. Please try again.'
+                'message' => 'Failed to complete assignment. Please try again.',
             ], 500);
         }
     }
@@ -451,11 +456,11 @@ class StaffController extends Controller
     {
         try {
             $staff = Auth::user();
-            
-            if (!$staff) {
+
+            if (! $staff) {
                 return redirect()->route('login')->with('error', 'Please log in to access your profile.');
             }
-            
+
             // Get staff's active assignment
             $assignment = StaffAssignment::where('staff_id', $staff->id)
                 ->where('status', 'active')
@@ -463,13 +468,13 @@ class StaffController extends Controller
                 ->first();
 
             return view('staff.profile', compact('staff', 'assignment'));
-            
+
         } catch (\Exception $exception) {
-            \Illuminate\Support\Facades\Log::error('Staff profile error: ' . $exception->getMessage(), [
+            \Illuminate\Support\Facades\Log::error('Staff profile error: '.$exception->getMessage(), [
                 'user_id' => Auth::id(),
-                'trace' => $exception->getTraceAsString()
+                'trace' => $exception->getTraceAsString(),
             ]);
-            
+
             return redirect()->route('staff.dashboard')->with('error', 'Unable to load profile. Please try again.');
         }
     }
@@ -481,8 +486,8 @@ class StaffController extends Controller
     {
         try {
             $staff = Auth::user();
-            
-            if (!$staff) {
+
+            if (! $staff) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
@@ -492,31 +497,31 @@ class StaffController extends Controller
             ]);
 
             // Verify current password
-            if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $staff->password)) {
+            if (! \Illuminate\Support\Facades\Hash::check($request->current_password, $staff->password)) {
                 return response()->json(['error' => 'Current password is incorrect.'], 400);
             }
 
             // Update password
             $staff->update([
-                'password' => \Illuminate\Support\Facades\Hash::make($request->new_password)
+                'password' => \Illuminate\Support\Facades\Hash::make($request->new_password),
             ]);
 
             // Log the password change
             \Illuminate\Support\Facades\Log::info('Staff password updated', [
                 'staff_id' => $staff->id,
                 'staff_email' => $staff->email,
-                'updated_at' => now()
+                'updated_at' => now(),
             ]);
 
             return response()->json(['success' => 'Password updated successfully!']);
 
         } catch (\Exception $exception) {
-            \Illuminate\Support\Facades\Log::error('Staff password update error: ' . $exception->getMessage(), [
+            \Illuminate\Support\Facades\Log::error('Staff password update error: '.$exception->getMessage(), [
                 'staff_id' => Auth::id(),
-                'trace' => $exception->getTraceAsString()
+                'trace' => $exception->getTraceAsString(),
             ]);
 
             return response()->json(['error' => 'Failed to update password. Please try again.'], 500);
         }
     }
-} 
+}
