@@ -7,6 +7,7 @@ use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\TenantAssignment;
 use App\Models\User;
+use App\Http\Requests\Landlord\StoreBillRequest;
 use App\Notifications\BillCreated;
 use App\Notifications\PaymentProofSubmitted;
 use App\Notifications\PaymentRecorded;
@@ -82,19 +83,8 @@ class BillingController extends Controller
     /**
      * Store a new bill
      */
-    public function store(Request $request)
+    public function store(StoreBillRequest $request)
     {
-        $request->validate([
-            'tenant_assignment_id' => 'required|exists:tenant_assignments,id',
-            'type' => 'required|in:rent,electricity,water,other',
-            'amount' => 'required|numeric|min:1',
-            'due_date' => 'required|date|after_or_equal:today',
-            'billing_period_start' => 'nullable|date',
-            'billing_period_end' => 'nullable|date|after_or_equal:billing_period_start',
-            'description' => 'nullable|string|max:500',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
         $landlordId = Auth::id();
 
         // Verify the assignment belongs to this landlord
