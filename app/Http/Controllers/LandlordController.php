@@ -817,6 +817,9 @@ class LandlordController extends Controller
             }
         }
 
+        // Fire Registered event so verification email is sent (required for dashboard access after approval)
+        event(new \Illuminate\Auth\Events\Registered($landlord));
+
         return redirect()->route('landlord.pending')->with('success', 'Registration submitted successfully. Please wait for admin approval.');
     }
 
