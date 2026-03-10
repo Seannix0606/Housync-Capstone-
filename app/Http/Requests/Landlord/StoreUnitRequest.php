@@ -26,7 +26,7 @@ class StoreUnitRequest extends FormRequest
         $propertyId = $this->route('apartmentId') ?? $this->route('propertyId');
 
         return [
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,' . $propertyId,
+            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
             'rent_amount' => 'required|numeric|min:0',
             'status' => 'required|in:available,maintenance',
