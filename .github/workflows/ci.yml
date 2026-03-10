@@ -11,6 +11,9 @@ jobs:
   lint-and-build:
     runs-on: ubuntu-latest
 
+    env:
+      APP_KEY: base64:4BUmuxIgZktBlowFbweF3/GfEaOgxErIuvQUnk94+2o=
+
     services:
       mysql:
         image: mysql:8
