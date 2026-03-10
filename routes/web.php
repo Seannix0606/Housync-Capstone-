@@ -137,6 +137,10 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 
     Route::controller(LandlordController::class)->group(function () {
         // Units
+    });
+
+    // Units
+    Route::controller(\App\Http\Controllers\Landlord\UnitController::class)->group(function () {
         Route::get('/units/create', 'createUnit')->name('create-unit');
         Route::get('/units/{apartmentId?}', 'units')->name('units')->whereNumber('apartmentId');
         Route::get('/units/{id}/details', 'getUnitDetails')->name('unit-details')->whereNumber('id');
@@ -262,6 +266,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 */
 
 Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.')->group(function () {
+
     // Dashboard & Profile
     Route::controller(TenantAssignmentController::class)->group(function () {
         Route::get('/dashboard', 'tenantDashboard')->name('dashboard');
@@ -322,6 +327,7 @@ Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.'
 */
 
 Route::middleware(['role:staff', 'verified'])->prefix('staff')->name('staff.')->group(function () {
+
     // Dashboard & Profile
     Route::controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'staffDashboard')->name('dashboard');
