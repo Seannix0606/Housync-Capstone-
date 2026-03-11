@@ -41,4 +41,8 @@ return [
         'service_key' => env('SUPABASE_SERVICE_KEY'),
     ],
 
+    'esp32' => [
+        'key' => env('ESP32_API_KEY'),
+    ],
+
 ];
