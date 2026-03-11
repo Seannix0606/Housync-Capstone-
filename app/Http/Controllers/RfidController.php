@@ -9,6 +9,7 @@ use App\Models\TenantAssignment;
 use App\Models\TenantRfidAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -386,14 +387,15 @@ class RfidController extends Controller
      */
     public function scanCard(Request $request)
     {
-        $timeout = $request->input('timeout', 15); // Default 15 seconds timeout
+        $timeout = (int) $request->input('timeout', 15);
+        $timeout = max(1, min(30, $timeout)); // Clamp to 1–30 seconds
 
         try {
             // Create a unique scan request
             $scanId = 'temp_scan_'.uniqid();
-            $tempFile = storage_path('app/'.$scanId.'.json');
+            $cacheKey = 'rfid:scan:'.$scanId;
 
-            // Store the scan request
+            // Store the scan request in cache
             $scanRequest = [
                 'scan_id' => $scanId,
                 'requested_at' => now()->toISOString(),
@@ -404,7 +406,7 @@ class RfidController extends Controller
                 'direct_mode' => true, // Flag for direct Card UID extraction
             ];
 
-            file_put_contents($tempFile, json_encode($scanRequest));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
 
             return response()->json([
                 'success' => true,
@@ -675,18 +677,13 @@ class RfidController extends Controller
     public function getCardUIDFromESP32Reader(Request $request)
     {
         try {
-            $timeout = $request->input('timeout', 15);
+            $timeout = (int) $request->input('timeout', 15);
+            $timeout = max(1, min(30, $timeout));
             $comPort = $request->input('com_port', 'COM3');
 
-            // Create a scan request file that ESP32Reader.php will monitor
+            // Create a scan request entry that ESP32Reader.php will monitor
             $scanId = 'web_scan_'.uniqid();
-            $requestFile = storage_path('app/scan_requests/'.$scanId.'.json');
-
-            // Ensure directory exists
-            $requestDir = dirname($requestFile);
-            if (! is_dir($requestDir)) {
-                mkdir($requestDir, 0755, true);
-            }
+            $cacheKey = 'rfid:scan_request:'.$scanId;
 
             // Create scan request
             $scanRequest = [
@@ -700,7 +697,7 @@ class RfidController extends Controller
                 'error' => null,
             ];
 
-            file_put_contents($requestFile, json_encode($scanRequest, JSON_PRETTY_PRINT));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
 
             return response()->json([
                 'success' => true,
@@ -732,31 +729,23 @@ class RfidController extends Controller
         }
 
         try {
-            $requestFile = storage_path('app/scan_requests/'.$scanId.'.json');
+            $cacheKey = 'rfid:scan_request:'.$scanId;
+            $scanData = Cache::get($cacheKey);
 
-            if (! file_exists($requestFile)) {
+            if (! $scanData) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Scan request not found or expired',
                 ], 404);
             }
 
-            $scanData = json_decode(file_get_contents($requestFile), true);
-
-            if (! $scanData) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Invalid scan data',
-                ], 500);
-            }
-
             // Check if timed out
             $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
-            $timeout = $scanData['timeout'];
+            $timeout = (int) ($scanData['timeout'] ?? 15);
+            $elapsed = $requestedAt->diffInSeconds(now());
 
-            if ($requestedAt->addSeconds($timeout)->isPast()) {
-                // Clean up expired file
-                unlink($requestFile);
+            if ($elapsed > $timeout) {
+                Cache::forget($cacheKey);
 
                 return response()->json([
                     'success' => false,
@@ -765,8 +754,7 @@ class RfidController extends Controller
                 ]);
             }
 
-            // Calculate remaining time
-            $remaining = max(0, $requestedAt->addSeconds($timeout)->diffInSeconds(now()));
+            $remaining = max(0, $timeout - $elapsed);
 
             return response()->json([
                 'success' => true,
@@ -794,7 +782,7 @@ class RfidController extends Controller
         try {
             // Create a scan request file that ESP32Reader.php will detect
             $scanId = 'scan_request_'.uniqid();
-            $tempFile = storage_path('app/'.$scanId.'.json');
+            $cacheKey = 'rfid:scan:'.$scanId;
 
             $scanRequest = [
                 'scan_id' => $scanId,
@@ -806,7 +794,7 @@ class RfidController extends Controller
                 'request_type' => 'web_interface',
             ];
 
-            file_put_contents($tempFile, json_encode($scanRequest));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
 
             return response()->json([
                 'success' => true,
@@ -837,21 +825,22 @@ class RfidController extends Controller
             ], 400);
         }
 
-        $tempFile = storage_path('app/'.$scanId.'.json');
+        $cacheKey = 'rfid:scan:'.$scanId;
+        $scanData = Cache::get($cacheKey);
 
-        if (! file_exists($tempFile)) {
+        if (! $scanData) {
             return response()->json([
                 'success' => false,
                 'error' => 'Invalid scan ID or scan expired',
             ], 404);
         }
 
-        $scanData = json_decode(file_get_contents($tempFile), true);
         $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
+        $timeout = (int) ($scanData['timeout'] ?? 15);
 
         // Check if scan has timed out
-        if ($requestedAt->addSeconds($scanData['timeout'])->isPast()) {
-            unlink($tempFile); // Clean up
+        if ($requestedAt->addSeconds($timeout)->isPast()) {
+            Cache::forget($cacheKey);
 
             return response()->json([
                 'success' => false,
@@ -865,7 +854,7 @@ class RfidController extends Controller
             'status' => $scanData['status'],
             'card_uid' => $scanData['card_uid'],
             'error' => $scanData['error'],
-            'remaining_time' => max(0, $requestedAt->addSeconds($scanData['timeout'])->diffInSeconds(now())),
+            'remaining_time' => max(0, $requestedAt->addSeconds($timeout)->diffInSeconds(now())),
         ]);
     }
 
@@ -932,13 +921,12 @@ class RfidController extends Controller
             return response()->json(['error' => 'Invalid scan ID'], 400);
         }
 
-        $tempFile = storage_path('app/'.$scanId.'.json');
+        $cacheKey = 'rfid:scan:'.$scanId;
+        $scanData = Cache::get($cacheKey);
 
-        if (! file_exists($tempFile)) {
+        if (! $scanData) {
             return response()->json(['error' => 'Invalid scan ID'], 404);
         }
-
-        $scanData = json_decode(file_get_contents($tempFile), true);
 
         if ($cardUid) {
             $scanData['status'] = 'completed';
@@ -950,15 +938,8 @@ class RfidController extends Controller
 
         $scanData['completed_at'] = now()->toISOString();
 
-        file_put_contents($tempFile, json_encode($scanData));
-
-        // Clean up file after 60 seconds
-        dispatch(function () use ($tempFile) {
-            sleep(60);
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
-            }
-        })->delay(now()->addMinutes(1));
+        // Persist updated scan data in cache with a short TTL to allow the client to read it
+        Cache::put($cacheKey, $scanData, now()->addSeconds(30));
 
         return response()->json(['success' => true]);
     }
