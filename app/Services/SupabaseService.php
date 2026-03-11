@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Contracts\StorageServiceInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 
-class SupabaseService
+class SupabaseService implements StorageServiceInterface
 {
     protected $client;
 
@@ -116,7 +117,7 @@ class SupabaseService
         }
     }
 
-    public function uploadFile($bucket, $path, $file)
+    public function uploadFile(string $bucket, string $path, mixed $file): array
     {
         try {
             // Handle both file paths and direct content
@@ -209,12 +210,12 @@ class SupabaseService
         }
     }
 
-    public function getPublicUrl($bucket, $path)
+    public function getPublicUrl(string $bucket, string $path): string
     {
         return "{$this->url}/storage/v1/object/public/{$bucket}/{$path}";
     }
 
-    public function deleteFile($bucket, $path)
+    public function deleteFile(string $bucket, string $path): bool
     {
         try {
             $this->client->delete("/storage/v1/object/{$bucket}/{$path}");
@@ -227,7 +228,7 @@ class SupabaseService
         }
     }
 
-    public function listFiles($bucket, $path = '')
+    public function listFiles(string $bucket, string $path = ''): ?array
     {
         try {
             $response = $this->client->post("/storage/v1/object/list/{$bucket}", [
