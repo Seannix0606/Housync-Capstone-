@@ -444,16 +444,16 @@ class ESP32Reader
             return false;
         }
 
-        // Dedupe: suppress rapid duplicate submissions of the same UID
+        // Check for rapid duplicate scans of the same UID
         $now = time();
-        if ($this->lastProcessedUid === $cardUID && ($now - $this->lastProcessedAt) < $this->dedupeWindowSeconds) {
-            echo "Duplicate UID within {$this->dedupeWindowSeconds}s window, ignoring: $cardUID (last scan was ".($now - $this->lastProcessedAt)."s ago)\n";
+        $isDuplicateWithinWindow = $this->lastProcessedUid === $cardUID
+            && ($now - $this->lastProcessedAt) < $this->dedupeWindowSeconds;
 
-            return false;
+        if ($isDuplicateWithinWindow) {
+            echo "Duplicate UID within {$this->dedupeWindowSeconds}s window: $cardUID (last scan was "
+                .($now - $this->lastProcessedAt)."s ago). Skipping Laravel logging but still handling web scan.\n";
         }
 
-        $this->lastProcessedUid = $cardUID;
-        $this->lastProcessedAt = $now;
         echo "Processing RFID card: $cardUID\n";
 
         // Store the latest card UID for web interface access
@@ -464,17 +464,24 @@ class ESP32Reader
         echo "Checking web scan requests...\n";
         $this->fulfillWebScanRequest($cardUID);
 
-        // Send to Laravel for activity logging (including new cards)
-        echo "Sending to Laravel API...\n";
-        $result = $this->sendToLaravel($cardUID, $timestamp);
+        // Only send to Laravel (and advance the dedupe window) when this is not a rapid duplicate
+        if (! $isDuplicateWithinWindow) {
+            echo "Sending to Laravel API...\n";
+            $result = $this->sendToLaravel($cardUID, $timestamp);
 
-        if ($result) {
-            echo "Successfully processed card: $cardUID\n";
-        } else {
-            echo "Failed to send card to Laravel\n";
+            if ($result) {
+                echo "Successfully processed card: $cardUID\n";
+                $this->lastProcessedUid = $cardUID;
+                $this->lastProcessedAt = $now;
+            } else {
+                echo "Failed to send card to Laravel\n";
+            }
+
+            return $result;
         }
 
-        return $result;
+        // For rapid duplicates we still fulfilled any pending web scan, so report success to the caller
+        return true;
     }
 
     /**
