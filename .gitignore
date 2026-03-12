@@ -30,3 +30,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# ESP32 tooling
+/tools/esp32/*
+!/tools/esp32/ESP32Reader.php
