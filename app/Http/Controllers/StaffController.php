@@ -6,6 +6,7 @@ use App\Models\StaffAssignment;
 use App\Models\StaffProfile;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -115,6 +116,8 @@ class StaffController extends Controller
                 'address' => $request->address,
                 'status' => 'active',
             ]);
+
+            event(new Registered($staff));
 
             return redirect()->route('landlord.staff')
                 ->with('success', 'Staff member added successfully!')
