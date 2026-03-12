@@ -341,9 +341,30 @@ class ESP32Reader
 
             $requestData = json_decode(file_get_contents($requestFile), true);
 
-            if (! $requestData || $requestData['status'] !== 'processing') {
+            if (! $requestData) {
                 continue;
             }
+
+            // Skip requests that are already finished
+            if (in_array($requestData['status'], ['completed', 'timeout', 'error'], true)) {
+                continue;
+            }
+
+            // Respect original timeout before fulfilling
+            $requestedAt = strtotime($requestData['requested_at'] ?? 'now');
+            $timeout = $requestData['timeout'] ?? 15;
+
+            if (time() - $requestedAt > $timeout) {
+                $requestData['status'] = 'timeout';
+                $requestData['error'] = $requestData['error'] ?? 'Request timed out';
+                file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+                echo "Web scan request timed out before fulfillment: {$requestData['scan_id']}\n";
+
+                continue;
+            }
+
+            // At this point we allow both "pending" and "processing" requests to be fulfilled.
+            // If still pending, this tap effectively claims and completes it in one step.
 
             // Fulfill the request
             $requestData['status'] = 'completed';
