@@ -47,6 +47,23 @@ class ESP32Reader
     }
 
     /**
+     * Resolve a path inside Laravel's storage/app directory
+     * from tools/esp32/ESP32Reader.php.
+     * Does not require the path to exist; callers may mkdir as needed.
+     */
+    private function getLaravelStoragePath(string $relative = ''): string
+    {
+        $laravelRoot = dirname(__DIR__, 2);
+        $storageBase = $laravelRoot.DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app';
+
+        if ($relative === '') {
+            return $storageBase;
+        }
+
+        return $storageBase.DIRECTORY_SEPARATOR.ltrim($relative, DIRECTORY_SEPARATOR);
+    }
+
+    /**
      * Connect to ESP32 serial port
      */
     public function connect()
@@ -221,12 +238,11 @@ class ESP32Reader
             }
 
             return true;
-        } else {
-            echo 'Laravel API returned error: '.($responseData['message'] ?? 'Unknown error')."\n";
-
-            return false;
-            // --
         }
+
+        echo 'Laravel API returned error: '.($responseData['message'] ?? 'Unknown error')."\n";
+
+        return false;
     }
 
     /**
@@ -234,7 +250,7 @@ class ESP32Reader
      */
     public function checkWebScanRequests()
     {
-        $scanRequestDir = dirname(__FILE__).'/storage/app/scan_requests';
+        $scanRequestDir = $this->getLaravelStoragePath('scan_requests');
 
         // Create directory if it doesn't exist
         if (! is_dir($scanRequestDir)) {
@@ -288,7 +304,7 @@ class ESP32Reader
      */
     public function storeLatestCardUID($cardUID)
     {
-        $latestCardFile = dirname(__FILE__).'/storage/app/latest_card.json';
+        $latestCardFile = $this->getLaravelStoragePath('latest_card.json');
         $latestCardDir = dirname($latestCardFile);
 
         // Create directory if it doesn't exist
@@ -315,7 +331,7 @@ class ESP32Reader
      */
     public function fulfillWebScanRequest($cardUID)
     {
-        $scanRequestDir = dirname(__FILE__).'/storage/app/scan_requests';
+        $scanRequestDir = $this->getLaravelStoragePath('scan_requests');
         $requestFiles = glob($scanRequestDir.'/web_scan_*.json');
 
         foreach ($requestFiles as $requestFile) {
@@ -325,9 +341,30 @@ class ESP32Reader
 
             $requestData = json_decode(file_get_contents($requestFile), true);
 
-            if (! $requestData || $requestData['status'] !== 'processing') {
+            if (! $requestData) {
                 continue;
             }
+
+            // Skip requests that are already finished
+            if (in_array($requestData['status'], ['completed', 'timeout', 'error'], true)) {
+                continue;
+            }
+
+            // Respect original timeout before fulfilling
+            $requestedAt = strtotime($requestData['requested_at'] ?? 'now');
+            $timeout = $requestData['timeout'] ?? 15;
+
+            if (time() - $requestedAt > $timeout) {
+                $requestData['status'] = 'timeout';
+                $requestData['error'] = $requestData['error'] ?? 'Request timed out';
+                file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+                echo "Web scan request timed out before fulfillment: {$requestData['scan_id']}\n";
+
+                continue;
+            }
+
+            // At this point we allow both "pending" and "processing" requests to be fulfilled.
+            // If still pending, this tap effectively claims and completes it in one step.
 
             // Fulfill the request
             $requestData['status'] = 'completed';
@@ -377,9 +414,8 @@ class ESP32Reader
                 'device_id' => 'esp32_serial',
             ]);
             echo "Extracted UID from debug message: $extractedUID\n";
-        }
-        // Case 4: Filter out other messages
-        else {
+        } else {
+            // Case 4: Filter out other messages
             $ignoredMessages = [
                 'v:', 'mode:', 'load:', 'entry', 'Firmware Version:', 'MFRC522',
                 'RFID Reader initialized', 'Ready to scan cards', 'ESP32 RFID Serial Bridge Ready',
@@ -421,32 +457,41 @@ class ESP32Reader
             return false;
         }
 
-        if ($cardUID) {
-            // Dedupe: suppress rapid duplicate submissions of the same UID
-            $now = time();
-            if ($this->lastProcessedUid === $cardUID && ($now - $this->lastProcessedAt) < $this->dedupeWindowSeconds) {
-                echo "Duplicate UID within {$this->dedupeWindowSeconds}s window, ignoring: $cardUID (last scan was ".($now - $this->lastProcessedAt)."s ago)\n";
+        if (! $cardUID) {
+            echo "No card UID found in data: '$data'\n";
 
-                return false;
-            }
-            $this->lastProcessedUid = $cardUID;
-            $this->lastProcessedAt = $now;
-            echo "Processing RFID card: $cardUID\n";
+            return false;
+        }
 
-            // Store the latest card UID for web interface access
-            echo "Storing latest card UID...\n";
-            $this->storeLatestCardUID($cardUID);
+        // Check for rapid duplicate scans of the same UID
+        $now = time();
+        $isDuplicateWithinWindow = $this->lastProcessedUid === $cardUID
+            && ($now - $this->lastProcessedAt) < $this->dedupeWindowSeconds;
 
-            // Check if this fulfills any web scan requests
-            echo "Checking web scan requests...\n";
-            $this->fulfillWebScanRequest($cardUID);
+        if ($isDuplicateWithinWindow) {
+            echo "Duplicate UID within {$this->dedupeWindowSeconds}s window: $cardUID (last scan was "
+                .($now - $this->lastProcessedAt)."s ago). Skipping Laravel logging but still handling web scan.\n";
+        }
 
-            // Send to Laravel for activity logging (including new cards)
+        echo "Processing RFID card: $cardUID\n";
+
+        // Store the latest card UID for web interface access
+        echo "Storing latest card UID...\n";
+        $this->storeLatestCardUID($cardUID);
+
+        // Check if this fulfills any web scan requests
+        echo "Checking web scan requests...\n";
+        $this->fulfillWebScanRequest($cardUID);
+
+        // Only send to Laravel (and advance the dedupe window) when this is not a rapid duplicate
+        if (! $isDuplicateWithinWindow) {
             echo "Sending to Laravel API...\n";
             $result = $this->sendToLaravel($cardUID, $timestamp);
 
             if ($result) {
                 echo "Successfully processed card: $cardUID\n";
+                $this->lastProcessedUid = $cardUID;
+                $this->lastProcessedAt = $now;
             } else {
                 echo "Failed to send card to Laravel\n";
             }
@@ -454,9 +499,8 @@ class ESP32Reader
             return $result;
         }
 
-        echo "No card UID found in data: '$data'\n";
-
-        return false;
+        // For rapid duplicates we still fulfilled any pending web scan, so report success to the caller
+        return true;
     }
 
     /**
@@ -539,7 +583,6 @@ class ESP32Reader
             return false;
         }
 
-        $lastDataTime = 0;
         $emptyReads = 0;
 
         while ($this->running) {
@@ -547,13 +590,11 @@ class ESP32Reader
 
             if ($data !== false) {
                 $emptyReads = 0;
-                $lastDataTime = time();
 
                 echo "[MAIN LOOP] Got data from serial: '$data'\n";
 
                 // Process the RFID data
                 $this->processRfidData($data);
-
             } else {
                 $emptyReads++;
 
@@ -692,7 +733,7 @@ if (php_sapi_name() === 'cli') {
     }
 
     $reader->run();
-
 } else {
     echo "This script must be run from command line\n";
 }
+
