@@ -49,14 +49,12 @@ class ESP32Reader
     /**
      * Resolve a path inside Laravel's storage/app directory
      * from tools/esp32/ESP32Reader.php.
+     * Does not require the path to exist; callers may mkdir as needed.
      */
     private function getLaravelStoragePath(string $relative = ''): string
     {
-        $storageBase = realpath(__DIR__.'/../../storage/app');
-
-        if ($storageBase === false) {
-            throw new \RuntimeException('Unable to locate Laravel storage/app directory from ESP32Reader.');
-        }
+        $laravelRoot = dirname(__DIR__, 2);
+        $storageBase = $laravelRoot.DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app';
 
         if ($relative === '') {
             return $storageBase;
