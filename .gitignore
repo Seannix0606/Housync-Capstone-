@@ -28,5 +28,7 @@
 /storage/pail
 /vendor
 Homestead.json
+# Local mail test script (contains test email)
+test-mail.php
 Homestead.yaml
 Thumbs.db

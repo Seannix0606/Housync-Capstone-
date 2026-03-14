@@ -22,7 +22,7 @@ Before you begin, ensure your local development environment meets the following 
 * **PHP:** 8.2 or higher
 * **Node.js:** 18.x or higher
 * **Composer:** 2.x
-* **Database:** MySQL (recommended) or SQLite
+* **Database:** MySQL 8.x (or MariaDB 10.x)
 
 ---
 
@@ -57,11 +57,16 @@ Follow these steps to get your Housync development environment up and running:
    ```
 
 6. **Configure Database**
-   By default, the application is set to use SQLite for easy local development. Ensure `DB_CONNECTION=sqlite` in your `.env`. Create an empty SQLite file if it doesn't exist:
-   ```bash
-   touch database/database.sqlite
+   Create a MySQL database (e.g. `housync`) and ensure your `.env` has:
    ```
-   *(If you prefer MySQL, update the `DB_*` keys in `.env` to match your local MySQL configuration).*
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=housync
+   DB_USERNAME=root
+   DB_PASSWORD=your_password
+   ```
+   *(For quick local dev without MySQL, you can use SQLite: set `DB_CONNECTION=sqlite`, `DB_DATABASE=database/database.sqlite`, and run `touch database/database.sqlite`.)*
 
 7. **Run Database Migrations and Seeders**
    ```bash
@@ -93,8 +98,8 @@ Housync uses several environment variables to configure its core features and ex
 * `APP_URL`: The base URL of your application (e.g., `http://localhost:8000`).
 
 ### Database
-* `DB_CONNECTION`: Connection driver (`sqlite` or `mysql`).
-* *(MySQL only)* `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: Standard relational database credentials.
+* `DB_CONNECTION`: Connection driver (`mysql` recommended, or `sqlite` for quick local dev).
+* `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: MySQL credentials.
 
 ### Broadcasting & Queues
 * `BROADCAST_CONNECTION`: Set to your broadcasting driver (e.g., `reverb` or `log`).
