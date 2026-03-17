@@ -24,8 +24,8 @@ Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
 });
 
 // Browser-facing RFID API routes (web-triggered scans + landlord dashboards)
-// These stay on the app's normal auth path and do NOT require the ESP32 shared secret.
-Route::middleware(['throttle:60,1'])->group(function () {
+// These use the app's normal user auth and do NOT require the ESP32 shared secret.
+Route::middleware(['throttle:60,1', 'auth'])->group(function () {
     // Web-triggered scanning (request + status polling)
     Route::post('/rfid/scan/request', [RfidController::class, 'getCardUIDFromESP32Reader'])->name('api.rfid.scan.request');
     Route::get('/rfid/scan/status/{scanId}', [RfidController::class, 'checkScanRequestStatus'])->name('api.rfid.scan.status');
