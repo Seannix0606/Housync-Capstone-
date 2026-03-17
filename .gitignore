@@ -34,3 +34,23 @@ Thumbs.db
 # ESP32 tooling
 /tools/esp32/*
 !/tools/esp32/ESP32Reader.php
+# Custom PHP configs
+php-config.ini
+.user.ini
+public/.user.ini
+
+# User-uploaded files in storage
+/storage/app/public/apartment-covers/*
+!/storage/app/public/apartment-covers/.gitignore
+/storage/app/public/apartment-gallery/*
+!/storage/app/public/apartment-gallery/.gitignore
+/storage/app/public/landlord-documents/*
+!/storage/app/public/landlord-documents/.gitignore
+
+# Symlinked user-uploaded files in public
+/public/storage/apartment-covers/*
+!/public/storage/apartment-covers/.gitignore
+/public/storage/apartment-gallery/*
+!/public/storage/apartment-gallery/.gitignore
+/public/storage/landlord-documents/*
+!/public/storage/landlord-documents/.gitignore

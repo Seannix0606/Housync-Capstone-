@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // 1. Register the Role Middleware Alias (Fixes "Target class [role] does not exist")
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'esp32.auth' => \App\Http\Middleware\VerifyEsp32ApiKey::class,
         ]);
 
         // 2. Trust Proxies (Fixes disfigured UI / Mixed Content on Railway)
