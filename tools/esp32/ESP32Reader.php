@@ -415,17 +415,31 @@ class ESP32Reader
             ]);
             echo "Extracted UID from debug message: $extractedUID\n";
         } else {
-            // Case 4: Filter out other messages
-            $ignoredMessages = [
-                'v:', 'mode:', 'load:', 'entry', 'Firmware Version:', 'MFRC522',
-                'RFID Reader initialized', 'Ready to scan cards', 'ESP32 RFID Serial Bridge Ready',
-                'Mode: Serial Bridge', 'SCAN_REQUEST_ACTIVE', 'Please tap your RFID card',
-                'SCAN_COMPLETED', 'PONG', '========================================', '---',
+            // Case 4: Filter out non-card serial noise / status lines
+            // Key = substring pattern seen in serial output
+            // Value = human-readable meaning (for maintainability)
+            $ignoredSerialPatterns = [
+                'v:' => 'Device diagnostic prefix (ex: voltage/version/variant)',
+                'mode:' => 'ESP32 mode/status output',
+                'load:' => 'ESP32 boot/status output',
+                'entry' => 'ESP32 entry/status output',
+                'Firmware Version:' => 'Firmware version banner',
+                'MFRC522' => 'RFID reader initialization banner',
+                'RFID Reader initialized' => 'RFID init banner',
+                'Ready to scan cards' => 'RFID ready banner',
+                'ESP32 RFID Serial Bridge Ready' => 'Bridge ready banner',
+                'Mode: Serial Bridge' => 'Bridge mode banner',
+                'SCAN_REQUEST_ACTIVE' => 'Web scan request prompt/status',
+                'Please tap your RFID card' => 'Web scan request prompt/status',
+                'SCAN_COMPLETED' => 'Web scan completion status',
+                'PONG' => 'Ping response from device',
+                '========================================' => 'Separator line',
+                '---' => 'Separator line',
             ];
 
-            foreach ($ignoredMessages as $ignored) {
-                if (strpos($data, $ignored) !== false) {
-                    echo 'Ignoring: '.substr($originalData, 0, 50)."...\n";
+            foreach ($ignoredSerialPatterns as $pattern => $meaning) {
+                if (strpos($data, $pattern) !== false) {
+                    echo 'Ignoring serial noise ('.$meaning.'): '.substr($originalData, 0, 50)."...\n";
 
                     return false;
                 }
