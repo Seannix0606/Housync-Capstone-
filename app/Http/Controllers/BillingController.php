@@ -118,9 +118,14 @@ class BillingController extends Controller
                     ->firstOrFail();
 
                 $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
+                $attempts = 1;
 
                 while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
+                    if ($attempts >= 10) {
+                        throw new \RuntimeException('Unable to generate a unique invoice number after 10 attempts.');
+                    }
                     $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
+                    $attempts++;
                 }
 
                 $bill = Bill::create([
