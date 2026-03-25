@@ -12,6 +12,7 @@ use App\Notifications\PaymentProofSubmitted;
 use App\Notifications\PaymentRecorded;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -84,8 +85,15 @@ class BillingController extends Controller
      */
     public function store(Request $request)
     {
+        $landlordId = Auth::id();
+
         $request->validate([
-            'tenant_assignment_id' => 'required|exists:tenant_assignments,id',
+            'tenant_assignment_id' => [
+                'required',
+                Rule::exists('tenant_assignments', 'id')
+                    ->where('landlord_id', $landlordId)
+                    ->where('status', 'active'),
+            ],
             'type' => 'required|in:rent,electricity,water,other',
             'amount' => 'required|numeric|min:1',
             'due_date' => 'required|date|after_or_equal:today',
@@ -95,18 +103,11 @@ class BillingController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $landlordId = Auth::id();
-
-        // Verify the assignment belongs to this landlord
         $assignment = TenantAssignment::where('id', $request->tenant_assignment_id)
             ->where('landlord_id', $landlordId)
             ->where('status', 'active')
             ->with(['tenant', 'unit'])
-            ->first();
-
-        if (! $assignment) {
-            return back()->with('error', 'Invalid tenant assignment selected.');
-        }
+            ->firstOrFail();
 
         try {
             // Generate invoice number
