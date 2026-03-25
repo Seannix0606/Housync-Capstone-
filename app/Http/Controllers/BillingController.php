@@ -103,39 +103,45 @@ class BillingController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $assignment = TenantAssignment::where('id', $request->tenant_assignment_id)
-            ->where('landlord_id', $landlordId)
-            ->where('status', 'active')
-            ->with(['tenant', 'unit'])
-            ->firstOrFail();
+        $bill = null;
+        $assignment = null;
 
         try {
-            // Generate invoice number
-            $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
+            DB::transaction(function () use ($request, $landlordId, &$bill, &$assignment) {
+                // Re-read with a row lock so no concurrent request can terminate or
+                // reassign this row between validation and the insert below.
+                $assignment = TenantAssignment::where('id', $request->tenant_assignment_id)
+                    ->where('landlord_id', $landlordId)
+                    ->where('status', 'active')
+                    ->with(['tenant', 'unit'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            // Ensure unique invoice number
-            while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
                 $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
-            }
 
-            $bill = Bill::create([
-                'landlord_id' => $landlordId,
-                'tenant_id' => $assignment->tenant_id,
-                'tenant_assignment_id' => $assignment->id,
-                'unit_id' => $assignment->unit_id,
-                'invoice_number' => $invoiceNumber,
-                'type' => $request->type,
-                'description' => $request->description ?? ucfirst($request->type).' bill for '.$assignment->unit->unit_number,
-                'billing_period_start' => $request->billing_period_start,
-                'billing_period_end' => $request->billing_period_end,
-                'amount' => $request->amount,
-                'amount_paid' => 0,
-                'balance' => $request->amount,
-                'status' => 'unpaid',
-                'due_date' => $request->due_date,
-                'currency' => 'PHP',
-                'notes' => $request->notes,
-            ]);
+                while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
+                    $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
+                }
+
+                $bill = Bill::create([
+                    'landlord_id' => $landlordId,
+                    'tenant_id' => $assignment->tenant_id,
+                    'tenant_assignment_id' => $assignment->id,
+                    'unit_id' => $assignment->unit_id,
+                    'invoice_number' => $invoiceNumber,
+                    'type' => $request->type,
+                    'description' => $request->description ?? ucfirst($request->type).' bill for '.$assignment->unit->unit_number,
+                    'billing_period_start' => $request->billing_period_start,
+                    'billing_period_end' => $request->billing_period_end,
+                    'amount' => $request->amount,
+                    'amount_paid' => 0,
+                    'balance' => $request->amount,
+                    'status' => 'unpaid',
+                    'due_date' => $request->due_date,
+                    'currency' => 'PHP',
+                    'notes' => $request->notes,
+                ]);
+            });
 
             Log::info('Bill created', [
                 'bill_id' => $bill->id,
@@ -144,16 +150,19 @@ class BillingController extends Controller
                 'amount' => $request->amount,
             ]);
 
-            // Notify tenant
             if ($assignment->tenant) {
                 $assignment->tenant->notify(new BillCreated($bill));
             }
 
-            ActivityLog::log('bill_created', "Created bill {$invoiceNumber} for ₱".number_format($request->amount, 2), $bill);
+            ActivityLog::log('bill_created', "Created bill {$bill->invoice_number} for ₱".number_format($request->amount, 2), $bill);
 
             return redirect()->route('landlord.payments')
-                ->with('success', "Bill #{$invoiceNumber} created successfully for ₱".number_format($request->amount, 2));
+                ->with('success', "Bill #{$bill->invoice_number} created successfully for ₱".number_format($request->amount, 2));
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return back()->withErrors([
+                'tenant_assignment_id' => 'The selected tenant assignment is no longer active.',
+            ]);
         } catch (\Exception $exception) {
             Log::error('Failed to create bill', [
                 'error' => $exception->getMessage(),
