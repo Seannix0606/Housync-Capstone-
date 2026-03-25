@@ -105,48 +105,65 @@ class BillingController extends Controller
 
         $bill = null;
         $assignment = null;
+        $maxInvoiceAttempts = 10;
 
         try {
-            DB::transaction(function () use ($request, $landlordId, &$bill, &$assignment) {
-                // Re-read with a row lock so no concurrent request can terminate or
-                // reassign this row between validation and the insert below.
-                $assignment = TenantAssignment::where('id', $request->tenant_assignment_id)
-                    ->where('landlord_id', $landlordId)
-                    ->where('status', 'active')
-                    ->with(['tenant', 'unit'])
-                    ->lockForUpdate()
-                    ->firstOrFail();
+            for ($invoiceAttempt = 1; $invoiceAttempt <= $maxInvoiceAttempts; $invoiceAttempt++) {
+                try {
+                    DB::transaction(function () use ($request, $landlordId, &$bill, &$assignment) {
+                        // Re-read with a row lock so no concurrent request can terminate or
+                        // reassign this row between validation and the insert below.
+                        $assignment = TenantAssignment::where('id', $request->tenant_assignment_id)
+                            ->where('landlord_id', $landlordId)
+                            ->where('status', 'active')
+                            ->with(['tenant', 'unit'])
+                            ->lockForUpdate()
+                            ->firstOrFail();
 
-                $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
-                $attempts = 1;
+                        // A fresh random number is generated on every attempt.
+                        // No pre-insert exists() check: that check-then-insert
+                        // pattern is itself racy, so we rely solely on the
+                        // unique index and the retry loop below instead.
+                        $bill = Bill::create([
+                            'landlord_id' => $landlordId,
+                            'tenant_id' => $assignment->tenant_id,
+                            'tenant_assignment_id' => $assignment->id,
+                            'unit_id' => $assignment->unit_id,
+                            'invoice_number' => 'INV-'.strtoupper(Str::random(8)),
+                            'type' => $request->type,
+                            'description' => $request->description ?? ucfirst($request->type).' bill for '.$assignment->unit->unit_number,
+                            'billing_period_start' => $request->billing_period_start,
+                            'billing_period_end' => $request->billing_period_end,
+                            'amount' => $request->amount,
+                            'amount_paid' => 0,
+                            'balance' => $request->amount,
+                            'status' => 'unpaid',
+                            'due_date' => $request->due_date,
+                            'currency' => 'PHP',
+                            'notes' => $request->notes,
+                        ]);
+                    });
 
-                while (Bill::where('invoice_number', $invoiceNumber)->exists()) {
-                    if ($attempts >= 10) {
-                        throw new \RuntimeException('Unable to generate a unique invoice number after 10 attempts.');
+                    break; // insert succeeded — exit the retry loop
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Re-throw immediately for anything other than a duplicate-key
+                    // violation (MySQL 23000 / PostgreSQL 23505).
+                    $sqlState = $e->errorInfo[0] ?? '';
+                    if (! in_array($sqlState, ['23000', '23505'], true)) {
+                        throw $e;
                     }
-                    $invoiceNumber = 'INV-'.strtoupper(Str::random(8));
-                    $attempts++;
-                }
 
-                $bill = Bill::create([
-                    'landlord_id' => $landlordId,
-                    'tenant_id' => $assignment->tenant_id,
-                    'tenant_assignment_id' => $assignment->id,
-                    'unit_id' => $assignment->unit_id,
-                    'invoice_number' => $invoiceNumber,
-                    'type' => $request->type,
-                    'description' => $request->description ?? ucfirst($request->type).' bill for '.$assignment->unit->unit_number,
-                    'billing_period_start' => $request->billing_period_start,
-                    'billing_period_end' => $request->billing_period_end,
-                    'amount' => $request->amount,
-                    'amount_paid' => 0,
-                    'balance' => $request->amount,
-                    'status' => 'unpaid',
-                    'due_date' => $request->due_date,
-                    'currency' => 'PHP',
-                    'notes' => $request->notes,
-                ]);
-            });
+                    if ($invoiceAttempt >= $maxInvoiceAttempts) {
+                        throw new \RuntimeException(
+                            "Unable to generate a unique invoice number after {$maxInvoiceAttempts} attempts.",
+                            0,
+                            $e
+                        );
+                    }
+
+                    $bill = null; // reset before retrying
+                }
+            }
 
             Log::info('Bill created', [
                 'bill_id' => $bill->id,
@@ -167,7 +184,7 @@ class BillingController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return back()->withErrors([
                 'tenant_assignment_id' => 'The selected tenant assignment is no longer active.',
-            ]);
+            ])->withInput();
         } catch (\Exception $exception) {
             Log::error('Failed to create bill', [
                 'error' => $exception->getMessage(),
