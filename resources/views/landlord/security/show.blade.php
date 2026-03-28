@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}">Security</a>
+                        <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Card {{ $card->card_uid }}</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}" 
+        <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>

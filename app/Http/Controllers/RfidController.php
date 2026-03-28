@@ -561,13 +561,41 @@ class RfidController extends Controller
     }
 
     /**
-     * Get the latest Card UID from access_logs database
+     * Get the latest Card UID from access_logs database.
+     *
+     * Scope resolution order (first match wins):
+     *   1. ?property_id=X  — caller-supplied property scope
+     *   2. ?landlord_id=X  — caller-supplied landlord scope
+     *   3. Authenticated session user — auto-scoped to their properties
+     *   4. No scope at all  — rejected (422) to prevent cross-tenant UID leakage
      */
     public function getLatestCardUID(Request $request)
     {
         try {
-            // Get the most recent access log entry
-            $latestLog = AccessLog::orderBy('access_time', 'desc')->first();
+            $propertyId  = $request->query('property_id');
+            $landlordId  = $request->query('landlord_id');
+
+            $query = AccessLog::orderBy('access_time', 'desc');
+
+            if ($propertyId !== null) {
+                // Scope to a single property — one indexed WHERE clause
+                $query->where('property_id', (int) $propertyId);
+            } elseif ($landlordId !== null) {
+                // Scope to all properties of the specified landlord
+                $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
+            } elseif ($user = auth()->user()) {
+                // Authenticated web session — auto-scope to this landlord's properties
+                $ownedIds = $user->properties()->pluck('id');
+                $query->whereIn('property_id', $ownedIds);
+            } else {
+                // No scope and no auth — refuse rather than expose cross-tenant UIDs
+                return response()->json([
+                    'success' => false,
+                    'error' => 'A property_id or landlord_id scope parameter is required.',
+                ], 422);
+            }
+
+            $latestLog = $query->first();
 
             if (! $latestLog) {
                 return response()->json([

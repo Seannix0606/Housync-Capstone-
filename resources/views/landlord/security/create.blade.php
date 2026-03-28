@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['apartment_id' => $apartmentId]) }}">Security</a>
+                        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Assign Card</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['apartment_id' => $apartmentId]) }}" 
+        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -86,20 +86,20 @@
 
                         <!-- Apartment Selection -->
                         <div class="mb-3">
-                            <label for="apartment_id" class="form-label required">Apartment</label>
-                            <select class="form-select @error('apartment_id') is-invalid @enderror" 
-                                    id="apartment_id" 
-                                    name="apartment_id" 
+                            <label for="property_id" class="form-label required">Apartment</label>
+                            <select class="form-select @error('property_id') is-invalid @enderror" 
+                                    id="property_id" 
+                                    name="property_id" 
                                     required>
                                 <option value="">Select an apartment</option>
                                 @foreach($apartments as $apartment)
                                     <option value="{{ $apartment->id }}" 
-                                            {{ (old('apartment_id') ?: $apartmentId) == $apartment->id ? 'selected' : '' }}>
+                                            {{ (old('property_id') ?: $propertyId) == $apartment->id ? 'selected' : '' }}>
                                         {{ $apartment->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('apartment_id')
+                            @error('property_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -114,7 +114,7 @@
                                 <option value="">Select a tenant</option>
                                 @foreach($tenantAssignments as $assignment)
                                     <option value="{{ $assignment->id }}" 
-                                            data-apartment="{{ $assignment->unit->apartment_id }}"
+                                            data-apartment="{{ $assignment->unit->property_id }}"
                                             {{ old('tenant_assignment_id') == $assignment->id ? 'selected' : '' }}>
                                         {{ $assignment->tenant->name }} - Unit {{ $assignment->unit->unit_number }}
                                     </option>
@@ -177,7 +177,7 @@
 
                         <!-- Action Buttons -->
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('landlord.security', ['apartment_id' => $apartmentId]) }}" 
+                            <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
                                class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
@@ -378,7 +378,7 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const apartmentSelect = document.getElementById('apartment_id');
+    const apartmentSelect = document.getElementById('property_id');
     const tenantSelect = document.getElementById('tenant_assignment_id');
     const tenantOptions = Array.from(tenantSelect.options);
     
