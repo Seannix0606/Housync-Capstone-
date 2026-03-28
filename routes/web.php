@@ -5,13 +5,26 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ExploreController;
-use App\Http\Controllers\LandlordController;
+use App\Http\Controllers\Landlord\RegistrationController as LandlordRegistrationController;
+use App\Http\Controllers\Landlord\SettingsController as LandlordSettingsController;
+use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RfidController;
-use App\Http\Controllers\StaffController;
-use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SuperAdmin\LandlordVerificationController as SuperAdminLandlordVerificationController;
+use App\Http\Controllers\SuperAdmin\PropertyController as SuperAdminPropertyController;
+use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsController;
+use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
+use App\Http\Controllers\Staff\ProfileController as StaffProfileController;
+use App\Http\Controllers\Tenant\AnnouncementController as TenantAnnouncementController;
+use App\Http\Controllers\Tenant\ApplicationController as TenantApplicationController;
+use App\Http\Controllers\Tenant\BillingController as TenantBillingController;
+use App\Http\Controllers\Tenant\ChatController as TenantChatController;
+use App\Http\Controllers\Tenant\LeaseController as TenantLeaseController;
+use App\Http\Controllers\Tenant\MaintenanceController as TenantMaintenanceController;
+use App\Http\Controllers\Tenant\ProfileController as TenantProfileController;
 use App\Http\Controllers\TenantAssignmentController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Auth;
@@ -59,7 +72,7 @@ Route::controller(ExploreController::class)->group(function () {
 });
 
 // Public Landlord Registration & Status
-Route::controller(LandlordController::class)->prefix('landlord')->name('landlord.')->group(function () {
+Route::controller(LandlordRegistrationController::class)->prefix('landlord')->name('landlord.')->group(function () {
     Route::get('/register', 'register')->name('register');
     Route::post('/register', 'storeRegistration')->name('register.store');
     Route::get('/pending', 'pending')->name('pending');
@@ -73,28 +86,32 @@ Route::controller(LandlordController::class)->prefix('landlord')->name('landlord
 */
 
 Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/dashboard', 'index')->name('dashboard');
+    });
 
-    Route::controller(SuperAdminController::class)->group(function () {
-        // Dashboard & Properties
-        Route::get('/dashboard', 'dashboard')->name('dashboard');
+    Route::controller(SuperAdminPropertyController::class)->group(function () {
         Route::get('/apartments', 'apartments')->name('apartments');
+    });
 
-        // User Management
-        Route::get('/users', 'users')->name('users');
-        Route::get('/users/create', 'createUser')->name('create-user');
-        Route::post('/users', 'storeUser')->name('store-user');
-        Route::get('/users/{id}', 'editUser')->name('edit-user');
-        Route::put('/users/{id}', 'updateUser')->name('update-user');
-        Route::delete('/users/{id}', 'deleteUser')->name('delete-user');
+    Route::controller(SuperAdminUserController::class)->group(function () {
+        Route::get('/users', 'index')->name('users');
+        Route::get('/users/create', 'create')->name('create-user');
+        Route::post('/users', 'store')->name('store-user');
+        Route::get('/users/{id}', 'edit')->name('edit-user');
+        Route::put('/users/{id}', 'update')->name('update-user');
+        Route::delete('/users/{id}', 'destroy')->name('delete-user');
+    });
 
-        // Landlord Verification
+    Route::controller(SuperAdminLandlordVerificationController::class)->group(function () {
         Route::get('/pending-landlords', 'pendingLandlords')->name('pending-landlords');
         Route::post('/approve-landlord/{id}', 'approveLandlord')->name('approve-landlord');
         Route::post('/reject-landlord/{id}', 'rejectLandlord')->name('reject-landlord');
         Route::get('/landlords/{id}/documents', 'reviewLandlordDocuments')->name('landlord-docs');
         Route::post('/landlord-documents/{docId}/verify', 'verifyLandlordDocument')->name('verify-landlord-document');
+    });
 
-        // Settings
+    Route::controller(SuperAdminSettingsController::class)->group(function () {
         Route::get('/settings', 'settings')->name('settings');
         Route::post('/settings', 'updateSettings')->name('settings.update');
         Route::post('/settings/{group}', 'updateSettingsGroup')->name('settings.group.update');
@@ -110,14 +127,20 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 
 Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('landlord.')->group(function () {
 
-    // Dashboard, Settings & Tenants
-    Route::controller(LandlordController::class)->group(function () {
-        Route::get('/dashboard', 'dashboard')->name('dashboard');
+    // Dashboard
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/dashboard', 'index')->name('dashboard');
+    });
+
+    // Tenants & Tenant History
+    Route::controller(LandlordTenantController::class)->group(function () {
         Route::get('/tenants', 'tenants')->name('tenants');
         Route::get('/tenant-history', 'tenantHistory')->name('tenant-history');
         Route::get('/tenant-history/export-csv', 'exportTenantHistoryCSV')->name('tenant-history.export-csv');
+    });
 
-        // Settings
+    // Settings
+    Route::controller(LandlordSettingsController::class)->group(function () {
         Route::get('/settings', 'settings')->name('settings');
         Route::put('/settings', 'updateSettings')->name('settings.update');
         Route::put('/settings/password', 'updatePassword')->name('settings.password');
@@ -133,10 +156,6 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
         Route::delete('/apartments/{id}', 'deleteApartment')->name('delete-apartment');
         Route::get('/apartments/{id}/details', 'getApartmentDetails')->name('apartment-details')->whereNumber('id');
         Route::get('/apartments/{id}/units', 'getApartmentUnits')->name('apartment-units')->whereNumber('id');
-    });
-
-    Route::controller(LandlordController::class)->group(function () {
-        // Units
     });
 
     // Units
@@ -173,7 +192,7 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
     });
 
     // Staff Management
-    Route::controller(StaffController::class)->group(function () {
+    Route::controller(\App\Http\Controllers\Landlord\StaffController::class)->group(function () {
         Route::get('/staff', 'index')->name('staff');
         Route::post('/staff/add', 'addStaff')->name('add-staff');
         Route::get('/staff/by-type/{staffType}', 'getStaffByType')->name('staff-by-type');
@@ -268,47 +287,56 @@ Route::middleware(['role:landlord', 'verified'])->prefix('landlord')->name('land
 Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.')->group(function () {
 
     // Dashboard & Profile
-    Route::controller(TenantAssignmentController::class)->group(function () {
-        Route::get('/dashboard', 'tenantDashboard')->name('dashboard');
-        Route::get('/profile', 'tenantProfile')->name('profile');
-        Route::get('/lease', 'tenantLease')->name('lease');
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/dashboard', 'index')->name('dashboard');
+    });
+
+    Route::controller(TenantProfileController::class)->group(function () {
+        Route::get('/profile', 'profile')->name('profile');
         Route::post('/update-password', 'updatePassword')->name('update-password');
         Route::get('/upload-documents', 'uploadDocuments')->name('upload-documents');
         Route::post('/upload-documents', 'storeDocuments')->name('store-documents');
         Route::get('/download-document/{documentId}', 'downloadDocument')->name('download-document');
         Route::delete('/delete-document/{documentId}', 'deleteDocument')->name('delete-document');
+    });
+
+    Route::controller(TenantLeaseController::class)->group(function () {
+        Route::get('/lease', 'lease')->name('lease');
+    });
+
+    Route::controller(TenantApplicationController::class)->group(function () {
         Route::post('/apply/{propertyId}', 'applyForProperty')->name('apply');
         Route::post('/apply-unit/{unitId}', 'applyForUnit')->name('apply.unit');
     });
 
     // Payments
-    Route::controller(BillingController::class)->group(function () {
-        Route::get('/payments', 'tenantIndex')->name('payments');
-        Route::get('/payments/{id}', 'tenantShowBill')->name('payments.show');
-        Route::post('/payments/{id}/submit-proof', 'submitPaymentProof')->name('payments.submit-proof');
+    Route::controller(TenantBillingController::class)->group(function () {
+        Route::get('/payments', 'index')->name('payments');
+        Route::get('/payments/{id}', 'show')->name('payments.show');
+        Route::post('/payments/{id}/submit-proof', 'submitProof')->name('payments.submit-proof');
     });
 
     // Maintenance
-    Route::controller(MaintenanceController::class)->prefix('maintenance')->name('maintenance.')->group(function () {
-        Route::get('/', 'tenantIndex')->name('index');
-        Route::get('/create', 'tenantCreate')->name('create');
-        Route::post('/', 'tenantStore')->name('store');
-        Route::get('/{id}', 'tenantShow')->name('show');
-        Route::post('/{id}/update-notes', 'tenantUpdateNotes')->name('update-notes');
-        Route::post('/{id}/cancel', 'tenantCancel')->name('cancel');
+    Route::controller(TenantMaintenanceController::class)->prefix('maintenance')->name('maintenance.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::post('/{id}/update-notes', 'updateNotes')->name('update-notes');
+        Route::post('/{id}/cancel', 'cancel')->name('cancel');
         Route::post('/{id}/comment', 'addComment')->name('add-comment');
         Route::post('/{id}/rate', 'rate')->name('rate');
     });
 
     // Announcements
-    Route::controller(AnnouncementController::class)->prefix('announcements')->name('announcements.')->group(function () {
-        Route::get('/', 'tenantIndex')->name('index');
-        Route::get('/{id}', 'tenantShow')->name('show');
+    Route::controller(TenantAnnouncementController::class)->prefix('announcements')->name('announcements.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{id}', 'show')->name('show');
     });
 
     // Chat & Messaging
-    Route::controller(ChatController::class)->group(function () {
-        Route::get('/messages', 'tenantIndex')->name('chat');
+    Route::controller(TenantChatController::class)->group(function () {
+        Route::get('/messages', 'index')->name('chat');
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-landlord', 'startWithLandlord')->name('chat.start-with-landlord');
         Route::post('/messages/create-ticket', 'createTicket')->name('chat.create-ticket');
@@ -327,11 +355,12 @@ Route::middleware(['role:tenant', 'verified'])->prefix('tenant')->name('tenant.'
 */
 
 Route::middleware(['role:staff', 'verified'])->prefix('staff')->name('staff.')->group(function () {
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/dashboard', 'index')->name('dashboard');
+    });
 
-    // Dashboard & Profile
-    Route::controller(StaffController::class)->group(function () {
-        Route::get('/dashboard', 'staffDashboard')->name('dashboard');
-        Route::get('/profile', 'staffProfile')->name('profile');
+    Route::controller(StaffProfileController::class)->group(function () {
+        Route::get('/profile', 'profile')->name('profile');
         Route::post('/update-password', 'updatePassword')->name('update-password');
         Route::post('/assignments/{id}/complete', 'completeAssignment')->name('complete-assignment');
     });
