@@ -180,11 +180,20 @@ class Unit extends Model
     }
 
     /**
-     * Get the current tenant assignment
+     * Get the current (active) tenant assignment.
+     *
+     * Filtered to status = 'active' so that units with assignment history never
+     * silently resolve to an old or inactive row. Ordered by assigned_at DESC so
+     * that if two active rows exist (data-integrity error), the most recent one
+     * wins rather than an arbitrary DB-engine default.
+     *
+     * Use tenantAssignments() for history queries.
      */
     public function tenantAssignment()
     {
-        return $this->hasOne(TenantAssignment::class);
+        return $this->hasOne(TenantAssignment::class)
+            ->where('status', 'active')
+            ->latest('assigned_at');
     }
 
     /**
