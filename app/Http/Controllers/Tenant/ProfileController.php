@@ -434,7 +434,7 @@ class ProfileController extends Controller
             }
 
             $tenant->update([
-                'password' => Hash::make($request->new_password),
+                'password' => $request->new_password,
             ]);
 
             Log::info('Tenant password updated', [

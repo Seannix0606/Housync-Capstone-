@@ -13,7 +13,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -56,7 +55,7 @@ class UserController extends Controller
         DB::transaction(function () use ($request) {
             $user = User::create([
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => $request->password,
                 'role' => $request->role,
             ]);
 
@@ -118,7 +117,7 @@ class UserController extends Controller
         $user->update($request->only(['email', 'role']));
 
         if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
+            $user->update(['password' => $request->password]);
         }
 
         $profileData = $request->only(['name', 'phone', 'address']);

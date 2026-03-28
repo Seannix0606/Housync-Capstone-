@@ -11,7 +11,6 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class RegistrationController extends Controller
@@ -48,7 +47,7 @@ class RegistrationController extends Controller
             $landlord = DB::transaction(function () use ($request, $supabase) {
                 $landlord = User::create([
                     'email' => $request->email,
-                    'password' => Hash::make($request->password),
+                    'password' => $request->password,
                     'role' => 'landlord',
                 ]);
 

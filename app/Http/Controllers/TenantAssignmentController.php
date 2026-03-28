@@ -901,7 +901,7 @@ class TenantAssignmentController extends Controller
 
             // Update password
             $tenant->update([
-                'password' => Hash::make($request->new_password),
+                'password' => $request->new_password,
             ]);
 
             // Log the password change
