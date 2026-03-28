@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Landlord\StorePropertyRequest;
+use App\Http\Requests\Landlord\UpdatePropertyRequest;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,32 +63,12 @@ class PropertyController extends Controller
         return view('landlord.create-apartment');
     }
 
-    public function storeApartment(Request $request)
+    public function storeApartment(StorePropertyRequest $request)
     {
         Log::info('Property creation request received', [
-            'data' => $request->all(),
+            'data' => $request->only(['name', 'property_type', 'address', 'floors', 'bedrooms']),
             'method' => $request->method(),
             'url' => $request->url(),
-        ]);
-
-        // Sanitize phone number - remove all non-digit characters
-        if ($request->has('contact_phone') && $request->contact_phone) {
-            $request->merge(['contact_phone' => preg_replace('/[^0-9]/', '', $request->contact_phone)]);
-        }
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
-            'address' => 'required|string|max:500',
-            'description' => 'nullable|string|max:1000',
-            'contact_person' => 'nullable|string|max:255',
-            'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
-            'contact_email' => 'nullable|email|max:255',
-            'amenities' => 'nullable|array',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'floors' => 'nullable|integer|min:1',
-            'bedrooms' => 'nullable|integer|min:1',
         ]);
 
         try {
@@ -178,38 +160,13 @@ class PropertyController extends Controller
         return view('landlord.edit-apartment', compact('apartment'));
     }
 
-    public function updateApartment(Request $request, $id)
+    public function updateApartment(UpdatePropertyRequest $request, $id)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
-            'address' => 'required|string|max:500',
-            'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:255',
-            'postal_code' => 'nullable|string|max:20',
-            'description' => 'nullable|string|max:1000',
-            'total_units' => 'required|integer|min:1',
-            'floors' => 'nullable|integer|min:1',
-            'bedrooms' => 'nullable|integer|min:1',
-            'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
-            'parking_spaces' => 'nullable|integer|min:0',
-            'contact_person' => 'nullable|string|max:255',
-            'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
-            'contact_email' => 'nullable|email|max:255',
-            'amenities' => 'nullable|array',
-            'status' => 'required|in:active,inactive,maintenance',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-        ]);
-
         try {
-            $currentUnitCount = $property->units()->count();
-            $newTotalUnits = $request->total_units;
-
             $floors = $request->property_type === 'house' ? null : $request->floors;
             $bedrooms = $request->property_type === 'house' ? $request->bedrooms : null;
 

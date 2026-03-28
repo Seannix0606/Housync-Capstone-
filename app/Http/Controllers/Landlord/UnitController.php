@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Landlord\StoreUnitRequest;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
@@ -111,29 +112,11 @@ class UnitController extends Controller
         }
     }
 
-    public function storeUnit(Request $request, $propertyId)
+    public function storeUnit(StoreUnitRequest $request, $propertyId)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
-
-        $request->validate([
-            'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
-            'unit_type' => 'required|string|max:100',
-            'rent_amount' => 'required|numeric|min:0',
-            'status' => 'required|in:available,maintenance',
-            'leasing_type' => 'required|in:separate,inclusive',
-            'description' => 'nullable|string|max:1000',
-            'floor_area' => 'nullable|numeric|min:0',
-            'floor_number' => 'nullable|integer|min:1',
-            'bedrooms' => 'required|integer|min:0',
-            'bathrooms' => 'required|integer|min:1',
-            'is_furnished' => 'boolean',
-            'amenities' => 'nullable|array',
-            'notes' => 'nullable|string|max:500',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-        ]);
 
         $coverPath = null;
         if ($request->hasFile('cover_image')) {
