@@ -79,7 +79,7 @@ class RegistrationController extends Controller
                     $fileName = 'landlord-doc-'.$landlord->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
                     $path = 'landlord-documents/'.$fileName;
 
-                    $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                     if (! $uploadResult['success']) {
                         throw new \RuntimeException('Failed to upload document "'.$file->getClientOriginalName().'": '.($uploadResult['message'] ?? 'Unknown error'));

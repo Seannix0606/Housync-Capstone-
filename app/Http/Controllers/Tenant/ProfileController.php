@@ -145,7 +145,7 @@ class ProfileController extends Controller
 
                     if ($useSupabase) {
                         $path = 'tenant-documents/'.$fileName;
-                        $uploadResult = $supabaseInstance->uploadFile('house-sync', $path, $file->getRealPath());
+                        $uploadResult = $supabaseInstance->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                         if (! $uploadResult['success']) {
                             Log::error('Supabase upload failed', [
