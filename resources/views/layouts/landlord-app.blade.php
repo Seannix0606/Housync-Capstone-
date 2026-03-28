@@ -1201,6 +1201,147 @@
         body.dark-mode .maintenance-header {
             border-color: #334155 !important;
         }
+
+        /* ========== Chat / Messages Dark Mode ========== */
+        body.dark-mode .chat-container {
+            background: #1e293b !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .chat-sidebar,
+        body.dark-mode .chat-main {
+            background: #1e293b !important;
+        }
+
+        body.dark-mode .chat-sidebar-header,
+        body.dark-mode .chat-header,
+        body.dark-mode .chat-input-area {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode .chat-messages {
+            background: #0f172a !important;
+        }
+
+        body.dark-mode .conversation-item:hover,
+        body.dark-mode .conversation-item.active {
+            background: #334155 !important;
+        }
+
+        body.dark-mode .conversation-name {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .conversation-preview {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .chat-header-details h3,
+        body.dark-mode .chat-header-details p {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .chat-header-details p {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .message.received .message-content {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message-text {
+            color: inherit;
+        }
+
+        body.dark-mode .message.received .message-text {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message.received .attachment-item {
+            background: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message-system {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .date-separator span {
+            background: #0f172a !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .date-separator::before {
+            background: #334155 !important;
+        }
+
+        body.dark-mode .chat-input,
+        body.dark-mode .chat-input-area textarea {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .chat-input::placeholder {
+            color: #64748b !important;
+        }
+
+        body.dark-mode .header-action-btn {
+            background: #334155 !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .header-action-btn:hover {
+            background: #475569 !important;
+        }
+
+        body.dark-mode .input-action-btn {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .input-action-btn:hover {
+            background: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .attachment-preview,
+        body.dark-mode .attachment-preview-item {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .back-btn {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .back-btn:hover {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* ========== Input/Textarea Autofill & Placeholder ========== */
+        body.dark-mode input:-webkit-autofill,
+        body.dark-mode input:-webkit-autofill:hover,
+        body.dark-mode input:-webkit-autofill:focus,
+        body.dark-mode input:-webkit-autofill:active,
+        body.dark-mode textarea:-webkit-autofill,
+        body.dark-mode textarea:-webkit-autofill:hover,
+        body.dark-mode textarea:-webkit-autofill:focus,
+        body.dark-mode textarea:-webkit-autofill:active {
+            -webkit-text-fill-color: #e2e8f0 !important;
+            -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        body.dark-mode input::placeholder,
+        body.dark-mode textarea::placeholder {
+            color: #64748b !important;
+        }
     </style>
     @stack('styles')
 </head>

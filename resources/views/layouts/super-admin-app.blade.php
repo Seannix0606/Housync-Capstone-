@@ -219,6 +219,25 @@
             border-color: #60a5fa !important;
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
         }
+
+        /* ========== Input/Textarea Autofill & Placeholder ========== */
+        body.dark-mode input:-webkit-autofill,
+        body.dark-mode input:-webkit-autofill:hover,
+        body.dark-mode input:-webkit-autofill:focus,
+        body.dark-mode input:-webkit-autofill:active,
+        body.dark-mode textarea:-webkit-autofill,
+        body.dark-mode textarea:-webkit-autofill:hover,
+        body.dark-mode textarea:-webkit-autofill:focus,
+        body.dark-mode textarea:-webkit-autofill:active {
+            -webkit-text-fill-color: #e2e8f0 !important;
+            -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        body.dark-mode input::placeholder,
+        body.dark-mode textarea::placeholder {
+            color: #64748b !important;
+        }
     </style>
     @stack('styles')
 </head>

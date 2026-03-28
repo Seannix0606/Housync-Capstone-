@@ -421,6 +421,28 @@
         font-style: italic;
     }
     
+    .attachment-preview {
+        background: #f8fafc;
+    }
+
+    .attachment-preview-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #fff;
+        border-radius: 6px;
+        margin-right: 8px;
+        font-size: 0.85rem;
+    }
+
+    .attachment-remove-btn {
+        border: none;
+        background: none;
+        color: #dc2626;
+        cursor: pointer;
+    }
+
     /* Date Separator */
     .date-separator {
         text-align: center;
@@ -602,7 +624,7 @@
                     <span class="d-none d-sm-inline">Send</span>
                 </button>
             </form>
-            <div id="attachmentPreview" style="display: none; margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px;"></div>
+            <div id="attachmentPreview" class="attachment-preview" style="display: none; margin-top: 10px; padding: 10px; border-radius: 8px;"></div>
         </div>
     </div>
 </div>
@@ -648,9 +670,9 @@
         if (files.length > 0) {
             attachmentPreview.style.display = 'block';
             attachmentPreview.innerHTML = files.map(f => `
-                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #fff; border-radius: 6px; margin-right: 8px; font-size: 0.85rem;">
+                <span class="attachment-preview-item">
                     <i class="fas fa-paperclip"></i> ${f.name}
-                    <button type="button" onclick="removeFile('${f.name}')" style="border: none; background: none; color: #dc2626; cursor: pointer;">&times;</button>
+                    <button type="button" onclick="removeFile('${f.name}')" class="attachment-remove-btn">&times;</button>
                 </span>
             `).join('');
         } else {
