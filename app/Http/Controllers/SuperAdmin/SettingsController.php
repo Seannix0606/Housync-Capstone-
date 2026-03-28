@@ -32,15 +32,7 @@ class SettingsController extends Controller
             $setting = Setting::where('key', $key)->first();
 
             if ($setting) {
-                if ($setting->type === 'boolean') {
-                    $value = isset($value) && $value !== '0' && $value !== 'false';
-                } elseif ($setting->type === 'integer') {
-                    $value = (int) $value;
-                } elseif ($setting->type === 'json' && is_array($value)) {
-                    $value = json_encode($value);
-                }
-
-                $setting->update(['value' => $value]);
+                $setting->update(['value' => $this->castSettingValue($setting, $value)]);
             }
         }
 
@@ -70,15 +62,7 @@ class SettingsController extends Controller
             $setting = Setting::where('key', $key)->where('group', $group)->first();
 
             if ($setting) {
-                if ($setting->type === 'boolean') {
-                    $value = isset($value) && $value !== '0' && $value !== 'false';
-                } elseif ($setting->type === 'integer') {
-                    $value = (int) $value;
-                } elseif ($setting->type === 'json' && is_array($value)) {
-                    $value = json_encode($value);
-                }
-
-                $setting->update(['value' => $value]);
+                $setting->update(['value' => $this->castSettingValue($setting, $value)]);
             }
         }
 
@@ -87,13 +71,27 @@ class SettingsController extends Controller
         return back()->with('success', ucfirst($group).' settings updated successfully.');
     }
 
-    protected function getValidationRule($setting)
+    /**
+     * Coerce a raw request value to the correct type for storage.
+     */
+    protected function castSettingValue($setting, mixed $value): mixed
+    {
+        return match ($setting->type) {
+            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+            'integer' => (int) $value,
+            'json' => is_array($value) ? json_encode($value) : $value,
+            default => $value,
+        };
+    }
+
+    protected function getValidationRule($setting): string
     {
         return match ($setting->type) {
             'integer' => 'nullable|integer',
             'boolean' => 'nullable|boolean',
             'email' => 'nullable|email',
             'url' => 'nullable|url',
+            'json' => 'nullable|array',
             default => 'nullable|string|max:1000',
         };
     }

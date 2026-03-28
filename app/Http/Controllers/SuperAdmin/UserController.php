@@ -10,6 +10,7 @@ use App\Models\TenantProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -57,57 +58,57 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'business_info' => 'nullable|string|max:1000',
+            'approve_immediately' => 'sometimes|boolean',
+            'staff_type' => 'nullable|required_if:role,staff|string|in:maintenance,security,cleaning,concierge,other',
         ]);
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-        ]);
+        DB::transaction(function () use ($request) {
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->role,
+            ]);
 
-        switch ($request->role) {
-            case 'landlord':
-                LandlordProfile::create([
-                    'user_id' => $user->id,
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'business_info' => $request->business_info,
-                    'status' => 'pending',
-                ]);
-                if ($request->approve_immediately ?? false) {
-                    $user->approve(Auth::id());
-                }
-                break;
-            case 'tenant':
-                TenantProfile::create([
-                    'user_id' => $user->id,
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'status' => 'active',
-                ]);
-                break;
-            case 'staff':
-                StaffProfile::create([
-                    'user_id' => $user->id,
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'staff_type' => $request->staff_type ?? 'maintenance',
-                    'status' => 'active',
-                ]);
-                break;
-            case 'super_admin':
-                SuperAdminProfile::create([
-                    'user_id' => $user->id,
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'status' => 'active',
-                ]);
-                break;
-        }
+            switch ($request->role) {
+                case 'landlord':
+                    LandlordProfile::updateOrCreate(['user_id' => $user->id], [
+                        'name' => $request->name,
+                        'phone' => $request->phone,
+                        'address' => $request->address,
+                        'business_info' => $request->business_info,
+                        'status' => 'pending',
+                    ]);
+                    if ($request->boolean('approve_immediately')) {
+                        $user->approve(Auth::id());
+                    }
+                    break;
+                case 'tenant':
+                    TenantProfile::updateOrCreate(['user_id' => $user->id], [
+                        'name' => $request->name,
+                        'phone' => $request->phone,
+                        'address' => $request->address,
+                        'status' => 'active',
+                    ]);
+                    break;
+                case 'staff':
+                    StaffProfile::updateOrCreate(['user_id' => $user->id], [
+                        'name' => $request->name,
+                        'phone' => $request->phone,
+                        'address' => $request->address,
+                        'staff_type' => $request->staff_type,
+                        'status' => 'active',
+                    ]);
+                    break;
+                case 'super_admin':
+                    SuperAdminProfile::updateOrCreate(['user_id' => $user->id], [
+                        'name' => $request->name,
+                        'phone' => $request->phone,
+                        'address' => $request->address,
+                        'status' => 'active',
+                    ]);
+                    break;
+            }
+        });
 
         return redirect()->route('super-admin.users')->with('success', 'User created successfully.');
     }

@@ -16,21 +16,7 @@ class LandlordVerificationController extends Controller
             ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
             ->with(['landlordProfile', 'approvedBy', 'landlordDocuments'])
             ->latest('users.created_at')
-            ->get()
-            ->filter(fn ($landlord) => $landlord->landlordProfile && $landlord->landlordProfile->status === 'pending')
-            ->unique('id')
-            ->values();
-
-        $currentPage = request()->get('page', 1);
-        $perPage = 15;
-        $currentItems = $pendingLandlords->slice(($currentPage - 1) * $perPage, $perPage)->all();
-        $pendingLandlords = new \Illuminate\Pagination\LengthAwarePaginator(
-            $currentItems,
-            $pendingLandlords->count(),
-            $perPage,
-            $currentPage,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+            ->paginate(15);
 
         return view('super-admin.pending-landlords', compact('pendingLandlords'));
     }
@@ -63,6 +49,10 @@ class LandlordVerificationController extends Controller
             return back()->with('error', 'User is not a landlord.');
         }
 
+        if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'rejected') {
+            return back()->with('error', 'This landlord application has already been rejected.');
+        }
+
         $landlord->reject(Auth::id(), $request->reason);
 
         return back()->with('success', 'Landlord rejected successfully.');
@@ -86,7 +76,7 @@ class LandlordVerificationController extends Controller
         $doc = LandlordDocument::findOrFail($docId);
         $doc->update([
             'verification_status' => $request->status,
-            'verified_at' => now(),
+            'verified_at' => $request->status === 'verified' ? now() : null,
             'verified_by' => Auth::id(),
             'verification_notes' => $request->notes,
         ]);
