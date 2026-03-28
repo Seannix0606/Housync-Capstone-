@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\StorageServiceInterface;
+use App\Services\SupabaseService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -13,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bind storage abstraction to Supabase implementation
+        $this->app->bind(StorageServiceInterface::class, SupabaseService::class);
     }
 
     /**
