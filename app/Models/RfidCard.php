@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $card_uid
  * @property int $landlord_id
- * @property int $apartment_id
+ * @property int $property_id
  * @property string|null $card_name
  * @property string $status
  * @property \Carbon\Carbon $issued_at
@@ -25,7 +25,7 @@ class RfidCard extends Model
     protected $fillable = [
         'card_uid',
         'landlord_id',
-        'apartment_id',
+        'property_id',
         'card_name',
         'status',
         'issued_at',
@@ -71,7 +71,7 @@ class RfidCard extends Model
 
     public function apartment()
     {
-        return $this->belongsTo(Property::class);
+        return $this->belongsTo(Property::class, 'property_id');
     }
 
     public function accessLogs()
@@ -96,9 +96,9 @@ class RfidCard extends Model
         return $query->whereIn('status', ['lost', 'stolen']);
     }
 
-    public function scopeForApartment($query, $apartmentId)
+    public function scopeForApartment($query, $propertyId)
     {
-        return $query->where('apartment_id', $apartmentId);
+        return $query->where('property_id', $propertyId);
     }
 
     public function scopeForLandlord($query, $landlordId)
