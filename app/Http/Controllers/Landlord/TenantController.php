@@ -87,7 +87,7 @@ class TenantController extends Controller
     }
 
     /**
-     * Export tenant history as CSV.
+     * Export tenant history as CSV, applying the same filters as tenantHistory().
      */
     public function exportTenantHistoryCSV(Request $request)
     {
@@ -100,6 +100,30 @@ class TenantController extends Controller
             $query->whereHas('unit.property', function ($q) use ($request) {
                 $q->where('id', $request->property_id);
             });
+        }
+
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->unit_id);
+        }
+
+        if ($request->filled('tenant_name')) {
+            $searchTerm = $request->tenant_name;
+            $query->whereHas('tenant', function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('lease_start_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('lease_end_date', '<=', $request->date_to);
         }
 
         $assignments = $query->orderBy('lease_start_date', 'desc')->get();
@@ -120,11 +144,11 @@ class TenantController extends Controller
 
             foreach ($assignments as $assignment) {
                 fputcsv($file, [
-                    $assignment->tenant->name ?? 'N/A',
-                    $assignment->tenant->email ?? 'N/A',
-                    $assignment->tenant->phone ?? 'N/A',
-                    $assignment->unit->property->name ?? 'N/A',
-                    $assignment->unit->unit_number ?? 'N/A',
+                    $this->sanitizeCsvValue($assignment->tenant->name ?? 'N/A'),
+                    $this->sanitizeCsvValue($assignment->tenant->email ?? 'N/A'),
+                    $this->sanitizeCsvValue($assignment->tenant->phone ?? 'N/A'),
+                    $this->sanitizeCsvValue($assignment->unit->property->name ?? 'N/A'),
+                    $this->sanitizeCsvValue($assignment->unit->unit_number ?? 'N/A'),
                     $assignment->unit->bedrooms ?? 'N/A',
                     $assignment->lease_start_date ? $assignment->lease_start_date->format('M d, Y') : 'N/A',
                     $assignment->lease_end_date ? $assignment->lease_end_date->format('M d, Y') : 'N/A',
@@ -137,5 +161,17 @@ class TenantController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Prefix values that begin with formula-injection characters to neutralize them.
+     */
+    private function sanitizeCsvValue(string $value): string
+    {
+        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 }

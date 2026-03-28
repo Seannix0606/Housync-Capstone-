@@ -22,6 +22,7 @@ class StaffController extends Controller
         $landlordId = Auth::id();
 
         $staffQuery = User::where('role', 'staff')
+            ->whereHas('staffProfile', fn ($q) => $q->where('created_by_landlord_id', $landlordId))
             ->with(['staffProfile',
                 'assignedMaintenanceRequests' => function ($query) use ($landlordId) {
                     $query->where('landlord_id', $landlordId)
@@ -132,7 +133,7 @@ class StaffController extends Controller
 
             $staff = User::where('id', $request->staff_id)
                 ->where('role', 'staff')
-                ->where('status', 'active')
+                ->whereHas('staffProfile', fn ($q) => $q->where('created_by_landlord_id', Auth::id())->where('status', 'active'))
                 ->firstOrFail();
 
             $existingAssignment = StaffAssignment::where('unit_id', $request->unit_id)
@@ -224,7 +225,7 @@ class StaffController extends Controller
 
         return response()->json([
             'email' => $assignment->staff->email,
-            'password' => $assignment->generated_password ?? 'Password not available',
+            'note' => 'Passwords are not stored in plain text. Use the password reset flow to send a new password to this staff member.',
         ]);
     }
 
