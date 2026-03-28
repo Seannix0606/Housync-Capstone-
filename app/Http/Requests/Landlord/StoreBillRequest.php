@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Landlord;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StoreBillRequest extends FormRequest
 {
@@ -22,7 +24,12 @@ class StoreBillRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_assignment_id' => 'required|exists:tenant_assignments,id',
+            'tenant_assignment_id' => [
+                'required',
+                Rule::exists('tenant_assignments', 'id')
+                    ->where('landlord_id', Auth::id())
+                    ->where('status', 'active'),
+            ],
             'type' => 'required|in:rent,electricity,water,other',
             'amount' => 'required|numeric|min:1',
             'due_date' => 'required|date|after_or_equal:today',
