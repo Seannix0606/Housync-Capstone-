@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SuperAdmin\StoreUserRequest;
+use App\Http\Requests\SuperAdmin\UpdateUserRequest;
 use App\Models\LandlordProfile;
 use App\Models\StaffProfile;
 use App\Models\SuperAdminProfile;
@@ -48,19 +50,8 @@ class UserController extends Controller
         return view('super-admin.create-user');
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:super_admin,landlord,tenant,staff',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'business_info' => 'nullable|string|max:1000',
-            'approve_immediately' => 'sometimes|boolean',
-            'staff_type' => 'nullable|required_if:role,staff|string|in:maintenance,security,cleaning,concierge,other',
-        ]);
 
         DB::transaction(function () use ($request) {
             $user = User::create([
@@ -120,7 +111,7 @@ class UserController extends Controller
         return view('super-admin.edit-user', compact('user'));
     }
 
-    public function update(\App\Http\Requests\SuperAdmin\UpdateUserRequest $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
         $user = User::findOrFail($id);
 

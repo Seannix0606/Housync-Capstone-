@@ -23,13 +23,15 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|string|in:landlord,tenant,staff',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'business_info' => 'nullable|string|max:1000',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|string|email|max:255|unique:users',
+            'password'            => 'required|string|min:8|confirmed',
+            'role'                => 'required|in:super_admin,landlord,tenant,staff',
+            'phone'               => 'nullable|string|max:20',
+            'address'             => 'nullable|string|max:500',
+            'business_info'       => 'nullable|string|max:1000',
+            'approve_immediately' => 'sometimes|boolean',
+            'staff_type'          => 'nullable|required_if:role,staff|string|in:maintenance,security,cleaning,concierge,other',
         ];
     }
 }
