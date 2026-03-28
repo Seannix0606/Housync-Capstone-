@@ -406,7 +406,7 @@ class RfidController extends Controller
                 'direct_mode' => true, // Flag for direct Card UID extraction
             ];
 
-            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds($timeout + 5));
 
             return response()->json([
                 'success' => true,
@@ -697,7 +697,7 @@ class RfidController extends Controller
                 'error' => null,
             ];
 
-            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds($timeout + 5));
 
             return response()->json([
                 'success' => true,
@@ -794,7 +794,7 @@ class RfidController extends Controller
                 'request_type' => 'web_interface',
             ];
 
-            Cache::put($cacheKey, $scanRequest, now()->addSeconds(30));
+            Cache::put($cacheKey, $scanRequest, now()->addSeconds(20));
 
             return response()->json([
                 'success' => true,
@@ -837,9 +837,10 @@ class RfidController extends Controller
 
         $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
         $timeout = (int) ($scanData['timeout'] ?? 15);
+        $expiresAt = $requestedAt->copy()->addSeconds($timeout);
 
         // Check if scan has timed out
-        if ($requestedAt->addSeconds($timeout)->isPast()) {
+        if ($expiresAt->isPast()) {
             Cache::forget($cacheKey);
 
             return response()->json([
@@ -854,7 +855,7 @@ class RfidController extends Controller
             'status' => $scanData['status'],
             'card_uid' => $scanData['card_uid'],
             'error' => $scanData['error'],
-            'remaining_time' => max(0, $requestedAt->addSeconds($timeout)->diffInSeconds(now())),
+            'remaining_time' => max(0, $expiresAt->diffInSeconds(now())),
         ]);
     }
 
@@ -938,7 +939,7 @@ class RfidController extends Controller
 
         $scanData['completed_at'] = now()->toISOString();
 
-        // Persist updated scan data in cache with a short TTL to allow the client to read it
+        // Persist updated scan data long enough for the client poller to read the final state
         Cache::put($cacheKey, $scanData, now()->addSeconds(30));
 
         return response()->json(['success' => true]);
