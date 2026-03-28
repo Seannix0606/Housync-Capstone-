@@ -10,7 +10,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}">Security</a>
+                        <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item">
                         <a href="{{ route('landlord.security.card-details', $card->id) }}">Card Details</a>
@@ -19,7 +19,7 @@
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}" 
+        <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -167,7 +167,7 @@
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-exchange-alt"></i> Reassign Card to New Tenant
                                 </button>
-                                <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}" 
+                                <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}" 
                                    class="btn btn-secondary">
                                     Cancel
                                 </a>
@@ -179,7 +179,7 @@
                             <strong>No Available Tenants</strong>
                             <p class="mb-0">There are no active tenants in <strong>{{ $card->apartment->name }}</strong> available for card assignment. Please ensure you have active tenants before reassigning this card.</p>
                         </div>
-                        <a href="{{ route('landlord.security', ['apartment_id' => $card->apartment_id]) }}" 
+                        <a href="{{ route('landlord.security', ['property_id' => $card->property_id]) }}" 
                            class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Security
                         </a>

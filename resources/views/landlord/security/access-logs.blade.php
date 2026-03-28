@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['apartment_id' => $apartmentId]) }}">Security</a>
+                        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Access Logs</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['apartment_id' => $apartmentId]) }}" 
+        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -34,12 +34,12 @@
                 <div class="row g-3">
                     <!-- Apartment Filter -->
                     <div class="col-md-3">
-                        <label for="apartment_id" class="form-label">Apartment</label>
-                        <select name="apartment_id" id="apartment_id" class="form-select">
+                        <label for="property_id" class="form-label">Apartment</label>
+                        <select name="property_id" id="property_id" class="form-select">
                             <option value="">All Apartments</option>
                             @foreach($apartments as $apartment)
                                 <option value="{{ $apartment->id }}" 
-                                        {{ $apartmentId == $apartment->id ? 'selected' : '' }}>
+                                        {{ $propertyId == $apartment->id ? 'selected' : '' }}>
                                     {{ $apartment->name }}
                                 </option>
                             @endforeach
@@ -308,7 +308,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form when quick filters change
-    const quickFilters = ['apartment_id', 'result'];
+    const quickFilters = ['property_id', 'result'];
     
     quickFilters.forEach(filterId => {
         const filterElement = document.getElementById(filterId);

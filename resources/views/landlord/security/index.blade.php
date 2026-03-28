@@ -7,11 +7,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Security Management</h1>
         <div class="d-flex gap-2">
-            <a href="{{ route('landlord.security.create-card', ['apartment_id' => $apartmentId]) }}" 
+            <a href="{{ route('landlord.security.create-card', ['property_id' => $propertyId]) }}" 
                class="btn btn-primary">
                 <i class="fas fa-plus"></i> Assign New Card
             </a>
-            <a href="{{ route('landlord.security.access-logs', ['apartment_id' => $apartmentId]) }}" 
+            <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
                class="btn btn-outline-secondary">
                 <i class="fas fa-list"></i> View All Logs
             </a>
@@ -40,11 +40,11 @@
                     <h6 class="card-title">Filter by Apartment</h6>
                     <form method="GET" action="{{ route('landlord.security.index') }}">
                         <div class="input-group">
-                            <select name="apartment_id" class="form-select" onchange="this.form.submit()">
+                            <select name="property_id" class="form-select" onchange="this.form.submit()">
                                 <option value="">All Apartments</option>
                                 @foreach($apartments as $apartment)
                                     <option value="{{ $apartment->id }}" 
-                                            {{ $apartmentId == $apartment->id ? 'selected' : '' }}>
+                                            {{ $propertyId == $apartment->id ? 'selected' : '' }}>
                                         {{ $apartment->name }}
                                     </option>
                                 @endforeach
@@ -193,7 +193,7 @@
                     <i class="fas fa-id-card-alt fa-3x text-muted mb-3"></i>
                     <h5>No RFID Cards Found</h5>
                     <p class="text-muted">Get started by assigning RFID cards to your tenants.</p>
-                    <a href="{{ route('landlord.security.create-card', ['apartment_id' => $apartmentId]) }}" 
+                    <a href="{{ route('landlord.security.create-card', ['property_id' => $propertyId]) }}" 
                        class="btn btn-primary">
                         <i class="fas fa-plus"></i> Assign First Card
                     </a>
@@ -207,7 +207,7 @@
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Recent Access Attempts</h5>
-                <a href="{{ route('landlord.security.access-logs', ['apartment_id' => $apartmentId]) }}" 
+                <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
                    class="btn btn-sm btn-outline-primary">
                     View All
                 </a>
@@ -254,7 +254,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const bodyEl = document.getElementById('recent-logs-body');
     if (!bodyEl) return;
-    const apartmentId = @json($apartmentId);
+    const propertyId = @json($propertyId);
 
     function renderRows(logs) {
         const rows = logs.map(l => `
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function refreshLogs() {
         try {
             const params = new URLSearchParams();
-            if (apartmentId) params.set('apartment_id', apartmentId);
+            if (propertyId) params.set('property_id', propertyId);
             params.set('limit', 10);
             const res = await fetch(`/api/rfid/recent-logs?${params.toString()}`, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
