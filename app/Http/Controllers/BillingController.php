@@ -48,7 +48,7 @@ class BillingController extends Controller
             'total_amount' => Bill::forLandlord($landlordId)->sum('amount') ?? 0,
             'total_collected' => Bill::forLandlord($landlordId)->sum('amount_paid') ?? 0,
             'total_outstanding' => Bill::forLandlord($landlordId)->sum('balance') ?? 0,
-            'pending_count' => Bill::forLandlord($landlordId)->where('status', 'unpaid')->orWhere('status', 'partially_paid')->count(),
+            'pending_count' => Bill::forLandlord($landlordId)->whereIn('status', ['unpaid', 'partially_paid'])->count(),
         ];
 
         // Get active tenant assignments for the "Create Bill" dropdown
