@@ -66,7 +66,7 @@ class PropertyController extends Controller
     public function storeApartment(StorePropertyRequest $request)
     {
         Log::info('Property creation request received', [
-            'data' => $request->all(),
+            'data' => $request->only(['name', 'property_type', 'address', 'floors', 'bedrooms']),
             'method' => $request->method(),
             'url' => $request->url(),
         ]);
@@ -167,9 +167,6 @@ class PropertyController extends Controller
         $property = $landlord->properties()->findOrFail($id);
 
         try {
-            $currentUnitCount = $property->units()->count();
-            $newTotalUnits = $request->total_units;
-
             $floors = $request->property_type === 'house' ? null : $request->floors;
             $bedrooms = $request->property_type === 'house' ? $request->bedrooms : null;
 
