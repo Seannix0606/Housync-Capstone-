@@ -451,38 +451,43 @@ Route::get('/dashboard', function () {
 |--------------------------------------------------------------------------
 */
 
+// Public health check — safe for load balancers and uptime monitors.
+// Returns only operational status; no environment, config, or version data.
 Route::get('/health', function () {
     try {
-        $dbConnected = DB::connection()->getPdo() ? 'connected' : 'disconnected';
+        DB::connection()->getPdo();
+        $dbStatus = 'connected';
     } catch (\Exception $exception) {
         \Illuminate\Support\Facades\Log::error('Health check DB connection failed', ['exception' => $exception]);
-        $dbConnected = 'disconnected';
+        $dbStatus = 'disconnected';
     }
 
     return response()->json([
-        'status' => 'healthy',
-        'timestamp' => now(),
-        'database' => $dbConnected,
-        'version' => app()->version(),
-        'app_key' => config('app.key') ? 'set' : 'missing',
-        'app_debug' => config('app.debug'),
-        'app_env' => config('app.env'),
+        'status' => 'ok',
+        'database' => $dbStatus,
+        'timestamp' => now()->toISOString(),
     ]);
 });
 
+// Diagnostic route — restricted to super admins in local/staging environments only.
+// Returns 404 in production regardless of authentication.
 Route::get('/debug', function () {
+    if (app()->isProduction()) {
+        abort(404);
+    }
+
+    try {
+        DB::connection()->getPdo();
+        $dbStatus = 'connected';
+    } catch (\Exception $exception) {
+        $dbStatus = 'disconnected';
+    }
+
     return response()->json([
-        'message' => 'Laravel is working!',
-        'php_version' => PHP_VERSION,
-        'laravel_version' => app()->version(),
+        'status' => 'ok',
         'environment' => app()->environment(),
         'config_cached' => app()->configurationIsCached(),
         'routes_cached' => app()->routesAreCached(),
-        'app_key' => config('app.key') ? 'configured' : 'missing',
-        'database' => [
-            'default' => config('database.default'),
-            'host' => config('database.connections.mysql.host'),
-            'database' => config('database.connections.mysql.database'),
-        ],
+        'database' => $dbStatus,
     ]);
-});
+})->middleware(['auth', 'role:super_admin']);
