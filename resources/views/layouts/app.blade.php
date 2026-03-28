@@ -461,6 +461,125 @@
             background: #334155;
             color: #fbbf24;
         }
+
+        /* ========== Chat / Messages Dark Mode ========== */
+        body.dark-mode .chat-card,
+        body.dark-mode .chat-page .chat-card {
+            background: #1e293b !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .chat-header {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode .chat-messages {
+            background: #0f172a !important;
+        }
+
+        body.dark-mode .message.received .message-content {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message.received .message-text {
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message.received .attachment-item {
+            background: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .message-system {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .date-separator span {
+            background: #0f172a !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .date-separator::before {
+            background: #334155 !important;
+        }
+
+        body.dark-mode .chat-input-area {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode .chat-input,
+        body.dark-mode .chat-input-area textarea {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .chat-input::placeholder {
+            color: #64748b !important;
+        }
+
+        body.dark-mode .header-action-btn,
+        body.dark-mode .input-action-btn {
+            background: #334155 !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .back-btn {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .back-btn:hover {
+            background: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .chat-header-info h3 {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .chat-header-info p {
+            color: #94a3b8 !important;
+        }
+
+        /* ========== Input/Textarea Autofill & Placeholder ========== */
+        body.dark-mode input:-webkit-autofill,
+        body.dark-mode input:-webkit-autofill:hover,
+        body.dark-mode input:-webkit-autofill:focus,
+        body.dark-mode input:-webkit-autofill:active,
+        body.dark-mode textarea:-webkit-autofill,
+        body.dark-mode textarea:-webkit-autofill:hover,
+        body.dark-mode textarea:-webkit-autofill:focus,
+        body.dark-mode textarea:-webkit-autofill:active {
+            -webkit-text-fill-color: #e2e8f0 !important;
+            -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        body.dark-mode input::placeholder,
+        body.dark-mode textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        /* Override inline white backgrounds in dark mode */
+        body.dark-mode [style*="background: white"],
+        body.dark-mode [style*="background:white"],
+        body.dark-mode [style*="background: #fff"],
+        body.dark-mode [style*="background:#fff"] {
+            background: #1e293b !important;
+        }
+
+        body.dark-mode [style*="background: #f8fafc"],
+        body.dark-mode [style*="background:#f8fafc"],
+        body.dark-mode [style*="background: #f1f5f9"],
+        body.dark-mode [style*="background:#f1f5f9"] {
+            background: #0f172a !important;
+        }
     </style>
     @stack('styles')
 </head>
