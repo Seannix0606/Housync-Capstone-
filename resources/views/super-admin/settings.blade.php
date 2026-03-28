@@ -481,6 +481,7 @@
                             <h3 class="form-section-title">Feature Toggles</h3>
                             
                             @foreach($groupSettings as $setting)
+                                @if($setting->key !== 'maintenance_mode')
                                 <div class="form-group">
                                     <div class="form-check">
                                         <input type="checkbox" 
@@ -497,6 +498,7 @@
                                         <div class="form-description">{{ $setting->description }}</div>
                                     @endif
                                 </div>
+                                @endif
                             @endforeach
                         </div>
 
