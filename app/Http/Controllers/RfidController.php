@@ -21,40 +21,40 @@ class RfidController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $apartmentId = $request->get('apartment_id');
+        $propertyId = $request->get('property_id');
 
         // Get landlord's properties
         $apartments = $user->properties;
 
-        // If no specific apartment selected, use the first one
-        if (! $apartmentId && $apartments->count() > 0) {
-            $apartmentId = $apartments->first()->id;
+        // If no specific property selected, use the first one
+        if (! $propertyId && $apartments->count() > 0) {
+            $propertyId = $apartments->first()->id;
         }
 
-        // Get RFID cards for the selected apartment
+        // Get RFID cards for the selected property
         $cards = RfidCard::with(['activeTenantAssignment.tenantAssignment.tenant', 'apartment'])
             ->forLandlord($user->id);
 
-        if ($apartmentId) {
-            $cards = $cards->forApartment($apartmentId);
+        if ($propertyId) {
+            $cards = $cards->forApartment($propertyId);
         }
 
         $cards = $cards->orderBy('created_at', 'desc')->paginate(10);
 
         // Get recent access logs
         $recentLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
-            ->when($apartmentId, function ($query) use ($apartmentId) {
-                return $query->where('apartment_id', $apartmentId);
+            ->when($propertyId, function ($query) use ($propertyId) {
+                return $query->where('property_id', $propertyId);
             })
             ->orderBy('access_time', 'desc')
             ->limit(10)
             ->get();
 
         // Get access statistics
-        $stats = AccessLog::getAccessStats($apartmentId, 30);
+        $stats = AccessLog::getAccessStats($propertyId, 30);
 
         return view('landlord.security.index', compact(
-            'cards', 'apartments', 'apartmentId', 'recentLogs', 'stats'
+            'cards', 'apartments', 'propertyId', 'recentLogs', 'stats'
         ));
     }
 
@@ -64,24 +64,24 @@ class RfidController extends Controller
     public function create(Request $request)
     {
         $user = Auth::user();
-        $apartmentId = $request->get('apartment_id');
+        $propertyId = $request->get('property_id');
 
         // Get landlord's properties
         $apartments = $user->properties;
 
-        // Get active tenant assignments for the apartment
+        // Get active tenant assignments for the property
         $tenantAssignments = TenantAssignment::with(['tenant', 'unit'])
             ->where('landlord_id', $user->id)
-            ->when($apartmentId, function ($query) use ($apartmentId) {
-                return $query->whereHas('unit', function ($query) use ($apartmentId) {
-                    $query->where('apartment_id', $apartmentId);
+            ->when($propertyId, function ($query) use ($propertyId) {
+                return $query->whereHas('unit', function ($query) use ($propertyId) {
+                    $query->where('property_id', $propertyId);
                 });
             })
             ->active()
             ->get();
 
         return view('landlord.security.create', compact(
-            'apartments', 'apartmentId', 'tenantAssignments'
+            'apartments', 'propertyId', 'tenantAssignments'
         ));
     }
 
@@ -93,7 +93,7 @@ class RfidController extends Controller
         $request->validate([
             'card_uid' => 'required|string|max:255|unique:rfid_cards',
             'tenant_assignment_id' => 'required|exists:tenant_assignments,id',
-            'apartment_id' => 'required|exists:properties,id',
+            'property_id' => 'required|exists:properties,id',
             'card_name' => 'nullable|string|max:255',
             'expires_at' => 'nullable|date|after:today',
             'notes' => 'nullable|string|max:1000',
@@ -111,9 +111,9 @@ class RfidController extends Controller
         }
 
         // Verify the property belongs to this landlord
-        $apartment = $user->properties()->find($request->apartment_id);
-        if (! $apartment) {
-            return back()->withErrors(['apartment_id' => 'Invalid apartment.']);
+        $property = $user->properties()->find($request->property_id);
+        if (! $property) {
+            return back()->withErrors(['property_id' => 'Invalid property.']);
         }
 
         try {
@@ -123,7 +123,7 @@ class RfidController extends Controller
             $rfidCard = RfidCard::create([
                 'card_uid' => strtoupper($request->card_uid),
                 'landlord_id' => $user->id,
-                'apartment_id' => $request->apartment_id,
+                'property_id' => $request->property_id,
                 'card_name' => $request->card_name,
                 'status' => 'active',
                 'issued_at' => now(),
@@ -143,7 +143,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['apartment_id' => $request->apartment_id])
+            return redirect()->route('landlord.security', ['property_id' => $request->property_id])
                 ->with('success', 'RFID card assigned successfully!');
 
         } catch (\Exception $exception) {
@@ -180,7 +180,7 @@ class RfidController extends Controller
     public function accessLogs(Request $request)
     {
         $user = Auth::user();
-        $apartmentId = $request->get('apartment_id');
+        $propertyId = $request->get('property_id');
         $cardUid = $request->get('card_uid');
         $result = $request->get('result');
         $dateFrom = $request->get('date_from');
@@ -189,13 +189,13 @@ class RfidController extends Controller
         // Get landlord's properties
         $apartments = $user->properties;
 
-        // Build query
+        // Build query — restrict to this landlord's properties
         $query = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
-            ->whereIn('apartment_id', $apartments->pluck('id'));
+            ->whereIn('property_id', $apartments->pluck('id'));
 
         // Apply filters
-        if ($apartmentId) {
-            $query->where('apartment_id', $apartmentId);
+        if ($propertyId) {
+            $query->where('property_id', $propertyId);
         }
 
         if ($cardUid) {
@@ -217,10 +217,10 @@ class RfidController extends Controller
         $logs = $query->orderBy('access_time', 'desc')->paginate(20);
 
         // Get denied access reasons for stats
-        $deniedReasons = AccessLog::getDeniedAccessReasons($apartmentId);
+        $deniedReasons = AccessLog::getDeniedAccessReasons($propertyId);
 
         return view('landlord.security.access-logs', compact(
-            'logs', 'apartments', 'apartmentId', 'cardUid', 'result',
+            'logs', 'apartments', 'propertyId', 'cardUid', 'result',
             'dateFrom', 'dateTo', 'deniedReasons'
         ));
     }
@@ -253,11 +253,11 @@ class RfidController extends Controller
             ->where('landlord_id', $user->id)
             ->findOrFail($id);
 
-        // Get active tenant assignments for the same apartment (excluding current tenant if any)
+        // Get active tenant assignments for the same property (excluding current tenant if any)
         $tenantAssignments = TenantAssignment::with(['tenant', 'unit'])
             ->where('landlord_id', $user->id)
             ->whereHas('unit', function ($query) use ($card) {
-                $query->where('apartment_id', $card->apartment_id);
+                $query->where('property_id', $card->property_id);
             })
             ->when($card->activeTenantAssignment, function ($query) use ($card) {
                 // Exclude the currently assigned tenant
@@ -284,11 +284,11 @@ class RfidController extends Controller
 
         $card = RfidCard::where('landlord_id', $user->id)->findOrFail($id);
 
-        // Verify the tenant assignment belongs to this landlord and apartment
+        // Verify the tenant assignment belongs to this landlord and property
         $tenantAssignment = TenantAssignment::where('id', $request->tenant_assignment_id)
             ->where('landlord_id', $user->id)
             ->whereHas('unit', function ($query) use ($card) {
-                $query->where('apartment_id', $card->apartment_id);
+                $query->where('property_id', $card->property_id);
             })
             ->first();
 
@@ -325,7 +325,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['apartment_id' => $card->apartment_id])
+            return redirect()->route('landlord.security', ['property_id' => $card->property_id])
                 ->with('success', 'RFID card reassigned successfully to '.$tenantAssignment->tenant->name.'!');
 
         } catch (\Exception $exception) {
@@ -371,7 +371,7 @@ class RfidController extends Controller
             'card_uid' => $cardUid,
             'rfid_card_id' => $rfidCard?->id,
             'tenant_assignment_id' => $rfidCard?->activeTenantAssignment?->tenant_assignment_id,
-            'apartment_id' => $rfidCard?->apartment_id,
+            'property_id' => $rfidCard?->property_id,
             'access_result' => $result['access_granted'] ? 'granted' : 'denied',
             'denial_reason' => $result['denial_reason'],
             'access_time' => now(),
@@ -487,7 +487,7 @@ class RfidController extends Controller
                         'card_uid' => $cardUID,
                         'rfid_card_id' => null,
                         'tenant_assignment_id' => null,
-                        'apartment_id' => null,
+                        'property_id' => null,
                         'access_result' => 'denied',
                         'denial_reason' => 'card_not_found',
                         'access_time' => now(),
@@ -522,7 +522,7 @@ class RfidController extends Controller
                     'card_uid' => $cardUID,
                     'rfid_card_id' => $rfidCard->id,
                     'tenant_assignment_id' => $rfidCard->activeTenantAssignment?->tenant_assignment_id,
-                    'apartment_id' => $rfidCard->apartment_id,
+                    'property_id' => $rfidCard->property_id,
                     'access_result' => $result['access_granted'] ? 'granted' : 'denied',
                     'denial_reason' => $result['denial_reason'] ?? null,
                     'access_time' => now(),
@@ -613,13 +613,13 @@ class RfidController extends Controller
      */
     public function recentLogsJson(Request $request)
     {
-        $apartmentId = $request->get('apartment_id');
+        $propertyId = $request->get('property_id');
         $limit = (int) ($request->get('limit', 10));
         $limit = max(1, min(50, $limit));
 
         $logs = \App\Models\AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
             ->whereHas('apartment', fn ($query) => $query->where('landlord_id', auth()->id()))
-            ->when($apartmentId, fn ($query) => $query->where('apartment_id', $apartmentId))
+            ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->orderBy('access_time', 'desc')
             ->limit($limit)
             ->get();

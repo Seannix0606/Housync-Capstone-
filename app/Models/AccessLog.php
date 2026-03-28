@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $card_uid
  * @property int|null $rfid_card_id
  * @property int|null $tenant_assignment_id
- * @property int|null $apartment_id
+ * @property int|null $property_id
  * @property string $access_result
  * @property string|null $denial_reason
  * @property \Carbon\Carbon $access_time
@@ -27,7 +27,7 @@ class AccessLog extends Model
         'card_uid',
         'rfid_card_id',
         'tenant_assignment_id',
-        'apartment_id',
+        'property_id',
         'access_result',
         'denial_reason',
         'access_time',
@@ -53,7 +53,7 @@ class AccessLog extends Model
 
     public function apartment()
     {
-        return $this->belongsTo(Property::class);
+        return $this->belongsTo(Property::class, 'property_id');
     }
 
     // Scopes
@@ -67,9 +67,9 @@ class AccessLog extends Model
         return $query->where('access_result', 'denied');
     }
 
-    public function scopeForApartment($query, $apartmentId)
+    public function scopeForApartment($query, $propertyId)
     {
-        return $query->where('apartment_id', $apartmentId);
+        return $query->where('property_id', $propertyId);
     }
 
     public function scopeForCard($query, $cardUid)
@@ -190,12 +190,12 @@ class AccessLog extends Model
     }
 
     // Static methods for statistics
-    public static function getAccessStats($apartmentId = null, $days = 30)
+    public static function getAccessStats($propertyId = null, $days = 30)
     {
         $baseQuery = static::query();
 
-        if ($apartmentId) {
-            $baseQuery->where('apartment_id', $apartmentId);
+        if ($propertyId) {
+            $baseQuery->where('property_id', $propertyId);
         }
 
         $baseQuery->where('access_time', '>=', now()->subDays($days));
@@ -208,25 +208,25 @@ class AccessLog extends Model
         ];
     }
 
-    public static function getRecentActivity($apartmentId = null, $limit = 10)
+    public static function getRecentActivity($propertyId = null, $limit = 10)
     {
         $query = static::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
             ->orderBy('access_time', 'desc');
 
-        if ($apartmentId) {
-            $query->where('apartment_id', $apartmentId);
+        if ($propertyId) {
+            $query->where('property_id', $propertyId);
         }
 
         return $query->limit($limit)->get();
     }
 
-    public static function getDeniedAccessReasons($apartmentId = null, $days = 30)
+    public static function getDeniedAccessReasons($propertyId = null, $days = 30)
     {
         $query = static::where('access_result', 'denied')
             ->where('access_time', '>=', now()->subDays($days));
 
-        if ($apartmentId) {
-            $query->where('apartment_id', $apartmentId);
+        if ($propertyId) {
+            $query->where('property_id', $propertyId);
         }
 
         return $query->groupBy('denial_reason')
