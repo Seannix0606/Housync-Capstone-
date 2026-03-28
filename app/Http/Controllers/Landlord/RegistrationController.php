@@ -11,7 +11,6 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class RegistrationController extends Controller
@@ -48,7 +47,7 @@ class RegistrationController extends Controller
             $landlord = DB::transaction(function () use ($request, $supabase) {
                 $landlord = User::create([
                     'email' => $request->email,
-                    'password' => Hash::make($request->password),
+                    'password' => $request->password,
                     'role' => 'landlord',
                 ]);
 
@@ -79,7 +78,7 @@ class RegistrationController extends Controller
                     $fileName = 'landlord-doc-'.$landlord->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
                     $path = 'landlord-documents/'.$fileName;
 
-                    $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                     if (! $uploadResult['success']) {
                         throw new \RuntimeException('Failed to upload document "'.$file->getClientOriginalName().'": '.($uploadResult['message'] ?? 'Unknown error'));

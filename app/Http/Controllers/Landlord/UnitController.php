@@ -123,7 +123,7 @@ class UnitController extends Controller
             $supabase = new SupabaseService;
             $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
             $path = 'units/'.$filename;
-            $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
+            $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
 
             if ($uploadResult['success']) {
                 $coverPath = $uploadResult['url'];
@@ -138,7 +138,7 @@ class UnitController extends Controller
                 $supabase = new SupabaseService;
                 $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
                 $path = 'units/gallery/'.$filename;
-                $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                 if ($uploadResult['success']) {
                     $galleryPaths[] = $uploadResult['url'];
@@ -379,7 +379,7 @@ class UnitController extends Controller
                 $supabase = new SupabaseService;
                 $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
                 $path = 'units/'.$filename;
-                $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
+                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
 
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
@@ -395,7 +395,7 @@ class UnitController extends Controller
                 foreach ($request->file('gallery') as $index => $file) {
                     $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
                     $path = 'units/gallery/'.$filename;
-                    $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];

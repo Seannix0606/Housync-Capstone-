@@ -389,7 +389,7 @@ class ChatController extends Controller
 
         if ($useSupabase) {
             $supabase = new SupabaseService;
-            $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+            $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
             if (! $uploadResult['success']) {
                 throw new \Exception('Failed to upload attachment: '.($uploadResult['message'] ?? 'Unknown error'));

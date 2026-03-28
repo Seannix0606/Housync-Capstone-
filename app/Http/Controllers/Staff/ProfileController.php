@@ -51,7 +51,7 @@ class ProfileController extends Controller
                 return response()->json(['error' => 'Current password is incorrect.'], 400);
             }
 
-            $staff->update(['password' => Hash::make($request->new_password)]);
+            $staff->update(['password' => $request->new_password]);
 
             Log::info('Staff password updated', ['staff_id' => $staff->id, 'staff_email' => $staff->email, 'updated_at' => now()]);
 

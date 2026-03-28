@@ -382,7 +382,7 @@ class TenantAssignmentController extends Controller
                     if ($useSupabase) {
                         $path = 'tenant-documents/'.$fileName;
                         // Upload to Supabase
-                        $uploadResult = $supabaseInstance->uploadFile('house-sync', $path, $file->getRealPath());
+                        $uploadResult = $supabaseInstance->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                         // Enhanced error handling for Supabase uploads
                         if (! $uploadResult['success']) {
@@ -901,7 +901,7 @@ class TenantAssignmentController extends Controller
 
             // Update password
             $tenant->update([
-                'password' => Hash::make($request->new_password),
+                'password' => $request->new_password,
             ]);
 
             // Log the password change

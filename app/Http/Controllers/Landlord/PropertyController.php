@@ -78,7 +78,7 @@ class PropertyController extends Controller
                     $supabase = new SupabaseService;
                     $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
                     $path = 'properties/'.$filename;
-                    $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
+                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
 
                     if ($uploadResult['success']) {
                         $coverPath = $uploadResult['url'];
@@ -100,7 +100,7 @@ class PropertyController extends Controller
                         $supabase = $supabase ?? new SupabaseService;
                         $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
                         $path = 'properties/gallery/'.$filename;
-                        $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                        $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                         if ($uploadResult['success']) {
                             $galleryPaths[] = $uploadResult['url'];
@@ -194,7 +194,7 @@ class PropertyController extends Controller
                 $supabase = new SupabaseService;
                 $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
                 $path = 'properties/'.$filename;
-                $uploadResult = $supabase->uploadFile('house-sync', $path, $request->file('cover_image')->getRealPath());
+                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
 
                 if ($uploadResult['success']) {
                     $updateData['cover_image'] = $uploadResult['url'];
@@ -208,7 +208,7 @@ class PropertyController extends Controller
                 foreach ($request->file('gallery') as $index => $file) {
                     $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
                     $path = 'properties/gallery/'.$filename;
-                    $uploadResult = $supabase->uploadFile('house-sync', $path, $file->getRealPath());
+                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
 
                     if ($uploadResult['success']) {
                         $galleryPaths[] = $uploadResult['url'];

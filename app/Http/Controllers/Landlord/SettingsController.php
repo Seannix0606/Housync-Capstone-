@@ -83,7 +83,7 @@ class SettingsController extends Controller
         }
 
         $user->update([
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
         ]);
 
         Log::info('Landlord password updated', ['landlord_id' => $user->id]);
