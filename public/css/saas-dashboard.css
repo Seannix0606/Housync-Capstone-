@@ -1,0 +1,593 @@
+/**
+ * HouseSync — light SaaS dashboard shell (sidebar, topbar, cards).
+ * Scoped with body.saas-dashboard; respects .dark-mode.
+ */
+
+body.saas-dashboard {
+  --saas-blue: #2563eb;
+  --saas-blue-soft: #eff6ff;
+  --saas-orange: #fb923c;
+  --saas-orange-soft: #fff7ed;
+  --saas-page: #eef1f7;
+  --saas-card-border: #e8ecf4;
+  --saas-text: #1e293b;
+  --saas-muted: #64748b;
+  --saas-sidebar-active: #fff1eb;
+}
+
+/* ----- Light mode: page & main ----- */
+body.saas-dashboard:not(.dark-mode) html,
+body.saas-dashboard:not(.dark-mode) {
+  background-color: var(--saas-page) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content {
+  background: var(--saas-page) !important;
+  color: var(--saas-text);
+}
+
+/* ----- Light sidebar ----- */
+body.saas-dashboard:not(.dark-mode) aside.sidebar {
+  background: #ffffff !important;
+  color: var(--saas-text) !important;
+  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.06);
+  border-right: 1px solid var(--saas-card-border);
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-header {
+  border-bottom-color: var(--saas-card-border) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-hamburger {
+  color: var(--saas-muted) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-hamburger:hover {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+body.saas-dashboard:not(.dark-mode) nav.sidebar-nav a.nav-link {
+  color: var(--saas-muted) !important;
+  border-left: none !important;
+  border-radius: 12px !important;
+  margin: 3px 10px;
+  padding: 0.7rem 1rem !important;
+}
+
+body.saas-dashboard:not(.dark-mode) nav.sidebar-nav a.nav-link:hover {
+  background: #f8fafc !important;
+  color: var(--saas-text) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) nav.sidebar-nav a.nav-link.active {
+  background: var(--saas-sidebar-active) !important;
+  color: var(--saas-text) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(251, 146, 60, 0.15);
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-footer {
+  border-top-color: var(--saas-card-border) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-footer .btn-danger {
+  background: transparent !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 12px !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .sidebar-footer .btn-danger:hover {
+  background: #fef2f2 !important;
+}
+
+/* Logo mark */
+.saas-logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--saas-blue), #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.saas-logo-mark i {
+  font-size: 0.95rem;
+}
+
+.dashboard-container.collapsed .saas-logo-mark {
+  display: none;
+}
+
+/* ----- Top bar ----- */
+body.saas-dashboard .saas-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.65rem 1.15rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--saas-card-border);
+}
+
+body.saas-dashboard .saas-search-wrap {
+  flex: 1;
+  min-width: 200px;
+  max-width: 520px;
+  position: relative;
+}
+
+body.saas-dashboard .saas-search-wrap .saas-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+body.saas-dashboard .saas-search-input {
+  width: 100%;
+  border: 1px solid var(--saas-card-border);
+  border-radius: 999px;
+  padding: 0.55rem 1rem 0.55rem 2.65rem;
+  background: #f8fafc;
+  font-size: 0.9rem;
+  color: var(--saas-text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+body.saas-dashboard .saas-search-input:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.45);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+body.saas-dashboard .saas-search-input::placeholder {
+  color: #94a3b8;
+}
+
+body.saas-dashboard .saas-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+body.saas-dashboard .saas-topbar-actions .notification-bell {
+  margin-right: 0 !important;
+}
+
+body.saas-dashboard .saas-icon-btn.dark-mode-toggle {
+  border-radius: 12px;
+  border: 1px solid var(--saas-card-border);
+  padding: 0.45rem 0.55rem;
+  margin-right: 0 !important;
+  background: #f8fafc;
+}
+
+body.saas-dashboard:not(.dark-mode) .saas-icon-btn.dark-mode-toggle:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+body.saas-dashboard .profile-btn {
+  border-radius: 999px !important;
+  border: 1px solid var(--saas-card-border) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* ----- Landlord / shared content cards ----- */
+body.saas-dashboard:not(.dark-mode) .main-content .welcome-section {
+  border-left: none !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--saas-card-border) !important;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfd 100%) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .saas-stat-card {
+  border-left: none !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--saas-card-border) !important;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .saas-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--saas-blue), var(--saas-orange));
+  opacity: 0.9;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature {
+  border: none !important;
+  background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 55%, #1e40af 100%) !important;
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.35) !important;
+  color: #fff !important;
+  justify-content: center;
+  min-height: 140px;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature::before {
+  display: none;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .stat-label,
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .stat-sublabel {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .stat-value,
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .revenue-value {
+  color: #fff !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .saas-stat-icon {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+.saas-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.saas-stat-icon-blue {
+  background: var(--saas-blue-soft);
+  color: var(--saas-blue);
+}
+
+.saas-stat-icon-orange {
+  background: var(--saas-orange-soft);
+  color: #ea580c;
+}
+
+.saas-stat-icon-green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.saas-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, 1.15fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .saas-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .saas-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Charts row (landlord dashboard) */
+.saas-charts-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .saas-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.saas-widget-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--saas-card-border);
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06);
+  padding: 1.25rem 1.35rem;
+}
+
+body.dark-mode .saas-widget-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.saas-widget-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--saas-text);
+  margin: 0 0 1rem;
+}
+
+body.dark-mode .saas-widget-title {
+  color: #f1f5f9;
+}
+
+.saas-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 140px;
+  padding-top: 0.5rem;
+}
+
+.saas-bar {
+  flex: 1;
+  min-width: 12px;
+  max-width: 48px;
+  margin: 0 auto;
+  border-radius: 8px 8px 4px 4px;
+  background: var(--saas-blue);
+  opacity: 0.92;
+  transition: transform 0.2s;
+}
+
+.saas-bar:nth-child(even) {
+  background: var(--saas-orange);
+  opacity: 0.88;
+}
+
+.saas-bar:hover {
+  transform: scaleY(1.02);
+}
+
+.saas-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.saas-donut {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.15);
+}
+
+.saas-donut::after {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .saas-donut::after {
+  background: #0f172a;
+}
+
+.saas-donut-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.saas-donut-pct {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--saas-text);
+}
+
+body.dark-mode .saas-donut-pct {
+  color: #f1f5f9;
+}
+
+.saas-donut-caption {
+  font-size: 0.7rem;
+  color: var(--saas-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.saas-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--saas-muted);
+}
+
+body.dark-mode .saas-donut-legend {
+  color: #94a3b8;
+}
+
+.saas-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+}
+
+.saas-legend-dot.blue {
+  background: var(--saas-blue);
+}
+.saas-legend-dot.orange {
+  background: var(--saas-orange);
+}
+
+/* Tables */
+body.saas-dashboard:not(.dark-mode) .main-content .activity-section,
+body.saas-dashboard:not(.dark-mode) .main-content .quick-actions,
+body.saas-dashboard:not(.dark-mode) .main-content .property-summary {
+  border-radius: 16px !important;
+  border: 1px solid var(--saas-card-border) !important;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .activity-table {
+  border: none !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .activity-table thead th {
+  background: #f8fafc !important;
+  color: var(--saas-muted) !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600 !important;
+  border: none !important;
+  padding: 0.85rem 1rem !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .activity-table tbody td {
+  border-color: #f1f5f9 !important;
+  padding: 0.85rem 1rem !important;
+  vertical-align: middle;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .activity-table tbody tr:hover {
+  background: #fafbfc !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .btn-primary {
+  background: var(--saas-blue) !important;
+  border-color: var(--saas-blue) !important;
+  border-radius: 10px !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .btn-primary:hover {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .action-btn {
+  border-radius: 12px !important;
+  border: 1px solid var(--saas-card-border) !important;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+body.saas-dashboard:not(.dark-mode) .main-content .action-btn:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  background: var(--saas-blue-soft) !important;
+}
+
+/* Bootstrap cards (tenant / staff) */
+body.saas-dashboard:not(.dark-mode) .main-content > .card,
+body.saas-dashboard:not(.dark-mode) .main-content .row .card {
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.05);
+  border-color: var(--saas-card-border);
+}
+
+/* ----- Dark mode shell (when saas-dashboard + dark-mode) ----- */
+body.saas-dashboard.dark-mode .saas-topbar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+body.saas-dashboard.dark-mode .saas-search-input {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+body.saas-dashboard.dark-mode .saas-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+body.saas-dashboard.dark-mode .saas-search-wrap .saas-search-icon {
+  color: #64748b;
+}
+
+body.saas-dashboard.dark-mode aside.sidebar {
+  background: #0f172a !important;
+  border-right: 1px solid #1e293b !important;
+  box-shadow: none !important;
+  color: #e2e8f0 !important;
+}
+
+body.saas-dashboard.dark-mode .sidebar-header {
+  border-bottom-color: #1e293b !important;
+}
+
+body.saas-dashboard.dark-mode .sidebar-hamburger {
+  color: #94a3b8 !important;
+}
+
+body.saas-dashboard.dark-mode nav.sidebar-nav a.nav-link {
+  color: #94a3b8 !important;
+}
+
+body.saas-dashboard.dark-mode nav.sidebar-nav a.nav-link:hover {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+body.saas-dashboard.dark-mode nav.sidebar-nav a.nav-link.active {
+  background: rgba(59, 130, 246, 0.18) !important;
+  color: #f1f5f9 !important;
+  box-shadow: none !important;
+}
+
+body.saas-dashboard.dark-mode .saas-logo-mark {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.saas-dashboard.dark-mode .saas-icon-btn.dark-mode-toggle {
+  background: #0f172a;
+  border-color: #334155;
+  color: #fbbf24;
+}
+
+body.saas-dashboard.dark-mode .main-content .saas-stat-card::before {
+  opacity: 0.7;
+}
+
+body.saas-dashboard.dark-mode .main-content .stat-card-feature {
+  background: linear-gradient(145deg, #1e40af 0%, #1e3a8a 100%) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.saas-dashboard.dark-mode .saas-widget-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 900px) {
+  body.saas-dashboard .saas-topbar {
+    padding: 0.75rem 1rem;
+  }
+}

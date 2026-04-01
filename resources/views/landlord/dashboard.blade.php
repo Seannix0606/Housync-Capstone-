@@ -32,27 +32,67 @@
     <p>Here's an overview of your property portfolio</p>
 </div>
 
+@php
+    $tu = (int) ($stats['total_units'] ?? 0);
+    $ou = (int) ($stats['occupied_units'] ?? 0);
+    $occPct = $tu > 0 ? (int) round(($ou / $tu) * 100) : 0;
+    $occDeg = $occPct * 3.6;
+    $barHeights = [42, 68, 52, 88, 61, 74];
+@endphp
+
 <!-- Stats Grid -->
-<div class="stats-grid mb-4">
-    <div class="stat-card">
+<div class="stats-grid saas-stats-grid mb-4">
+    <div class="stat-card saas-stat-card">
+        <div class="saas-stat-icon saas-stat-icon-blue"><i class="fas fa-building"></i></div>
         <div class="stat-value">{{ $stats['total_properties'] ?? 0 }}</div>
         <div class="stat-label">Total Properties</div>
         <div class="stat-sublabel">In your portfolio</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card saas-stat-card">
+        <div class="saas-stat-icon saas-stat-icon-orange"><i class="fas fa-door-open"></i></div>
         <div class="stat-value">{{ $stats['total_units'] ?? 0 }}</div>
         <div class="stat-label">Total Units</div>
-        <div class="stat-sublabel">Available for rent</div>
+        <div class="stat-sublabel">Across all properties</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card saas-stat-card">
+        <div class="saas-stat-icon saas-stat-icon-green"><i class="fas fa-user-check"></i></div>
         <div class="stat-value">{{ $stats['occupied_units'] ?? 0 }}</div>
         <div class="stat-label">Occupied Units</div>
         <div class="stat-sublabel">Currently rented</div>
     </div>
-    <div class="stat-card revenue-card">
+    <div class="stat-card saas-stat-card stat-card-feature">
+        <div class="saas-stat-icon" style="background:rgba(255,255,255,0.2);color:#fff;"><i class="fas fa-money-bill-wave"></i></div>
         <div class="stat-value revenue-value">₱{{ number_format($stats['total_revenue'] ?? 0, 0) }}</div>
         <div class="stat-label">Monthly Revenue</div>
         <div class="stat-sublabel">From occupied units</div>
+    </div>
+</div>
+
+<!-- Charts row -->
+<div class="saas-charts-row mb-4">
+    <div class="saas-widget-card">
+        <h3 class="saas-widget-title">Portfolio activity</h3>
+        <p class="text-muted small mb-3 mb-md-0" style="font-size:0.8rem;">Illustrative trend — last six periods</p>
+        <div class="saas-bar-chart" role="img" aria-label="Bar chart placeholder">
+            @foreach($barHeights as $h)
+                <div class="saas-bar" style="height: {{ $h }}%;"></div>
+            @endforeach
+        </div>
+    </div>
+    <div class="saas-widget-card">
+        <h3 class="saas-widget-title">Occupancy split</h3>
+        <div class="saas-donut-wrap">
+            <div class="saas-donut" style="background: conic-gradient(#2563eb 0deg {{ $occDeg }}deg, #fb923c {{ $occDeg }}deg 360deg);">
+                <div class="saas-donut-label">
+                    <span class="saas-donut-pct">{{ $occPct }}%</span>
+                    <span class="saas-donut-caption">Occupied</span>
+                </div>
+            </div>
+            <div class="saas-donut-legend">
+                <div><span class="saas-legend-dot blue"></span>Occupied ({{ $ou }})</div>
+                <div><span class="saas-legend-dot orange"></span>Other ({{ max(0, $tu - $ou) }})</div>
+            </div>
+        </div>
     </div>
 </div>
 

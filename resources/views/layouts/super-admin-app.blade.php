@@ -239,13 +239,15 @@
             color: #64748b !important;
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/saas-dashboard.css') }}">
     @stack('styles')
 </head>
-<body>
+<body class="saas-dashboard">
 <div class="dashboard-container" id="dashboardContainer">
     <aside class="sidebar">
         <div class="sidebar-header">
             <button class="sidebar-hamburger" id="sidebarCollapseBtn" aria-label="Toggle navigation"><i class="fas fa-bars"></i></button>
+            <span class="saas-logo-mark" aria-hidden="true"><i class="fas fa-shield-alt"></i></span>
             <span class="portal-title-label">Super Admin Portal</span>
         </div>
         <nav class="sidebar-nav">
@@ -258,7 +260,12 @@
         <div class="sidebar-footer mt-auto"></div>
     </aside>
     <main class="main-content">
-        <div class="topbar">
+        <div class="saas-topbar">
+            <div class="saas-search-wrap">
+                <i class="fas fa-search saas-search-icon" aria-hidden="true"></i>
+                <input type="search" class="saas-search-input" placeholder="Search users, properties, settings…" aria-label="Search">
+            </div>
+            <div class="saas-topbar-actions">
             <div class="dropdown" id="saProfileDropdown">
                 <div class="profile-btn" id="saProfileBtn">
                     <div class="profile-avatar">{{ substr(auth()->user()->name, 0, 1) }}</div>
@@ -272,6 +279,7 @@
                         <button type="submit" class="dropdown-item" style="width:100%;background:none;border:none;text-align:left"><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </form>
                 </div>
+            </div>
             </div>
         </div>
         @yield('content')

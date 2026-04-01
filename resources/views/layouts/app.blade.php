@@ -581,13 +581,15 @@
             background: #0f172a !important;
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/saas-dashboard.css') }}">
     @stack('styles')
 </head>
-<body>
+<body class="saas-dashboard">
 <div class="dashboard-container" id="dashboardContainer">
     <aside class="sidebar">
         <div class="sidebar-header">
             <button class="sidebar-hamburger" id="sidebarCollapseBtn" aria-label="Toggle navigation"><i class="fas fa-bars"></i></button>
+            <span class="saas-logo-mark" aria-hidden="true"><i class="fas fa-home"></i></span>
             <span class="portal-title-label">Tenant Portal</span>
         </div>
         <nav class="sidebar-nav">
@@ -622,9 +624,14 @@
         <div class="sidebar-footer mt-auto"></div>
     </aside>
     <main class="main-content">
-        <div class="topbar">
+        <div class="saas-topbar">
+            <div class="saas-search-wrap">
+                <i class="fas fa-search saas-search-icon" aria-hidden="true"></i>
+                <input type="search" class="saas-search-input" placeholder="Search payments, maintenance…" aria-label="Search">
+            </div>
+            <div class="saas-topbar-actions">
             @include('partials.notification-bell')
-            <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle Dark Mode">
+            <button type="button" class="dark-mode-toggle saas-icon-btn" id="darkModeToggle" title="Toggle Dark Mode">
                 <i class="fas fa-moon" id="darkModeIcon"></i>
             </button>
             <div class="dropdown" id="tnProfileDropdown">
@@ -641,6 +648,7 @@
                         <button type="submit" class="dropdown-item" style="width:100%;background:none;border:none;text-align:left"><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </form>
                 </div>
+            </div>
             </div>
         </div>
         @yield('content')
