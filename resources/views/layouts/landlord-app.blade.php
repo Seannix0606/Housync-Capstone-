@@ -1324,6 +1324,61 @@
             color: #e2e8f0 !important;
         }
 
+        /* Messages index: empty state + sidebar header (page styles load after layout) */
+        body.dark-mode .chat-empty {
+            background: #0f172a !important;
+        }
+        body.dark-mode .chat-empty h3 {
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode .chat-empty p {
+            color: #94a3b8 !important;
+        }
+        body.dark-mode .chat-sidebar-header h2 {
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode .conversation-item.unread {
+            background: rgba(249, 115, 22, 0.14) !important;
+        }
+        body.dark-mode .conversation-time {
+            color: #94a3b8 !important;
+        }
+        /* Custom new conversation modal (.modal-overlay, not Bootstrap) */
+        body.dark-mode .modal-overlay .modal-content {
+            background: #1e293b !important;
+            border: 1px solid #334155;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+        }
+        body.dark-mode .modal-overlay .modal-header {
+            border-bottom-color: #334155 !important;
+        }
+        body.dark-mode .modal-overlay .modal-header h3 {
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode .modal-overlay .modal-close {
+            color: #94a3b8 !important;
+        }
+        body.dark-mode .modal-overlay .modal-body {
+            color: #e2e8f0;
+        }
+        body.dark-mode .modal-overlay .modal-body > p {
+            color: #94a3b8 !important;
+        }
+        body.dark-mode .tenant-item {
+            border-color: #334155 !important;
+            background: #0f172a !important;
+        }
+        body.dark-mode .tenant-item:hover {
+            background: #1e293b !important;
+            border-color: #f97316 !important;
+        }
+        body.dark-mode .tenant-item .info h4 {
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode .tenant-item .info p {
+            color: #94a3b8 !important;
+        }
+
         /* ========== Input/Textarea Autofill & Placeholder ========== */
         body.dark-mode input:-webkit-autofill,
         body.dark-mode input:-webkit-autofill:hover,
