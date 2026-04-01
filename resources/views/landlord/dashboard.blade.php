@@ -112,10 +112,8 @@
     </div>
 @endif
 
-<!-- Content Grid -->
-<div class="content-grid">
-    <!-- Recent Units -->
-    <div class="activity-section">
+<!-- Recent Units -->
+<div class="activity-section">
         <div class="section-header mb-3 d-flex justify-content-between align-items-center">
             <h3 class="section-title">Recent Units</h3>
             <a href="{{ route('landlord.units') }}" class="btn btn-primary"><i class="fas fa-eye"></i> View All</a>
@@ -151,35 +149,5 @@
             @endif
             </tbody>
         </table>
-    </div>
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-        <h3 class="section-title mb-4">Quick Actions</h3>
-        <a href="{{ route('landlord.create-apartment') }}" class="action-btn"><i class="fas fa-plus-circle"></i> Add New Property</a>
-        <a href="{{ route('landlord.apartments') }}" class="action-btn"><i class="fas fa-building"></i> Manage Properties</a>
-        <a href="{{ route('landlord.units') }}" class="action-btn"><i class="fas fa-door-open"></i> Manage Units</a>
-        <a href="#" class="action-btn"><i class="fas fa-users"></i> Tenant Directory</a>
-        @if(($stats['total_units'] ?? 0) > 0)
-        <div class="mt-4">
-            <h4 class="mb-3" style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Portfolio Summary</h4>
-            <div class="p-2 bg-info bg-opacity-10 rounded mb-2 border-start border-4 border-info">
-                <span style="font-size: 0.78rem; color: #0369a1;">Available Units</span> <span class="float-end fw-bold" style="color: #0369a1;">{{ $stats['available_units'] ?? 0 }}</span>
-            </div>
-            <div class="p-2 bg-success bg-opacity-10 rounded mb-2 border-start border-4 border-success">
-                <span style="font-size: 0.78rem; color: #047857;">Occupied Units</span> <span class="float-end fw-bold" style="color: #047857;">{{ $stats['occupied_units'] ?? 0 }}</span>
-            </div>
-            @if(($stats['total_units'] - $stats['occupied_units'] - $stats['available_units']) > 0)
-            <div class="p-2 bg-warning bg-opacity-25 rounded border-start border-4 border-warning">
-                <span style="font-size: 0.78rem; color: #d97706;">Maintenance</span> <span class="float-end fw-bold" style="color: #d97706;">{{ $stats['total_units'] - $stats['occupied_units'] - $stats['available_units'] }}</span>
-            </div>
-            @endif
-        </div>
-        @else
-        <div class="mt-4 p-2 bg-warning bg-opacity-25 rounded border-start border-4 border-warning">
-            <h4 class="mb-2" style="color: #d97706; font-size: .88rem; font-weight:600;"><i class="fas fa-info-circle"></i> Get Started</h4>
-            <p class="mb-0" style="color: #92400e; font-size: .75rem;">Add your first property to start managing your rental portfolio.</p>
-        </div>
-        @endif
-    </div>
 </div>
 @endsection 

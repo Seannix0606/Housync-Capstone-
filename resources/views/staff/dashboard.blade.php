@@ -214,22 +214,6 @@
                 @endif
             </div>
         </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4 class="card-title"><i class="mdi mdi-lightning-bolt me-1"></i> Quick Actions</h4>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ route('staff.maintenance.index') }}" class="btn btn-primary">
-                        <i class="mdi mdi-format-list-bulleted me-1"></i> View All Tasks
-                    </a>
-                    <a href="{{ route('staff.maintenance.show', $currentTask->id) }}" class="btn btn-outline-success">
-                        <i class="mdi mdi-pencil me-1"></i> Update Task Status
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @else

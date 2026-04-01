@@ -149,34 +149,6 @@
                 </div>
                 @endif
 
-                <!-- Quick Actions for this Assignment -->
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="border-top pt-3">
-                            <h6 class="mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                @if($assignment->status === 'pending_approval')
-                                    <button class="btn btn-sm btn-outline-primary" disabled>
-                                        <i class="fas fa-clock me-1"></i> Awaiting Approval
-                                    </button>
-                                @else
-                                    <a href="{{ route('tenant.upload-documents') }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-upload me-1"></i> Upload Documents
-                                    </a>
-                                    
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewAssignmentDocuments({{ $assignment->id }})">
-                                        <i class="fas fa-file-alt me-1"></i> View Documents
-                                    </button>
-                                    
-                                    <button class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-envelope me-1"></i> Contact Landlord
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Tenant Documents -->
                 @if(Auth::user()->documents && Auth::user()->documents->count() > 0)
                 <div class="row mt-3">
@@ -407,17 +379,6 @@ function viewFile(fileUrl, fileName) {
     
     const modal = new bootstrap.Modal(document.getElementById('fileModal'));
     modal.show();
-}
-
-function viewAssignmentDocuments(assignmentId) {
-    // Scroll to documents section for this assignment
-    const assignmentCard = event.target.closest('.card');
-    if (assignmentCard) {
-        const documentsSection = assignmentCard.querySelector('.table-responsive');
-        if (documentsSection) {
-            documentsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
 }
 </script>
 @endpush
