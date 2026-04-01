@@ -30,6 +30,38 @@
     .badge-info{background:#dbeafe;color:#2563eb}
     .section-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
     @media(max-width:900px){.section-grid{grid-template-columns:1fr}}
+    .report-divider-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f1f5f9}
+    .report-divider-row .text-label{font-size:.85rem;color:#334155;text-transform:capitalize}
+    .report-divider-row .text-value{font-size:.85rem;font-weight:600;color:#1e293b}
+    .badge-neutral{background:#f1f5f9;color:#334155}
+
+    /* Dark mode — align with landlord portal */
+    body.dark-mode .report-card{background:#1e293b!important;border:1px solid #334155;box-shadow:0 4px 24px rgba(0,0,0,.25)}
+    body.dark-mode .report-card h3{color:#f1f5f9!important}
+    body.dark-mode .stat-box{background:#0f172a!important;border-color:#334155!important}
+    body.dark-mode .stat-box .stat-num{color:#f1f5f9}
+    body.dark-mode .stat-box.green .stat-num{color:#34d399!important}
+    body.dark-mode .stat-box.orange .stat-num{color:#fb923c!important}
+    body.dark-mode .stat-box.red .stat-num{color:#f87171!important}
+    body.dark-mode .stat-box.blue .stat-num{color:#60a5fa!important}
+    body.dark-mode .stat-box.purple .stat-num{color:#c084fc!important}
+    body.dark-mode .stat-box .stat-lbl{color:#94a3b8!important}
+    body.dark-mode .progress-bar-custom{background:#334155!important}
+    body.dark-mode .table-report th{background:#0f172a!important;color:#94a3b8!important;border-bottom-color:#334155!important}
+    body.dark-mode .table-report td{color:#e2e8f0!important;border-bottom-color:#334155!important}
+    body.dark-mode .table-report tr:hover td{background:#0f172a!important}
+    body.dark-mode .filter-bar select{background:#0f172a!important;border-color:#334155!important;color:#e2e8f0!important}
+    body.dark-mode .chart-placeholder{background:#0f172a!important;border-color:#334155!important;color:#64748b!important}
+    body.dark-mode .report-divider-row{border-bottom-color:#334155}
+    body.dark-mode .report-divider-row .text-label{color:#94a3b8!important}
+    body.dark-mode .report-divider-row .text-value{color:#f1f5f9!important}
+    body.dark-mode .badge-pill.badge-success{background:rgba(16,185,129,.2);color:#6ee7b7}
+    body.dark-mode .badge-pill.badge-warning{background:rgba(245,158,11,.2);color:#fbbf24}
+    body.dark-mode .badge-pill.badge-danger{background:rgba(239,68,68,.2);color:#fca5a5}
+    body.dark-mode .badge-pill.badge-info{background:rgba(59,130,246,.2);color:#93c5fd}
+    body.dark-mode .badge-neutral{background:#334155!important;color:#e2e8f0!important}
+    body.dark-mode .content-header h1{color:#f1f5f9!important}
+    body.dark-mode .table-report td[style*="#059669"]{color:#34d399!important}
 </style>
 
 <div class="content-header">
@@ -129,7 +161,7 @@
             <span class="badge-pill badge-warning">{{ $maintenance['pending'] }} Pending</span>
             <span class="badge-pill badge-info">{{ $maintenance['in_progress'] }} In Progress</span>
             @if($maintenance['avg_resolution_days'])
-                <span class="badge-pill" style="background:#f1f5f9;color:#334155">Avg Resolution: {{ $maintenance['avg_resolution_days'] }} days</span>
+                <span class="badge-pill badge-neutral">Avg Resolution: {{ $maintenance['avg_resolution_days'] }} days</span>
             @endif
             @if($maintenance['avg_rating'])
                 <span class="badge-pill" style="background:#fef3c7;color:#92400e"><i class="fas fa-star"></i> {{ $maintenance['avg_rating'] }}/5</span>
@@ -252,9 +284,9 @@
     <div class="report-card">
         <h3><i class="fas fa-tags" style="color:#d97706"></i> Maintenance by Category</h3>
         @foreach($maintenance['by_category'] as $category => $count)
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f1f5f9">
-            <span style="font-size:.85rem;color:#334155;text-transform:capitalize">{{ $category }}</span>
-            <span style="font-size:.85rem;font-weight:600;color:#1e293b">{{ $count }}</span>
+        <div class="report-divider-row">
+            <span class="text-label">{{ $category }}</span>
+            <span class="text-value">{{ $count }}</span>
         </div>
         @endforeach
     </div>
@@ -270,9 +302,9 @@
                 default => '#64748b',
             };
         @endphp
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f1f5f9">
+        <div class="report-divider-row">
             <span style="font-size:.85rem;color:{{ $pColor }};text-transform:capitalize;font-weight:500">{{ $priority }}</span>
-            <span style="font-size:.85rem;font-weight:600;color:#1e293b">{{ $count }}</span>
+            <span class="text-value">{{ $count }}</span>
         </div>
         @endforeach
     </div>
