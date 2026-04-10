@@ -200,7 +200,7 @@
             min-height: 600px;
             background-color: #4a5694;
             background-image: linear-gradient(135deg, rgba(102, 126, 234, 0.72) 0%, rgba(118, 75, 162, 0.72) 100%),
-                url('{{ asset('images/explore_listing_bg.jpg') }}');
+                url('/images/explore_listing_bg.jpg');
             background-size: cover, cover;
             background-position: center, center;
             background-repeat: no-repeat;
@@ -455,7 +455,7 @@
             <div class="form-section">
                 <div class="form-container">
                     <div class="brand">
-                        <img src="{{ asset('images/housync-logo.png') }}" alt="HouSync" class="brand-logo">
+                        <img src="/images/housync-logo.png" alt="HouSync" class="brand-logo">
                     </div>
                     
                     <h1 class="title">HouSync</h1>
