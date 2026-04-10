@@ -35,6 +35,47 @@ class RfidController extends Controller
     }
 
     /**
+     * Atomically replace a file so concurrent readers never see a partial write.
+     * Uses a same-directory temp file with LOCK_EX, then rename (unlink-on-Windows when replacing).
+     */
+    private function atomicPutContents(string $path, string $contents): bool
+    {
+        $dir = dirname($path);
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            return false;
+        }
+
+        $tmp = $dir.DIRECTORY_SEPARATOR.'.tmp_'.bin2hex(random_bytes(8));
+
+        if (file_put_contents($tmp, $contents, LOCK_EX) === false) {
+            return false;
+        }
+
+        if (PHP_OS_FAMILY === 'Windows' && is_file($path)) {
+            @unlink($path);
+        }
+
+        if (! @rename($tmp, $path)) {
+            @unlink($tmp);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function atomicPutScanRequestJson(string $path, array $data): bool
+    {
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+
+        if ($json === false) {
+            return false;
+        }
+
+        return $this->atomicPutContents($path, $json);
+    }
+
+    /**
      * ESP32Reader.php watches storage/app/scan_requests/web_scan_*.json — not Laravel cache.
      */
     private function readScanRequestPayload(string $scanId): ?array
@@ -843,7 +884,7 @@ class RfidController extends Controller
             ];
 
             $path = $this->rfidScanRequestFilePath($scanId);
-            if (file_put_contents($path, json_encode($scanRequest, JSON_PRETTY_PRINT)) === false) {
+            if (! $this->atomicPutScanRequestJson($path, $scanRequest)) {
                 throw new \RuntimeException('Could not write scan request file');
             }
 
@@ -893,10 +934,9 @@ class RfidController extends Controller
             if ($elapsed > $timeout) {
                 $scanData['status'] = 'timeout';
                 $scanData['error'] = $scanData['error'] ?? 'Scan request timed out';
-                @file_put_contents(
-                    $this->rfidScanRequestFilePath($scanId),
-                    json_encode($scanData, JSON_PRETTY_PRINT)
-                );
+                if (! $this->atomicPutScanRequestJson($this->rfidScanRequestFilePath($scanId), $scanData)) {
+                    Log::warning('Failed to persist scan request timeout state', ['scan_id' => $scanId]);
+                }
 
                 return response()->json([
                     'success' => false,

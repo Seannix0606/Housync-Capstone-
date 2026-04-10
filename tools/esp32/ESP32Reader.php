@@ -144,6 +144,46 @@ class ESP32Reader
     }
 
     /**
+     * Atomically replace a file: write a temp in the same directory with LOCK_EX, then rename.
+     * Prevents Laravel or this script from reading truncated JSON mid-write.
+     */
+    private function atomicPutContents(string $path, string $contents): bool
+    {
+        $dir = dirname($path);
+        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+            return false;
+        }
+
+        $tmp = $dir.DIRECTORY_SEPARATOR.'.tmp_'.bin2hex(random_bytes(8));
+
+        if (file_put_contents($tmp, $contents, LOCK_EX) === false) {
+            return false;
+        }
+
+        if (PHP_OS_FAMILY === 'Windows' && is_file($path)) {
+            @unlink($path);
+        }
+
+        if (! @rename($tmp, $path)) {
+            @unlink($tmp);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function atomicPutJson(string $path, array $data): bool
+    {
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+        if ($json === false) {
+            return false;
+        }
+
+        return $this->atomicPutContents($path, $json);
+    }
+
+    /**
      * Connect to ESP32 serial port
      */
     public function connect()
@@ -359,7 +399,7 @@ class ESP32Reader
                 // Mark as timed out
                 $requestData['status'] = 'timeout';
                 $requestData['error'] = 'Request timed out';
-                file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+                $this->atomicPutJson($requestFile, $requestData);
                 echo "Web scan request timed out: {$requestData['scan_id']}\n";
 
                 continue;
@@ -376,7 +416,7 @@ class ESP32Reader
 
             // Mark as processing
             $requestData['status'] = 'processing';
-            file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+            $this->atomicPutJson($requestFile, $requestData);
         }
     }
 
@@ -406,8 +446,8 @@ class ESP32Reader
             $latestCardData['property_id'] = $this->bridgePropertyId;
         }
 
-        $jsonResult = file_put_contents($latestCardFile, json_encode($latestCardData, JSON_PRETTY_PRINT));
-        if ($jsonResult !== false) {
+        $jsonResult = $this->atomicPutJson($latestCardFile, $latestCardData);
+        if ($jsonResult) {
             echo "Latest card UID stored: $cardUID (file: $latestCardFile)\n";
         } else {
             echo "Failed to store latest card UID\n";
@@ -445,7 +485,7 @@ class ESP32Reader
             if (time() - $requestedAt > $timeout) {
                 $requestData['status'] = 'timeout';
                 $requestData['error'] = $requestData['error'] ?? 'Request timed out';
-                file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+                $this->atomicPutJson($requestFile, $requestData);
                 echo "Web scan request timed out before fulfillment: {$requestData['scan_id']}\n";
 
                 continue;
@@ -459,7 +499,7 @@ class ESP32Reader
             $requestData['card_uid'] = $cardUID;
             $requestData['completed_at'] = date('c');
 
-            file_put_contents($requestFile, json_encode($requestData, JSON_PRETTY_PRINT));
+            $this->atomicPutJson($requestFile, $requestData);
 
             echo "Web scan request fulfilled: {$requestData['scan_id']} with card: $cardUID\n";
 
