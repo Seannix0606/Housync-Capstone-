@@ -299,7 +299,7 @@ class TenantAssignmentController extends Controller
         $tenant = Auth::user();
 
         // Get the active assignment if one exists (optional now)
-        $assignment = $tenant->tenantAssignments()->with(['unit.apartment', 'documents'])->first();
+        $assignment = $tenant->tenantAssignments()->with(['unit.apartment'])->first();
 
         // Get tenant's personal documents (uploaded before assignment)
         $personalDocuments = $tenant->documents()->orderBy('created_at', 'desc')->get();

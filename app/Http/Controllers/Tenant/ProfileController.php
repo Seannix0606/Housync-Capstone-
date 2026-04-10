@@ -69,7 +69,7 @@ class ProfileController extends Controller
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
 
-        $assignment = $tenant->tenantAssignments()->with(['unit.property', 'documents'])->first();
+        $assignment = $tenant->tenantAssignments()->with(['unit.property'])->first();
 
         $personalDocuments = $tenant->documents()->orderBy('created_at', 'desc')->get();
         $documentRequirementProgress = TenantDocument::requirementProgressForTenant($tenant->id);
