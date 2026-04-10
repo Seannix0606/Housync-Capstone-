@@ -417,7 +417,7 @@
     <div class="stat-card teal">
         <div class="stat-card-header">
             <div>
-                <div class="stat-value">{{ $stats['total_apartments'] ?? 0 }}</div>
+                <div class="stat-value">{{ $stats['total_properties'] ?? 0 }}</div>
                 <div class="stat-label">Total Properties</div>
             </div>
             <div class="stat-icon">

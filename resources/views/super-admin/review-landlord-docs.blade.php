@@ -50,7 +50,7 @@
             <tbody>
                 @foreach ($documents as $doc)
                     <tr>
-                        <td>{{ str_replace('_',' ', ucfirst($doc->document_type)) }}</td>
+                        <td>{{ $doc->document_type_label }}</td>
                         <td>
                             <a href="{{ document_url($doc->file_path) }}" target="_blank" class="file-link">
                                 <i class="fas fa-file"></i> {{ $doc->file_name }}

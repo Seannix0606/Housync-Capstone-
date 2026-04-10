@@ -1,5 +1,9 @@
 *.log
 .DS_Store
+
+# Composer PHAR / local binary — install Composer globally instead of committing
+/composer.phar
+/composer
 .env
 .env.*
 !.env.example

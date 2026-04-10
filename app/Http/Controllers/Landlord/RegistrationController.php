@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class RegistrationController extends Controller
 {
@@ -35,16 +36,40 @@ class RegistrationController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'business_info' => 'required|string|max:1000',
-            'documents' => 'required|array|min:1',
-            'documents.*' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'document_types' => 'required|array',
-            'document_types.*' => 'required|string|in:business_permit,mayors_permit,bir_certificate,barangay_clearance,lease_contract_sample,valid_id,other',
+            'doc_barangay_clearance' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'doc_mayors_permit' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'doc_fire_safety_certificate' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'doc_tax_registration' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'property_is_newly_built' => 'nullable|boolean',
+            'doc_certificate_of_occupancy' => [
+                Rule::requiredIf(fn () => $request->boolean('property_is_newly_built')),
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:5120',
+            ],
+        ], [
+            'doc_certificate_of_occupancy.required' => 'Certificate of Occupancy is required when your property is newly built.',
         ]);
 
         $supabase = new SupabaseService;
 
+        $documentSlots = [
+            ['file' => $request->file('doc_barangay_clearance'), 'type' => 'barangay_clearance'],
+            ['file' => $request->file('doc_mayors_permit'), 'type' => 'mayors_permit'],
+            ['file' => $request->file('doc_fire_safety_certificate'), 'type' => 'fire_safety_certificate'],
+            ['file' => $request->file('doc_tax_registration'), 'type' => 'bir_certificate'],
+        ];
+
+        if ($request->boolean('property_is_newly_built') && $request->hasFile('doc_certificate_of_occupancy')) {
+            $documentSlots[] = [
+                'file' => $request->file('doc_certificate_of_occupancy'),
+                'type' => 'certificate_of_occupancy',
+            ];
+        }
+
         try {
-            $landlord = DB::transaction(function () use ($request, $supabase) {
+            $landlord = DB::transaction(function () use ($request, $supabase, $documentSlots) {
                 $landlord = User::create([
                     'email' => $request->email,
                     'password' => $request->password,
@@ -72,8 +97,9 @@ class RegistrationController extends Controller
                     ]);
                 }
 
-                foreach ($request->file('documents') as $index => $file) {
-                    $docType = $request->document_types[$index] ?? 'other';
+                foreach ($documentSlots as $index => $slot) {
+                    $file = $slot['file'];
+                    $docType = $slot['type'];
                     $extension = $file->getClientOriginalExtension();
                     $fileName = 'landlord-doc-'.$landlord->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
                     $path = 'landlord-documents/'.$fileName;

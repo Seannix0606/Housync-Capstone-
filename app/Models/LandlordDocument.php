@@ -40,4 +40,20 @@ class LandlordDocument extends Model
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
+
+    public function getDocumentTypeLabelAttribute(): string
+    {
+        return match ($this->document_type) {
+            'barangay_clearance' => 'Barangay Clearance',
+            'mayors_permit' => "Mayor's Permit",
+            'fire_safety_certificate' => 'Fire Safety Certificate',
+            'bir_certificate' => 'Tax Registration (BIR)',
+            'certificate_of_occupancy' => 'Certificate of Occupancy',
+            'business_permit' => 'Business Permit',
+            'lease_contract_sample' => 'Sample Lease Contract',
+            'valid_id' => 'Valid ID',
+            'other' => 'Other Document',
+            default => ucfirst(str_replace('_', ' ', (string) $this->document_type)),
+        };
+    }
 }

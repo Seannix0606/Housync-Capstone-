@@ -119,30 +119,56 @@
                             <h3><i class="fas fa-lock"></i> Account Security</h3>
                         </div>
                         <div class="form-section-title">
-                            <h3><i class="fas fa-file-upload"></i> Business Documents (Required)</h3>
+                            <h3><i class="fas fa-file-upload"></i> Required legal documents</h3>
                         </div>
 
-                        <div class="form-group">
-                            <label>Upload Required Documents</label>
-                            <p style="font-size: 12px; color: #7f8c8d; margin-bottom: 8px;">Accepted: JPG, JPEG, PNG, PDF. Max 5MB each.</p>
-                            <div id="doc-list">
-                                <div class="doc-row" style="display:flex; gap:12px; margin-bottom:10px;">
-                                    <select name="document_types[]" required style="flex:0 0 260px; padding: 10px; border: 2px solid #e1e8ed; border-radius: 10px; background:#f8f9fa;">
-                                        <option value="">Select document type</option>
-                                        <option value="business_permit">Business Permit</option>
-                                        <option value="mayors_permit">Mayor's Permit</option>
-                                        <option value="bir_certificate">BIR Certificate</option>
-                                        <option value="barangay_clearance">Barangay Clearance</option>
-                                        <option value="lease_contract_sample">Sample Lease Contract</option>
-                                        <option value="valid_id">Valid ID</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                    <input type="file" name="documents[]" required accept=".pdf,.jpg,.jpeg,.png" style="flex:1; padding:10px; border:2px solid #e1e8ed; border-radius:10px; background:#f8f9fa;" />
-                                </div>
-                            </div>
-                            <button type="button" onclick="addDocRow()" class="submit-btn" style="width:auto; margin-top:8px; padding:10px 14px;">
-                                <i class="fas fa-plus"></i> Add another document
+                        <p class="doc-intro">Upload each document below. Accepted: JPG, JPEG, PNG, PDF. Max 5MB per file.</p>
+
+                        <div class="requirements-table-wrap">
+                            <table class="requirements-table" aria-label="Where to obtain each document">
+                                <thead>
+                                    <tr><th>Requirement</th><th>Where to get it</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Barangay Clearance</td><td>Barangay Hall</td></tr>
+                                    <tr><td>Mayor's Permit</td><td>City / Municipal Hall</td></tr>
+                                    <tr><td>Fire Safety Certificate</td><td>Bureau of Fire Protection</td></tr>
+                                    <tr><td>Tax Registration</td><td>Bureau of Internal Revenue</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group doc-upload-block">
+                            <label for="doc_barangay_clearance">Barangay Clearance *</label>
+                            <input type="file" id="doc_barangay_clearance" name="doc_barangay_clearance" required accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+
+                        <div class="form-group doc-upload-block">
+                            <label for="doc_mayors_permit">Mayor's Permit *</label>
+                            <input type="file" id="doc_mayors_permit" name="doc_mayors_permit" required accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+
+                        <div class="form-group doc-upload-block">
+                            <label for="doc_fire_safety_certificate">Fire Safety Certificate *</label>
+                            <input type="file" id="doc_fire_safety_certificate" name="doc_fire_safety_certificate" required accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+
+                        <div class="form-group doc-upload-block">
+                            <label for="doc_tax_registration">Tax Registration (BIR) *</label>
+                            <input type="file" id="doc_tax_registration" name="doc_tax_registration" required accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+
+                        <div class="form-group co-option-block">
+                            <input type="hidden" name="property_is_newly_built" id="property_is_newly_built" value="0">
+                            <button type="button" id="toggle_newly_built_btn" class="co-toggle-btn" aria-pressed="false">
+                                <i class="fas fa-plus-circle"></i>
+                                <span id="toggle_newly_built_label">My property is newly built — add Certificate of Occupancy</span>
                             </button>
+                            <p class="co-hint">Only turn this on if you need to submit a Certificate of Occupancy for a new building.</p>
+                            <div id="co_upload_wrap" class="co-upload-wrap" style="display: none;">
+                                <label for="doc_certificate_of_occupancy">Certificate of Occupancy *</label>
+                                <input type="file" id="doc_certificate_of_occupancy" name="doc_certificate_of_occupancy" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
                         </div>
                         
                         <div class="form-row">
@@ -554,6 +580,107 @@
             text-decoration: underline;
         }
 
+        .doc-intro {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .requirements-table-wrap {
+            margin-bottom: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e1e8ed;
+        }
+
+        .requirements-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .requirements-table th,
+        .requirements-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .requirements-table th {
+            background: #f1f5f9;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .requirements-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .doc-upload-block input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            background: #f8f9fa;
+            font-size: 14px;
+        }
+
+        .co-option-block {
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 1px dashed #e1e8ed;
+        }
+
+        .co-toggle-btn {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #3498db;
+            border-radius: 12px;
+            background: #fff;
+            color: #2980b9;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .co-toggle-btn:hover {
+            background: #ebf5fb;
+        }
+
+        .co-toggle-btn.active {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: #fff;
+            border-color: #2980b9;
+        }
+
+        .co-hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 8px;
+            margin-bottom: 0;
+            line-height: 1.4;
+        }
+
+        .co-upload-wrap {
+            margin-top: 16px;
+        }
+
+        .co-upload-wrap input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            background: #f8f9fa;
+            font-size: 14px;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .landlord-registration-wrapper {
@@ -600,26 +727,33 @@
             }
         }
 
-        function addDocRow() {
-            const list = document.getElementById('doc-list');
-            const row = document.createElement('div');
-            row.className = 'doc-row';
-            row.style.cssText = 'display:flex; gap:12px; margin-bottom:10px;';
-            row.innerHTML = `
-                <select name="document_types[]" required style="flex:0 0 260px; padding: 10px; border: 2px solid #e1e8ed; border-radius: 10px; background:#f8f9fa;">
-                    <option value="">Select document type</option>
-                    <option value="business_permit">Business Permit</option>
-                    <option value="mayors_permit">Mayor's Permit</option>
-                    <option value="bir_certificate">BIR Certificate</option>
-                    <option value="barangay_clearance">Barangay Clearance</option>
-                    <option value="lease_contract_sample">Sample Lease Contract</option>
-                    <option value="valid_id">Valid ID</option>
-                    <option value="other">Other</option>
-                </select>
-                <input type="file" name="documents[]" required accept=".pdf,.jpg,.jpeg,.png" style="flex:1; padding:10px; border:2px solid #e1e8ed; border-radius:10px; background:#f8f9fa;" />
-            `;
-            list.appendChild(row);
-        }
+        (function () {
+            const hidden = document.getElementById('property_is_newly_built');
+            const btn = document.getElementById('toggle_newly_built_btn');
+            const label = document.getElementById('toggle_newly_built_label');
+            const wrap = document.getElementById('co_upload_wrap');
+            const fileInput = document.getElementById('doc_certificate_of_occupancy');
+
+            btn.addEventListener('click', function () {
+                const on = hidden.value === '1';
+                if (on) {
+                    hidden.value = '0';
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                    label.textContent = 'My property is newly built — add Certificate of Occupancy';
+                    wrap.style.display = 'none';
+                    fileInput.value = '';
+                    fileInput.removeAttribute('required');
+                } else {
+                    hidden.value = '1';
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-pressed', 'true');
+                    label.textContent = 'Remove Certificate of Occupancy (not newly built)';
+                    wrap.style.display = 'block';
+                    fileInput.setAttribute('required', 'required');
+                }
+            });
+        })();
     </script>
 </body>
 </html> 
