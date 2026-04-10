@@ -19,6 +19,10 @@ return [
     'scan_timeout' => env('RFID_SCAN_TIMEOUT', 15), // seconds
     'read_delay' => env('RFID_READ_DELAY', 2000), // milliseconds
 
+    // Mirrored from .env for documentation; ESP32Reader.php reads .env directly when stamping latest_card.json
+    'bridge_landlord_id' => env('ESP32_BRIDGE_LANDLORD_ID'),
+    'bridge_property_id' => env('ESP32_BRIDGE_PROPERTY_ID'),
+
     // ESP32 commands
     'commands' => [
         'ping' => 'PING',

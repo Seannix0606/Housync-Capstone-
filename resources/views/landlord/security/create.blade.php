@@ -381,6 +381,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const apartmentSelect = document.getElementById('property_id');
     const tenantSelect = document.getElementById('tenant_assignment_id');
     const tenantOptions = Array.from(tenantSelect.options);
+
+    function latestCardUidUrl() {
+        const pid = apartmentSelect?.value;
+        if (pid) {
+            return '/api/rfid/latest-uid?property_id=' + encodeURIComponent(pid);
+        }
+        return '/api/rfid/latest-uid';
+    }
     
     // Tenant filtering functionality
     function filterTenants() {
@@ -475,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardUidInput.classList.add('d-none');
         
         // 1) Immediately load the most recent UID from latest_card.json
-        fetch('/api/rfid/latest-uid', {
+        fetch(latestCardUidUrl(), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -499,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(latestPollTimer);
                 return;
             }
-            fetch('/api/rfid/latest-uid', {
+            fetch(latestCardUidUrl(), {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -605,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         isScanning = true;
         
         // Check for the latest card from ESP32Reader.php
-        fetch('/api/rfid/latest-uid', {
+        fetch(latestCardUidUrl(), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

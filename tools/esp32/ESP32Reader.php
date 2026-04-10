@@ -19,6 +19,12 @@ class ESP32Reader
 
     private $esp32ApiKey;
 
+    /** @var int|null Stamped into latest_card.json so Laravel only serves it to that landlord */
+    private $bridgeLandlordId;
+
+    /** @var int|null When set, Laravel requires ?property_id= to match (per-building readers) */
+    private $bridgePropertyId;
+
     private $handle;
 
     private $running = false;
@@ -32,7 +38,7 @@ class ESP32Reader
 
     private $dedupeWindowSeconds = 10; // suppress repeats within 10 seconds - only allow one scan per card per 10s
 
-    public function __construct($port = 'COM7', $baudrate = 115200, $laravelUrl = 'http://127.0.0.1:8000', $esp32ApiKey = null)
+    public function __construct($port = 'COM7', $baudrate = 115200, $laravelUrl = 'http://127.0.0.1:8000', $esp32ApiKey = null, $bridgeLandlordId = null, $bridgePropertyId = null)
     {
         $this->port = $port;
         $this->baudrate = $baudrate;
@@ -41,14 +47,41 @@ class ESP32Reader
         $this->esp32ApiKey = $esp32ApiKey
             ?: (getenv('ESP32_API_KEY') ?: ($this->getLaravelEnvValue('ESP32_API_KEY') ?: ''));
 
+        $this->bridgeLandlordId = $this->resolveOptionalPositiveInt($bridgeLandlordId)
+            ?? $this->resolveOptionalPositiveInt(getenv('ESP32_BRIDGE_LANDLORD_ID') ?: null)
+            ?? $this->resolveOptionalPositiveInt($this->getLaravelEnvValue('ESP32_BRIDGE_LANDLORD_ID'));
+        $this->bridgePropertyId = $this->resolveOptionalPositiveInt($bridgePropertyId)
+            ?? $this->resolveOptionalPositiveInt(getenv('ESP32_BRIDGE_PROPERTY_ID') ?: null)
+            ?? $this->resolveOptionalPositiveInt($this->getLaravelEnvValue('ESP32_BRIDGE_PROPERTY_ID'));
+
         echo "Enhanced ESP32 RFID Reader Initialized\n";
         echo "Port: {$this->port}\n";
         echo "Baudrate: {$this->baudrate}\n";
         echo "Laravel URL: {$this->laravelUrl}\n";
         echo "API Endpoint: {$this->apiEndpoint}\n";
         echo 'ESP32 API Key: '.($this->esp32ApiKey !== '' ? "Configured\n" : "Missing (set --key or ESP32_API_KEY)\n");
+        echo 'Bridge scope: '.($this->bridgeLandlordId !== null
+            ? "landlord_id={$this->bridgeLandlordId}".($this->bridgePropertyId !== null ? ", property_id={$this->bridgePropertyId}" : '')."\n"
+            : "Not set — set ESP32_BRIDGE_LANDLORD_ID (or --landlord-id) so the web UI can read latest_card.json securely\n");
         echo "Web Scan Requests: Enabled\n";
         echo str_repeat('-', 50)."\n";
+    }
+
+    private function resolveOptionalPositiveInt($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+        if (is_string($value) && ctype_digit($value)) {
+            $n = (int) $value;
+
+            return $n > 0 ? $n : null;
+        }
+
+        return null;
     }
 
     /**
@@ -365,6 +398,13 @@ class ESP32Reader
             'scanned_at' => date('c'),
             'timestamp' => time(),
         ];
+
+        if ($this->bridgeLandlordId !== null) {
+            $latestCardData['landlord_id'] = $this->bridgeLandlordId;
+        }
+        if ($this->bridgePropertyId !== null) {
+            $latestCardData['property_id'] = $this->bridgePropertyId;
+        }
 
         $jsonResult = file_put_contents($latestCardFile, json_encode($latestCardData, JSON_PRETTY_PRINT));
         if ($jsonResult !== false) {
@@ -750,11 +790,13 @@ if (php_sapi_name() === 'cli') {
         'port' => 'COM7',
         'url' => 'http://127.0.0.1:8000',
         'key' => '',
+        'landlord-id' => '',
+        'property-id' => '',
         'help' => false,
     ];
 
     $shortopts = 'h';
-    $longopts = ['port:', 'url:', 'key:', 'help'];
+    $longopts = ['port:', 'url:', 'key:', 'landlord-id:', 'property-id:', 'help'];
     $parsed = getopt($shortopts, $longopts);
 
     if (isset($parsed['h']) || isset($parsed['help'])) {
@@ -763,8 +805,10 @@ if (php_sapi_name() === 'cli') {
         echo "Options:\n";
         echo "  --port=COMx    Serial port (default: COM7)\n";
         echo "  --url=URL      Laravel base URL (default: http://127.0.0.1:8000)\n";
-        echo "  --key=VALUE    ESP32 API key (default: from ESP32_API_KEY env var)\n";
-        echo "  --help, -h     Show this help message\n\n";
+        echo "  --key=VALUE         ESP32 API key (default: from ESP32_API_KEY env var)\n";
+        echo "  --landlord-id=ID    Your user id — written into latest_card.json for portal auth\n";
+        echo "  --property-id=ID    Optional — when set, portal must pass the same ?property_id=\n";
+        echo "  --help, -h          Show this help message\n\n";
         echo "Features:\n";
         echo "   RFID data reading and Laravel API integration\n";
         echo "   Web scan request support for direct Card UID retrieval\n";
@@ -776,7 +820,7 @@ if (php_sapi_name() === 'cli') {
             echo "  - $port\n";
         }
         echo "\nExample:\n";
-        echo "php ESP32Reader.php --port=COM7 --url=http://127.0.0.1:8000 --key=your-key\n";
+        echo "php ESP32Reader.php --port=COM7 --url=http://127.0.0.1:8000 --key=your-key --landlord-id=1\n";
         exit(0);
     }
 
@@ -792,8 +836,23 @@ if (php_sapi_name() === 'cli') {
         $options['key'] = $parsed['key'];
     }
 
+    if (isset($parsed['landlord-id'])) {
+        $options['landlord-id'] = $parsed['landlord-id'];
+    }
+
+    if (isset($parsed['property-id'])) {
+        $options['property-id'] = $parsed['property-id'];
+    }
+
     // Create and run the reader
-    $reader = new ESP32Reader($options['port'], 115200, $options['url'], $options['key']);
+    $reader = new ESP32Reader(
+        $options['port'],
+        115200,
+        $options['url'],
+        $options['key'] !== '' ? $options['key'] : null,
+        $options['landlord-id'] !== '' ? $options['landlord-id'] : null,
+        $options['property-id'] !== '' ? $options['property-id'] : null
+    );
 
     // Handle process control signals
     if (function_exists('pcntl_async_signals')) {

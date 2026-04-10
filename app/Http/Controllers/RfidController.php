@@ -7,6 +7,7 @@ use App\Models\Property;
 use App\Models\RfidCard;
 use App\Models\TenantAssignment;
 use App\Models\TenantRfidAssignment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -49,10 +50,18 @@ class RfidController extends Controller
     }
 
     /**
-     * Latest UID written by tools/esp32/ESP32Reader.php to storage/app/latest_card.json
+     * Latest UID from storage/app/latest_card.json (written by ESP32Reader.php).
+     *
+     * The file must include a positive landlord_id matching the authenticated landlord.
+     * When the bridge sets property_id (optional), the request must pass the same ?property_id=
+     * and the landlord must own that property — otherwise we fall through to access_logs only.
      */
-    private function readLatestCardFromBridgeFile(): ?array
+    private function readLatestCardFromBridgeFileForUser(?User $user, ?int $queryPropertyId): ?array
     {
+        if (! $user || ! $user->isLandlord()) {
+            return null;
+        }
+
         $path = storage_path('app/latest_card.json');
         if (! is_readable($path)) {
             return null;
@@ -61,6 +70,24 @@ class RfidController extends Controller
         $decoded = json_decode((string) file_get_contents($path), true);
         if (! is_array($decoded) || empty($decoded['card_uid'])) {
             return null;
+        }
+
+        $fileLandlordId = isset($decoded['landlord_id']) ? (int) $decoded['landlord_id'] : 0;
+        if ($fileLandlordId <= 0 || $fileLandlordId !== (int) $user->id) {
+            return null;
+        }
+
+        if (array_key_exists('property_id', $decoded) && $decoded['property_id'] !== null && $decoded['property_id'] !== '') {
+            $filePropertyId = (int) $decoded['property_id'];
+            if ($filePropertyId <= 0) {
+                return null;
+            }
+            if (! $user->properties()->where('id', $filePropertyId)->exists()) {
+                return null;
+            }
+            if ($queryPropertyId === null || $queryPropertyId !== $filePropertyId) {
+                return null;
+            }
         }
 
         $uid = strtoupper((string) $decoded['card_uid']);
@@ -640,10 +667,14 @@ class RfidController extends Controller
     public function getLatestCardUID(Request $request)
     {
         try {
-            // 1) Local bridge file from ESP32Reader.php (covers new / unregistered cards;
-            //    those often never appear in access_logs scoped by property_id).
+            // 1) Local bridge file (only when stamped with this landlord's id; optional property_id).
+            $queryPropertyId = $request->query('property_id');
+            $queryPropertyId = $queryPropertyId !== null && $queryPropertyId !== ''
+                ? (int) $queryPropertyId
+                : null;
+
             if (auth()->check()) {
-                $bridge = $this->readLatestCardFromBridgeFile();
+                $bridge = $this->readLatestCardFromBridgeFileForUser(auth()->user(), $queryPropertyId);
                 if ($bridge !== null && $bridge['age_seconds'] <= 600) {
                     return response()->json([
                         'success' => true,
@@ -656,14 +687,13 @@ class RfidController extends Controller
                 }
             }
 
-            $propertyId  = $request->query('property_id');
             $landlordId  = $request->query('landlord_id');
 
             $query = AccessLog::orderBy('access_time', 'desc');
 
-            if ($propertyId !== null) {
+            if ($queryPropertyId !== null) {
                 // Scope to a single property — one indexed WHERE clause
-                $query->where('property_id', (int) $propertyId);
+                $query->where('property_id', $queryPropertyId);
             } elseif ($landlordId !== null) {
                 // Scope to all properties of the specified landlord
                 $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
