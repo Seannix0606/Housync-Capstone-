@@ -66,6 +66,13 @@
                         </div>
                     @endif
 
+                    @if(session('error'))
+                        <div class="alert alert-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @if($errors->any())
                         <div class="alert alert-error">
                             <i class="fas fa-exclamation-circle"></i>
@@ -98,7 +105,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required placeholder="+1 (555) 123-4567">
+                                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required placeholder="09171234567 (digits and separators OK)">
                             </div>
                             <div class="form-group">
                                 <label for="address">Address *</label>
