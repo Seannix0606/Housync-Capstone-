@@ -261,10 +261,6 @@
     </aside>
     <main class="main-content">
         <div class="saas-topbar">
-            <div class="saas-search-wrap">
-                <i class="fas fa-search saas-search-icon" aria-hidden="true"></i>
-                <input type="search" class="saas-search-input" placeholder="Search users, properties, settings…" aria-label="Search">
-            </div>
             <div class="saas-topbar-actions">
             <div class="dropdown" id="saProfileDropdown">
                 <div class="profile-btn" id="saProfileBtn">
