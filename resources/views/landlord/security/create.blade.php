@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}">Security</a>
+                        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Assign Card</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
+        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -177,7 +177,7 @@
 
                         <!-- Action Buttons -->
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
+                            <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}" 
                                class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
@@ -450,6 +450,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Web-triggered scan request (creates a scan request file and polls for status)
+    function parseJsonResponse(response) {
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return response.text().then(text => {
+                const preview = (text || '').trim().slice(0, 80);
+                throw new Error(
+                    `Scan API returned non-JSON response (HTTP ${response.status}). ${preview}`
+                );
+            });
+        }
+        return response.json();
+    }
+
     function startWebScanFlow() {
         if (isScanning) return;
         isScanning = true;
@@ -464,9 +477,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // 1) Immediately load the most recent UID from latest_card.json
         fetch('/api/rfid/latest-uid', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(r => r.ok ? parseJsonResponse(r) : Promise.reject())
         .then(d => {
             if (d && d.success && d.card_uid) {
                 addUidOption(d.card_uid, true);
@@ -482,14 +499,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(latestPollTimer);
                 return;
             }
-            fetch('/api/rfid/latest-uid')
-                .then(r => r.ok ? r.json() : Promise.reject())
+            fetch('/api/rfid/latest-uid', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(r => r.ok ? parseJsonResponse(r) : Promise.reject())
                 .then(d => {
                     if (d && d.success && d.card_uid) {
                         // If dropdown is empty or value differs, update and select
                         if (!cardUidSelect.value || cardUidSelect.value !== d.card_uid) {
                             addUidOption(d.card_uid, true);
-                            updateScanState('success', `✅ Card detected: ${d.card_uid}`);
+                            updateScanState('success', `Card detected: ${d.card_uid}`);
                             clearInterval(latestPollTimer);
                             isScanning = false;
                             stopAutomaticScanning();
@@ -503,10 +525,12 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             }
         })
-        .then(res => res.json())
+        .then(parseJsonResponse)
         .then(data => {
             if (!data.success || !data.scan_id) {
                 throw new Error(data.error || 'Failed to start scan');
@@ -518,12 +542,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const poll = () => {
                 fetch(`/api/rfid/scan/status/${scanId}`)
-                    .then(r => r.json())
+                    .then(parseJsonResponse)
                     .then(s => {
                         if (s.success && s.status === 'completed' && s.card_uid) {
                             // Add scanned UID to dropdown (deduped) and select it
                             addUidOption(s.card_uid, true);
-                            updateScanState('success', `✅ Card detected: ${s.card_uid}`);
+                            updateScanState('success', `Card detected: ${s.card_uid}`);
                             cardUidInput.classList.add('border-success');
                             isScanning = false;
                             stopAutomaticScanning();
@@ -585,10 +609,12 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             }
         })
-        .then(response => response.json())
+        .then(parseJsonResponse)
         .then(data => {
             if (data.success && data.card_uid && !cardUidInput.value) {
                 // Success! New card detected
@@ -620,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('ESP32Reader error:', error);
-            updateScanState('error', 'ESP32Reader.php not running. Please start: php ESP32Reader.php --port=COM3');
+            updateScanState('error', 'ESP32Reader.php not running. Please start: php ESP32Reader.php --port=COM7');
             isScanning = false;
         });
     }
@@ -632,10 +658,12 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             }
         })
-        .then(response => response.json())
+        .then(parseJsonResponse)
         .then(data => {
             if (data.success && data.card_uid) {
                 cardUidInput.value = data.card_uid;

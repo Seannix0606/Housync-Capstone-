@@ -12,7 +12,7 @@ return [
     */
 
     // Serial port configuration
-    'com_port' => env('RFID_COM_PORT', 'COM3'),
+    'com_port' => env('RFID_COM_PORT', 'COM7'),
     'baud_rate' => env('RFID_BAUD_RATE', 115200),
 
     // Scan timeout settings

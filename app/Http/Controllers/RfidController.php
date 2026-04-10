@@ -15,6 +15,74 @@ use Illuminate\Support\Facades\Log;
 
 class RfidController extends Controller
 {
+    private function rfidScanRequestsDirectory(): string
+    {
+        return storage_path('app/scan_requests');
+    }
+
+    private function rfidScanRequestFilePath(string $scanId): string
+    {
+        return $this->rfidScanRequestsDirectory().DIRECTORY_SEPARATOR.$scanId.'.json';
+    }
+
+    private function ensureRfidScanRequestsDirectoryExists(): void
+    {
+        $dir = $this->rfidScanRequestsDirectory();
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+    }
+
+    /**
+     * ESP32Reader.php watches storage/app/scan_requests/web_scan_*.json — not Laravel cache.
+     */
+    private function readScanRequestPayload(string $scanId): ?array
+    {
+        $path = $this->rfidScanRequestFilePath($scanId);
+        if (! is_readable($path)) {
+            return null;
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * Latest UID written by tools/esp32/ESP32Reader.php to storage/app/latest_card.json
+     */
+    private function readLatestCardFromBridgeFile(): ?array
+    {
+        $path = storage_path('app/latest_card.json');
+        if (! is_readable($path)) {
+            return null;
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+        if (! is_array($decoded) || empty($decoded['card_uid'])) {
+            return null;
+        }
+
+        $uid = strtoupper((string) $decoded['card_uid']);
+        if ($uid === '') {
+            return null;
+        }
+
+        if (isset($decoded['timestamp']) && is_numeric($decoded['timestamp'])) {
+            $age = time() - (int) $decoded['timestamp'];
+        } elseif (! empty($decoded['scanned_at'])) {
+            $age = now()->diffInSeconds(\Carbon\Carbon::parse($decoded['scanned_at']));
+        } else {
+            $age = 0;
+        }
+
+        return [
+            'card_uid' => $uid,
+            'age_seconds' => $age,
+            'scanned_at' => $decoded['scanned_at'] ?? null,
+        ];
+    }
+
     /**
      * Display RFID management dashboard
      */
@@ -143,7 +211,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['property_id' => $request->property_id])
+            return redirect()->route('landlord.security.index', ['property_id' => $request->property_id])
                 ->with('success', 'RFID card assigned successfully!');
 
         } catch (\Exception $exception) {
@@ -325,7 +393,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['property_id' => $card->property_id])
+            return redirect()->route('landlord.security.index', ['property_id' => $card->property_id])
                 ->with('success', 'RFID card reassigned successfully to '.$tenantAssignment->tenant->name.'!');
 
         } catch (\Exception $exception) {
@@ -572,6 +640,22 @@ class RfidController extends Controller
     public function getLatestCardUID(Request $request)
     {
         try {
+            // 1) Local bridge file from ESP32Reader.php (covers new / unregistered cards;
+            //    those often never appear in access_logs scoped by property_id).
+            if (auth()->check()) {
+                $bridge = $this->readLatestCardFromBridgeFile();
+                if ($bridge !== null && $bridge['age_seconds'] <= 600) {
+                    return response()->json([
+                        'success' => true,
+                        'card_uid' => $bridge['card_uid'],
+                        'message' => 'Latest Card UID retrieved successfully',
+                        'scanned_at' => $bridge['scanned_at'] ?? now()->toISOString(),
+                        'age_seconds' => $bridge['age_seconds'],
+                        'source' => 'latest_card.json',
+                    ]);
+                }
+            }
+
             $propertyId  = $request->query('property_id');
             $landlordId  = $request->query('landlord_id');
 
@@ -598,11 +682,13 @@ class RfidController extends Controller
             $latestLog = $query->first();
 
             if (! $latestLog) {
+                // HTTP 200 so browsers do not log a false "route not found" for an empty state
                 return response()->json([
                     'success' => false,
                     'error' => 'No card has been scanned yet. Please tap a card on the ESP32 reader first.',
                     'instructions' => 'Make sure ESP32Reader.php is running and tap an RFID card.',
-                ], 404);
+                    'source' => 'access_logs',
+                ]);
             }
 
             // Check if the card data is recent (within last 10 minutes for better UX)
@@ -615,7 +701,8 @@ class RfidController extends Controller
                     'error' => 'Last scanned card is too old. Please tap a new card on the ESP32 reader.',
                     'last_scan' => $latestLog->access_time->toISOString(),
                     'age_seconds' => $age,
-                ], 410);
+                    'source' => 'access_logs',
+                ]);
             }
 
             return response()->json([
@@ -624,6 +711,7 @@ class RfidController extends Controller
                 'message' => 'Latest Card UID retrieved successfully',
                 'scanned_at' => $latestLog->access_time->toISOString(),
                 'age_seconds' => $age,
+                'source' => 'access_logs',
             ]);
 
         } catch (\Exception $exception) {
@@ -707,25 +795,27 @@ class RfidController extends Controller
         try {
             $timeout = (int) $request->input('timeout', 15);
             $timeout = max(1, min(30, $timeout));
-            $comPort = $request->input('com_port', 'COM3');
+            $comPort = $request->input('com_port', 'COM7');
 
-            // Create a scan request entry that ESP32Reader.php will monitor
+            // ESP32Reader.php polls storage/app/scan_requests/web_scan_*.json — not Laravel cache.
             $scanId = 'web_scan_'.uniqid();
-            $cacheKey = 'rfid:scan_request:'.$scanId;
+            $this->ensureRfidScanRequestsDirectoryExists();
 
-            // Create scan request
             $scanRequest = [
                 'scan_id' => $scanId,
                 'type' => 'web_request',
                 'com_port' => $comPort,
                 'timeout' => $timeout,
-                'requested_at' => now()->toISOString(),
+                'requested_at' => now()->toIso8601String(),
                 'status' => 'pending',
                 'card_uid' => null,
                 'error' => null,
             ];
 
-            Cache::put($cacheKey, $scanRequest, now()->addSeconds($timeout + 5));
+            $path = $this->rfidScanRequestFilePath($scanId);
+            if (file_put_contents($path, json_encode($scanRequest, JSON_PRETTY_PRINT)) === false) {
+                throw new \RuntimeException('Could not write scan request file');
+            }
 
             return response()->json([
                 'success' => true,
@@ -757,23 +847,26 @@ class RfidController extends Controller
         }
 
         try {
-            $cacheKey = 'rfid:scan_request:'.$scanId;
-            $scanData = Cache::get($cacheKey);
+            $scanData = $this->readScanRequestPayload($scanId);
 
             if (! $scanData) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Scan request not found or expired',
-                ], 404);
+                ]);
             }
 
-            // Check if timed out
-            $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
+            $requestedAt = \Carbon\Carbon::parse($scanData['requested_at'] ?? now());
             $timeout = (int) ($scanData['timeout'] ?? 15);
             $elapsed = $requestedAt->diffInSeconds(now());
 
             if ($elapsed > $timeout) {
-                Cache::forget($cacheKey);
+                $scanData['status'] = 'timeout';
+                $scanData['error'] = $scanData['error'] ?? 'Scan request timed out';
+                @file_put_contents(
+                    $this->rfidScanRequestFilePath($scanId),
+                    json_encode($scanData, JSON_PRETTY_PRINT)
+                );
 
                 return response()->json([
                     'success' => false,
@@ -787,8 +880,8 @@ class RfidController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => $scanData['status'],
-                'card_uid' => $scanData['card_uid'],
-                'error' => $scanData['error'],
+                'card_uid' => $scanData['card_uid'] ?? null,
+                'error' => $scanData['error'] ?? null,
                 'remaining_time' => $remaining,
             ]);
 
