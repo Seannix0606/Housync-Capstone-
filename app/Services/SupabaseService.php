@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\StorageServiceInterface;
+use Composer\CaBundle\CaBundle;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -20,18 +21,61 @@ class SupabaseService implements StorageServiceInterface
 
     public function __construct()
     {
-        $this->url = config('services.supabase.url');
-        $this->key = config('services.supabase.key');
-        $this->serviceKey = config('services.supabase.service_key');
+        $rawUrl = (string) config('services.supabase.url', '');
+        $this->url = $rawUrl !== '' ? rtrim($rawUrl, '/') : '';
+        $this->key = $this->normalizeSecret(config('services.supabase.key'));
+        $this->serviceKey = $this->normalizeSecret(config('services.supabase.service_key'));
 
         $this->client = new Client([
-            'base_uri' => $this->url,
+            'base_uri' => $this->url !== '' ? $this->url.'/' : '',
+            'verify' => $this->resolveSslCaBundlePath(),
             'headers' => [
                 'apikey' => $this->key,
                 'Authorization' => 'Bearer '.$this->key,
                 'Content-Type' => 'application/json',
             ],
         ]);
+    }
+
+    protected function normalizeSecret(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    protected function isLikelySupabaseApiJwt(?string $token): bool
+    {
+        if ($token === null || $token === '') {
+            return false;
+        }
+
+        return substr_count($token, '.') === 2;
+    }
+
+    /**
+     * Use a known CA bundle so HTTPS to Supabase works on systems where PHP/cURL has no CA store (common on Windows).
+     */
+    protected function resolveSslCaBundlePath(): bool|string
+    {
+        $configured = config('services.supabase.ca_bundle');
+        if (is_string($configured) && $configured !== '' && is_readable($configured)) {
+            return $configured;
+        }
+
+        try {
+            return CaBundle::getSystemCaRootBundlePath();
+        } catch (\Throwable $e) {
+            Log::warning('Supabase Guzzle SSL: could not resolve CA bundle, falling back to default verify', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return true;
+        }
     }
 
     public function from($table, $filters = [], $select = ['*'])
@@ -119,6 +163,28 @@ class SupabaseService implements StorageServiceInterface
 
     public function uploadFile(string $bucket, string $path, mixed $file): array
     {
+        if ($this->url === '' || $this->serviceKey === null || $this->serviceKey === '') {
+            $message = 'Supabase Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_KEY in your .env file (Supabase Dashboard → Settings → API).';
+
+            Log::warning('Supabase upload skipped: missing URL or service key');
+
+            return [
+                'success' => false,
+                'message' => $message,
+            ];
+        }
+
+        if (! $this->isLikelySupabaseApiJwt($this->serviceKey)) {
+            $message = 'SUPABASE_SERVICE_KEY is not a valid Supabase JWT. In Dashboard → Settings → API, copy the **service_role** key (long value starting with eyJ…), not the JWT Secret or anon key.';
+
+            Log::warning('Supabase upload skipped: service key is not JWT-shaped');
+
+            return [
+                'success' => false,
+                'message' => $message,
+            ];
+        }
+
         try {
             // Handle both file paths and direct content
             if (is_string($file)) {
@@ -147,10 +213,11 @@ class SupabaseService implements StorageServiceInterface
                 'url' => $this->url."/storage/v1/object/{$bucket}/{$path}",
             ]);
 
+            // Storage API expects apikey and Authorization to use the same JWT for service-role uploads.
             $response = $this->client->post("/storage/v1/object/{$bucket}/{$path}", [
                 'body' => $fileContents,
                 'headers' => [
-                    'apikey' => $this->key,
+                    'apikey' => $this->serviceKey,
                     'Authorization' => 'Bearer '.$this->serviceKey,
                     'Content-Type' => 'application/octet-stream',
                 ],
