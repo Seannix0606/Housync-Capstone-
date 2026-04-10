@@ -141,7 +141,15 @@ class RfidController extends Controller
         } elseif (! empty($decoded['scanned_at'])) {
             $age = now()->diffInSeconds(\Carbon\Carbon::parse($decoded['scanned_at']));
         } else {
-            $age = 0;
+            $mtime = @filemtime ($path);
+            if ($mtime === false) {
+                return null;
+            }
+            $age = time() - $mtime;
+        }
+
+        if ($age < 0) {
+            return null;
         }
 
         return [
@@ -893,6 +901,14 @@ class RfidController extends Controller
             $scanId = 'web_scan_'.uniqid();
             $this->ensureRfidScanRequestsDirectoryExists();
 
+            $userId = auth()->id();
+            if ($userId === null) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthenticated.',
+                ], 401);
+            }
+
             $scanRequest = [
                 'scan_id' => $scanId,
                 'type' => 'web_request',
@@ -902,6 +918,7 @@ class RfidController extends Controller
                 'status' => 'pending',
                 'card_uid' => null,
                 'error' => null,
+                'initiator_user_id' => (int) $userId,
             ];
 
             $path = $this->rfidScanRequestFilePath($scanId);
@@ -928,6 +945,9 @@ class RfidController extends Controller
 
     /**
      * Check scan request status from ESP32Reader.php
+     *
+     * Only the authenticated user who created the request (initiator_user_id in the JSON file)
+     * may read status or card_uid — same generic error if missing, wrong user, or forged id.
      */
     public function checkScanRequestStatus($scanId)
     {
@@ -939,9 +959,25 @@ class RfidController extends Controller
         }
 
         try {
+            $user = auth()->user();
+            if (! $user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthenticated.',
+                ], 401);
+            }
+
             $scanData = $this->readScanRequestPayload($scanId);
 
             if (! $scanData) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Scan request not found or expired',
+                ]);
+            }
+
+            $initiatorId = $scanData['initiator_user_id'] ?? null;
+            if ($initiatorId === null || (int) $initiatorId !== (int) $user->id) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Scan request not found or expired',

@@ -372,6 +372,9 @@ class ESP32Reader
 
     /**
      * Check for web scan requests from Laravel
+     *
+     * Request JSON may include initiator_user_id (set by Laravel). Preserve all keys when
+     * updating status so ownership checks on the server remain valid.
      */
     public function checkWebScanRequests()
     {
@@ -459,7 +462,8 @@ class ESP32Reader
     }
 
     /**
-     * Fulfill web scan request with detected card UID
+     * Fulfill web scan request with detected card UID.
+     * Merges into the existing decoded payload so fields like initiator_user_id are kept.
      */
     public function fulfillWebScanRequest($cardUID)
     {
