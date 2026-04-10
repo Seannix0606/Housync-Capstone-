@@ -5,4 +5,4 @@
 # MySQL is unreachable or still starting.
 
 [deploy]
-startCommand = "php artisan migrate --force --no-interaction && php artisan route:clear && rm -rf public/storage && php artisan storage:link && php -d display_errors=1 -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public public/index.php"
+startCommand = "php artisan migrate --force --no-interaction && php artisan route:clear && rm -rf public/storage && php artisan storage:link && php -d display_errors=1 -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public server.php"

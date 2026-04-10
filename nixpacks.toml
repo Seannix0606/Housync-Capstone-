@@ -16,4 +16,4 @@ cmds = [
 # Do not run `optimize:clear` here: it flushes the DB cache driver and fails if MySQL is unreachable
 # or still starting; Railway often misconfigures DB_HOST as 127.0.0.1. Migrations are enough for boot.
 [start]
-cmd = 'php artisan migrate --force --no-interaction && php -d display_errors=1 -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public public/index.php'
+cmd = 'php artisan migrate --force --no-interaction && php -d display_errors=1 -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public server.php'
