@@ -54,14 +54,16 @@
         }
 
         .brand {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-            border-radius: 8px;
+        .brand-logo {
+            display: block;
+            height: 120px;
+            width: auto;
+            max-width: 560px;
+            object-fit: contain;
+            object-position: left center;
         }
 
         .title {
@@ -453,7 +455,7 @@
             <div class="form-section">
                 <div class="form-container">
                     <div class="brand">
-                        <div class="brand-icon"></div>
+                        <img src="{{ asset('images/housync-logo.png') }}" alt="HouSync" class="brand-logo">
                     </div>
                     
                     <h1 class="title">HouSync</h1>
