@@ -54,6 +54,10 @@ class ESP32Reader
             ?? $this->resolveOptionalPositiveInt(getenv('ESP32_BRIDGE_PROPERTY_ID') ?: null)
             ?? $this->resolveOptionalPositiveInt($this->getLaravelEnvValue('ESP32_BRIDGE_PROPERTY_ID'));
 
+        if ($this->bridgePropertyId !== null && $this->bridgeLandlordId === null) {
+            throw new InvalidArgumentException('--property-id requires --landlord-id');
+        }
+
         echo "Enhanced ESP32 RFID Reader Initialized\n";
         echo "Port: {$this->port}\n";
         echo "Baudrate: {$this->baudrate}\n";

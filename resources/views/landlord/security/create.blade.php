@@ -461,11 +461,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function parseJsonResponse(response) {
         const contentType = response.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
-            return response.text().then(text => {
-                const preview = (text || '').trim().slice(0, 80);
-                throw new Error(
-                    `Scan API returned non-JSON response (HTTP ${response.status}). ${preview}`
-                );
+            // Drain body for fetch hygiene; never put response text into Error.message — it is shown via innerHTML.
+            return response.text().then((body) => {
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('Scan API non-JSON response', response.status, body?.slice?.(0, 200));
+                }
+                throw new Error(`NON_JSON_${response.status}`);
             });
         }
         return response.json();
@@ -541,7 +542,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(parseJsonResponse)
         .then(data => {
             if (!data.success || !data.scan_id) {
-                throw new Error(data.error || 'Failed to start scan');
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('Scan request rejected:', data.error);
+                }
+                throw new Error('SCAN_REQUEST_FAILED');
             }
             const scanId = data.scan_id;
             const timeoutMs = (data.timeout || 15) * 1000;
@@ -579,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => {
             console.error('Web scan error:', err);
-            updateScanState('error', err.message || 'Failed to start scan');
+            updateScanState('error', 'Failed to start scan. Try again.');
             isScanning = false;
         });
     }
@@ -632,7 +636,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 let message = `✅ Card detected: ${data.card_uid}`;
                 if (data.age_seconds !== undefined && data.age_seconds < 600) {
                     updateScanState('success', message);
-                    cardUidHelp.innerHTML = `Card UID detected: <strong>${data.card_uid}</strong>. You can now complete the assignment.`;
+                    cardUidHelp.textContent = '';
+                    cardUidHelp.appendChild(document.createTextNode('Card UID detected: '));
+                    const uidStrong = document.createElement('strong');
+                    uidStrong.textContent = String(data.card_uid);
+                    cardUidHelp.appendChild(uidStrong);
+                    cardUidHelp.appendChild(document.createTextNode('. You can now complete the assignment.'));
                     
                     // Stop scanning after successful detection
                     stopAutomaticScanning();
@@ -740,30 +749,54 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'danger') icon = 'fas fa-exclamation-triangle';
         if (type === 'info') icon = 'fas fa-spinner fa-spin';
         
-        scanStatus.innerHTML = `<i class="${icon} me-2"></i><span id="scan-status-text">${message}</span>`;
+        scanStatus.textContent = '';
+        const ic = document.createElement('i');
+        ic.className = icon + ' me-2';
+        ic.setAttribute('aria-hidden', 'true');
+        scanStatus.appendChild(ic);
+        const span = document.createElement('span');
+        span.id = 'scan-status-text';
+        span.textContent = String(message ?? '');
+        scanStatus.appendChild(span);
     }
     
     function hideScanStatus() {
         scanStatusContainer.style.display = 'none';
     }
     
+    function setCardUidHelpLine(iconClass, message) {
+        cardUidHelp.textContent = '';
+        const ic = document.createElement('i');
+        ic.className = iconClass;
+        ic.setAttribute('aria-hidden', 'true');
+        cardUidHelp.appendChild(ic);
+        cardUidHelp.appendChild(document.createTextNode(' '));
+        const span = document.createElement('span');
+        span.textContent = String(message ?? '');
+        cardUidHelp.appendChild(span);
+    }
+
     function updateScanState(state, message) {
         if (state === 'scanning') {
             scanIcon.className = 'fas fa-satellite-dish text-primary';
             scanIcon.style.animation = 'pulse-scan 1.5s infinite';
-            cardUidHelp.innerHTML = `<i class="fas fa-radio text-primary me-1"></i> ${message}`;
+            setCardUidHelpLine('fas fa-radio text-primary me-1', message);
         } else if (state === 'success') {
             scanIcon.className = 'fas fa-check-circle text-success';
             scanIcon.style.animation = 'none';
-            cardUidHelp.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i> ${message}`;
+            setCardUidHelpLine('fas fa-check-circle text-success me-1', message);
         } else if (state === 'error') {
             scanIcon.className = 'fas fa-exclamation-triangle text-warning';
             scanIcon.style.animation = 'none';
-            cardUidHelp.innerHTML = `<i class="fas fa-exclamation-triangle text-warning me-1"></i> ${message}`;
+            setCardUidHelpLine('fas fa-exclamation-triangle text-warning me-1', message);
         } else if (state === 'idle') {
             scanIcon.className = 'fas fa-id-card text-success';
             scanIcon.style.animation = 'none';
-            cardUidHelp.innerHTML = `<i class="fas fa-check text-success me-1"></i> ${message}`;
+            setCardUidHelpLine('fas fa-check text-success me-1', message);
+        } else if (state === 'info') {
+            scanIcon.className = 'fas fa-info-circle text-primary';
+            scanIcon.style.animation = 'none';
+            setCardUidHelpLine('fas fa-info-circle text-primary me-1', message);
         }
     }
     
