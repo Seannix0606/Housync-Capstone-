@@ -699,23 +699,29 @@ class RfidController extends Controller
     /**
      * Get the latest Card UID from access_logs database.
      *
-     * Scope resolution order (first match wins):
-     *   1. ?property_id=X  — caller-supplied property scope
-     *   2. ?landlord_id=X  — caller-supplied landlord scope
-     *   3. Authenticated session user — auto-scoped to their properties
-     *   4. No scope at all  — rejected (422) to prevent cross-tenant UID leakage
+     * Browser-authenticated route: caller-supplied landlord_id / property_id are not trusted.
+     * Landlords may only read within their own properties; optional ?property_id= must be owned.
+     * Super admins may scope with ?landlord_id= or ?property_id= explicitly (support tooling).
      */
     public function getLatestCardUID(Request $request)
     {
         try {
-            // 1) Local bridge file (only when stamped with this landlord's id; optional property_id).
+            $user = auth()->user();
+            if (! $user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthenticated.',
+                ], 401);
+            }
+
             $queryPropertyId = $request->query('property_id');
             $queryPropertyId = $queryPropertyId !== null && $queryPropertyId !== ''
                 ? (int) $queryPropertyId
                 : null;
 
-            if (auth()->check()) {
-                $bridge = $this->readLatestCardFromBridgeFileForUser(auth()->user(), $queryPropertyId);
+            // 1) Local bridge file (landlords only; already matches session user + optional property).
+            if ($user->isLandlord()) {
+                $bridge = $this->readLatestCardFromBridgeFileForUser($user, $queryPropertyId);
                 if ($bridge !== null && $bridge['age_seconds'] <= 600) {
                     return response()->json([
                         'success' => true,
@@ -728,26 +734,41 @@ class RfidController extends Controller
                 }
             }
 
-            $landlordId  = $request->query('landlord_id');
+            $query = AccessLog::query()->orderBy('access_time', 'desc');
 
-            $query = AccessLog::orderBy('access_time', 'desc');
-
-            if ($queryPropertyId !== null) {
-                // Scope to a single property — one indexed WHERE clause
-                $query->where('property_id', $queryPropertyId);
-            } elseif ($landlordId !== null) {
-                // Scope to all properties of the specified landlord
-                $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
-            } elseif ($user = auth()->user()) {
-                // Authenticated web session — auto-scope to this landlord's properties
+            if ($user->isLandlord()) {
                 $ownedIds = $user->properties()->pluck('id');
-                $query->whereIn('property_id', $ownedIds);
+
+                if ($queryPropertyId !== null) {
+                    if (! $ownedIds->contains($queryPropertyId)) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'You do not have access to this property.',
+                        ], 403);
+                    }
+                    $query->where('property_id', $queryPropertyId);
+                } else {
+                    $query->whereIn('property_id', $ownedIds);
+                }
+            } elseif ($user->isSuperAdmin()) {
+                $landlordIdParam = $request->query('landlord_id');
+
+                if ($queryPropertyId !== null) {
+                    $query->where('property_id', $queryPropertyId);
+                } elseif ($landlordIdParam !== null && $landlordIdParam !== '') {
+                    $lid = (int) $landlordIdParam;
+                    $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', $lid));
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Specify property_id or landlord_id to scope this lookup.',
+                    ], 422);
+                }
             } else {
-                // No scope and no auth — refuse rather than expose cross-tenant UIDs
                 return response()->json([
                     'success' => false,
-                    'error' => 'A property_id or landlord_id scope parameter is required.',
-                ], 422);
+                    'error' => 'This endpoint is only available to landlords and super administrators.',
+                ], 403);
             }
 
             $latestLog = $query->first();
