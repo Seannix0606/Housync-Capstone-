@@ -52,7 +52,7 @@ class RegistrationController extends Controller
             'doc_certificate_of_occupancy.required' => 'Certificate of Occupancy is required when your property is newly built.',
         ]);
 
-        $supabase = new SupabaseService;
+        $supabase = app(SupabaseService::class);
 
         $documentSlots = [
             ['file' => $request->file('doc_barangay_clearance'), 'type' => 'barangay_clearance'],

@@ -19,7 +19,6 @@ return new class extends Migration
                 'password' => Hash::make('admin123'),
                 'role' => 'super_admin',
                 'status' => 'active',
-                'email_verified_at' => now(),
                 'updated_at' => now(),
                 'created_at' => now(),
             ]

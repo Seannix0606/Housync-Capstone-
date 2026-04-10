@@ -112,7 +112,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('verification.notice');
+        return redirect()->route('tenant.dashboard');
     }
 
     /**
