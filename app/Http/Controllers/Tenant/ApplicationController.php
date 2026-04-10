@@ -24,8 +24,10 @@ class ApplicationController extends Controller
 
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
 
-        if ($personalDocuments->isEmpty()) {
-            return back()->with('error', 'You must upload your personal documents before applying for a property. Please visit your profile or upload documents page to add required documents.');
+        if (! TenantDocument::tenantMeetsRequiredDocuments($tenant->id)) {
+            $missing = TenantDocument::missingRequiredDocumentMessages($tenant->id);
+
+            return back()->with('error', 'You must complete all required documents before applying: '.implode(' ', $missing).' Go to Upload Documents to finish.');
         }
 
         $request->validate([
@@ -142,8 +144,10 @@ class ApplicationController extends Controller
 
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
 
-        if ($personalDocuments->isEmpty()) {
-            return back()->with('error', 'You must upload your personal documents before applying for a unit. Please visit your profile or upload documents page to add required documents.');
+        if (! TenantDocument::tenantMeetsRequiredDocuments($tenant->id)) {
+            $missing = TenantDocument::missingRequiredDocumentMessages($tenant->id);
+
+            return back()->with('error', 'You must complete all required documents before applying: '.implode(' ', $missing).' Go to Upload Documents to finish.');
         }
 
         $request->validate([

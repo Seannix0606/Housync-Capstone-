@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -117,9 +118,103 @@ class TenantDocument extends Model
             'bank_statement' => 'Bank Statement',
             'character_reference' => 'Character Reference',
             'rental_history' => 'Rental History',
+            'nbi_clearance' => 'NBI Clearance',
+            'police_clearance' => 'Police Clearance',
             'other' => 'Other Document',
             default => ucfirst(str_replace('_', ' ', $this->document_type))
         };
+    }
+
+    /**
+     * Allowed values for tenant uploads (validation, selects).
+     *
+     * @return list<string>
+     */
+    public static function uploadableDocumentTypes(): array
+    {
+        return [
+            'government_id',
+            'nbi_clearance',
+            'police_clearance',
+            'proof_of_income',
+            'employment_contract',
+            'bank_statement',
+            'character_reference',
+            'rental_history',
+            'other',
+        ];
+    }
+
+    /**
+     * Rule: 2× government ID, 1× NBI clearance, 1× police clearance.
+     */
+    public static function requiredDocumentRules(): array
+    {
+        return [
+            ['type' => 'government_id', 'min_count' => 2, 'label' => 'Valid government IDs', 'detail' => 'Upload two separate files, each labeled Government ID (e.g. passport, driver’s license, national ID).'],
+            ['type' => 'nbi_clearance', 'min_count' => 1, 'label' => 'NBI clearance', 'detail' => 'One NBI clearance certificate.'],
+            ['type' => 'police_clearance', 'min_count' => 1, 'label' => 'Police clearance', 'detail' => 'One police clearance certificate.'],
+        ];
+    }
+
+    /**
+     * @return Collection<string, int>
+     */
+    public static function documentTypeCountsForTenant(int $tenantId): Collection
+    {
+        return static::query()
+            ->where('tenant_id', $tenantId)
+            ->selectRaw('document_type, COUNT(*) as c')
+            ->groupBy('document_type')
+            ->pluck('c', 'document_type');
+    }
+
+    /**
+     * @return list<array{rule: array, uploaded: int, met: bool}>
+     */
+    public static function requirementProgressForTenant(int $tenantId): array
+    {
+        $counts = static::documentTypeCountsForTenant($tenantId);
+        $progress = [];
+        foreach (static::requiredDocumentRules() as $rule) {
+            $uploaded = (int) ($counts[$rule['type']] ?? 0);
+            $progress[] = [
+                'rule' => $rule,
+                'uploaded' => $uploaded,
+                'met' => $uploaded >= $rule['min_count'],
+            ];
+        }
+
+        return $progress;
+    }
+
+    public static function tenantMeetsRequiredDocuments(int $tenantId): bool
+    {
+        foreach (static::requirementProgressForTenant($tenantId) as $row) {
+            if (! $row['met']) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function missingRequiredDocumentMessages(int $tenantId): array
+    {
+        $messages = [];
+        foreach (static::requirementProgressForTenant($tenantId) as $row) {
+            if ($row['met']) {
+                continue;
+            }
+            $rule = $row['rule'];
+            $need = $rule['min_count'] - $row['uploaded'];
+            $messages[] = "{$rule['label']}: upload {$need} more ({$row['uploaded']}/{$rule['min_count']} on file).";
+        }
+
+        return $messages;
     }
 
     public function getFileSizeFormattedAttribute()

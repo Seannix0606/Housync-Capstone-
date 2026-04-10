@@ -129,9 +129,12 @@ class RegistrationController extends Controller
                 return $landlord;
             });
         } catch (\Exception $e) {
-            Log::error('Landlord registration failed', ['error' => $e->getMessage()]);
+            Log::error('Landlord registration failed', [
+                'message' => $e->getMessage(),
+                'exception' => $e,
+            ]);
 
-            return back()->with('error', 'Registration failed: '.$e->getMessage().'. Please try again.')->withInput();
+            return back()->with('registration_error', true)->withInput();
         }
 
         event(new Registered($landlord));
