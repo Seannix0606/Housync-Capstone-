@@ -29,11 +29,15 @@ class RegistrationController extends Controller
      */
     public function storeRegistration(Request $request)
     {
+        $request->merge([
+            'phone' => preg_replace('/\D/', '', (string) $request->input('phone', '')),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'phone' => 'required|regex:/^[0-9]+$/|max:20',
+            'phone' => 'required|regex:/^[0-9]+$/|min:7|max:20',
             'address' => 'required|string|max:500',
             'business_info' => 'required|string|max:1000',
             'doc_barangay_clearance' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
@@ -125,9 +129,12 @@ class RegistrationController extends Controller
                 return $landlord;
             });
         } catch (\Exception $e) {
-            Log::error('Landlord registration failed', ['error' => $e->getMessage()]);
+            Log::error('Landlord registration failed', [
+                'message' => $e->getMessage(),
+                'exception' => $e,
+            ]);
 
-            return back()->with('error', 'Registration failed: '.$e->getMessage().'. Please try again.')->withInput();
+            return back()->with('registration_error', true)->withInput();
         }
 
         event(new Registered($landlord));

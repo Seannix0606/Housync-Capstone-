@@ -66,6 +66,13 @@
                         </div>
                     @endif
 
+                    @if(session('registration_error'))
+                        <div class="alert alert-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Registration failed. Please try again. If the issue persists, contact support.
+                        </div>
+                    @endif
+
                     @if($errors->any())
                         <div class="alert alert-error">
                             <i class="fas fa-exclamation-circle"></i>
@@ -98,7 +105,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required placeholder="+1 (555) 123-4567">
+                                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required placeholder="e.g. 0917 123 4567 or +63 917 123 4567 (spaces ok)">
                             </div>
                             <div class="form-group">
                                 <label for="address">Address *</label>

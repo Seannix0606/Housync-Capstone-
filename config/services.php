@@ -40,6 +40,8 @@ return [
         'key' => env('SUPABASE_KEY'),
         'service_key' => env('SUPABASE_SERVICE_KEY'),
         'bucket' => env('SUPABASE_BUCKET', 'house-sync'),
+        // Optional: path to cacert.pem if PHP/cURL cannot verify SSL (Windows). Leave unset to use composer/ca-bundle.
+        'ca_bundle' => env('SUPABASE_CA_BUNDLE'),
     ],
 
     'esp32' => [
