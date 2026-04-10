@@ -193,10 +193,15 @@
         /* Illustration Section */
         .illustration-section {
             flex: 1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
             overflow: hidden;
             min-height: 600px;
+            background-color: #4a5694;
+            background-image: linear-gradient(135deg, rgba(102, 126, 234, 0.72) 0%, rgba(118, 75, 162, 0.72) 100%),
+                url('{{ asset('images/explore_listing_bg.jpg') }}');
+            background-size: cover, cover;
+            background-position: center, center;
+            background-repeat: no-repeat;
         }
 
         .illustration-container {
