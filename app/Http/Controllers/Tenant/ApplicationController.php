@@ -33,7 +33,6 @@ class ApplicationController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'occupation' => 'required|string|max:255',
-            'monthly_income' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -102,7 +101,7 @@ class ApplicationController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => $request->monthly_income,
+                    'monthly_income' => null,
                     'notes' => $request->notes,
                 ]);
             });
