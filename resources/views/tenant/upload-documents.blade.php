@@ -62,10 +62,22 @@
                 </div>
             @endif
             
-            @if($personalDocuments->isEmpty())
+            @if(!($documentsRequirementComplete ?? false))
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="mdi mdi-information me-2"></i>
-                    <strong>Important:</strong> You must upload your personal documents before you can apply for any property. Please upload at least one document to get started.
+                    <i class="mdi mdi-alert me-2"></i>
+                    <strong>Required before you can apply for a property:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Two (2) valid <strong>government IDs</strong> (upload two files, each with type &ldquo;Government ID&rdquo;)</li>
+                        <li>One <strong>NBI clearance</strong></li>
+                        <li>One <strong>police clearance</strong></li>
+                    </ul>
+                    <p class="mb-0 mt-2 small text-muted">Optional supporting documents (proof of income, etc.) can be added below but do not replace these requirements.</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @else
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="mdi mdi-check-circle me-2"></i>
+                    <strong>Requirements met.</strong> You have uploaded the minimum government IDs, NBI clearance, and police clearance. You may still add optional documents below.
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
@@ -81,6 +93,34 @@
                 <p class="mb-0">
                     You can upload your documents now, even before applying for a property. This will speed up the application process when you find a place you like!
                 </p>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @if(!empty($documentRequirementProgress))
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-{{ ($documentsRequirementComplete ?? false) ? 'success' : 'warning' }}">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-clipboard-check me-2"></i>Required document checklist</h5>
+                    <ul class="list-group list-group-flush">
+                        @foreach($documentRequirementProgress as $row)
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ $row['rule']['label'] }}</strong>
+                                    <span class="text-muted">({{ $row['uploaded'] }} / {{ $row['rule']['min_count'] }})</span>
+                                    <br><small class="text-muted">{{ $row['rule']['detail'] }}</small>
+                                </div>
+                                @if($row['met'])
+                                    <span class="badge bg-success rounded-pill">Done</span>
+                                @else
+                                    <span class="badge bg-warning text-dark rounded-pill">Needed</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -168,13 +208,15 @@
                                     <label class="form-label">Document Type <span class="text-danger">*</span></label>
                                     <select name="document_types[]" class="form-select" required>
                                         <option value="">Select Document Type</option>
-                                        <option value="government_id">Government ID</option>
-                                        <option value="proof_of_income">Proof of Income</option>
-                                        <option value="employment_contract">Employment Contract</option>
-                                        <option value="bank_statement">Bank Statement</option>
-                                        <option value="character_reference">Character Reference</option>
-                                        <option value="rental_history">Rental History</option>
-                                        <option value="other">Other Document</option>
+                                        <option value="government_id">Government ID (need 2 total)</option>
+                                        <option value="nbi_clearance">NBI Clearance</option>
+                                        <option value="police_clearance">Police Clearance</option>
+                                        <option value="proof_of_income">Proof of Income (optional)</option>
+                                        <option value="employment_contract">Employment Contract (optional)</option>
+                                        <option value="bank_statement">Bank Statement (optional)</option>
+                                        <option value="character_reference">Character Reference (optional)</option>
+                                        <option value="rental_history">Rental History (optional)</option>
+                                        <option value="other">Other Document (optional)</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -236,28 +278,24 @@
                         <p class="mb-0">Maximum <strong>5MB</strong> per document</p>
                     </div>
 
-                    <h6>Required Documents:</h6>
+                    <h6>Required (to apply for a unit)</h6>
                     <ul class="list-unstyled">
                         <li class="mb-2">
-                            <strong>Government ID</strong><br>
-                            <small class="text-muted">Passport, Driver's License, or any valid government-issued ID</small>
+                            <strong>2× Government ID</strong><br>
+                            <small class="text-muted">Upload two separate files; choose &ldquo;Government ID&rdquo; for each (passport, driver&rsquo;s license, national ID, etc.).</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Proof of Income</strong><br>
-                            <small class="text-muted">Recent payslips, employment contract, or business registration</small>
+                            <strong>NBI clearance</strong><br>
+                            <small class="text-muted">Current NBI clearance certificate.</small>
                         </li>
                         <li class="mb-2">
-                            <strong>Bank Statement</strong><br>
-                            <small class="text-muted">Last 3 months of bank statements</small>
+                            <strong>Police clearance</strong><br>
+                            <small class="text-muted">Police clearance certificate.</small>
                         </li>
-                        <li class="mb-2">
-                            <strong>Character Reference</strong><br>
-                            <small class="text-muted">Letter from employer, colleague, or community leader</small>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Rental History</strong><br>
-                            <small class="text-muted">Previous rental agreements or landlord references (if applicable)</small>
-                        </li>
+                    </ul>
+                    <h6 class="mt-3">Optional supporting documents</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li>Proof of income, employment contract, bank statements, references, rental history, other.</li>
                     </ul>
                 </div>
             </div>
@@ -350,13 +388,15 @@
 <!-- Document Type Options -->
 <template id="documentTypeOptions">
     <option value="">Select Document Type</option>
-    <option value="government_id">Government ID</option>
-    <option value="proof_of_income">Proof of Income</option>
-    <option value="employment_contract">Employment Contract</option>
-    <option value="bank_statement">Bank Statement</option>
-    <option value="character_reference">Character Reference</option>
-    <option value="rental_history">Rental History</option>
-    <option value="other">Other Document</option>
+    <option value="government_id">Government ID (need 2 total)</option>
+    <option value="nbi_clearance">NBI Clearance</option>
+    <option value="police_clearance">Police Clearance</option>
+    <option value="proof_of_income">Proof of Income (optional)</option>
+    <option value="employment_contract">Employment Contract (optional)</option>
+    <option value="bank_statement">Bank Statement (optional)</option>
+    <option value="character_reference">Character Reference (optional)</option>
+    <option value="rental_history">Rental History (optional)</option>
+    <option value="other">Other Document (optional)</option>
 </template>
 
 <!-- Image Preview Modal -->

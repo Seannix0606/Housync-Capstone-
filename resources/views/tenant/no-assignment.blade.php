@@ -33,12 +33,12 @@
                     <div class="mt-4">
                         <div class="alert alert-warning">
                             <h6 class="alert-heading mb-2"><i class="mdi mdi-file-document-outline me-1"></i> Start here: required documents</h6>
-                            <p class="mb-2 small mb-0 text-start">Upload government ID and any documents your landlord requires (e.g. proof of income). A landlord can only confidently assign you after this information is on file.</p>
+                            <p class="mb-2 small mb-0 text-start">Upload <strong>two valid government IDs</strong>, <strong>NBI clearance</strong>, and <strong>police clearance</strong> (required before you can apply for a unit). You may add other supporting documents afterward.</p>
                         </div>
                         <div class="alert alert-info">
                             <h6 class="alert-heading">What happens next?</h6>
                             <ol class="mb-0 text-start ps-3">
-                                <li><strong>Upload your documents</strong> using the button below (or <strong>Upload Documents</strong> in the sidebar)</li>
+                                <li><strong>Upload required documents</strong> (2× government ID, NBI clearance, police clearance) using the button below or <strong>Upload Documents</strong> in the sidebar</li>
                                 <li>Your landlord or admin reviews and verifies your files</li>
                                 <li>You are assigned to a unit when there is a match</li>
                                 <li>Your tenant dashboard updates with assignment details once you are linked to a unit</li>
