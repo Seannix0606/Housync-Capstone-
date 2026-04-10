@@ -1,0 +1,8 @@
+# Config-as-code overrides the Start Command from the Railway dashboard (including old optimize:clear).
+# https://docs.railway.com/deploy/config-as-code
+#
+# Do not add `php artisan optimize:clear` here: CACHE_STORE=database runs DELETE on `cache` and fails when
+# MySQL is unreachable or still starting.
+
+[deploy]
+startCommand = "php artisan migrate --force --no-interaction && php artisan route:clear && rm -rf public/storage && php artisan storage:link && php -d display_errors=1 -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public public/index.php"
