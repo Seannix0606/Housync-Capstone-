@@ -16,11 +16,20 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ESP32 device callback API routes (secured with shared ESP32 key)
+// All routes here require the X-ESP32-Key header to match ESP32_API_KEY in .env.
 Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
-    Route::post('/rfid/verify', [RfidController::class, 'verifyAccess'])->name('api.rfid.verify');
-    Route::post('/rfid-scan', [RfidController::class, 'scanCardDirect'])->name('api.rfid-scan'); // For ESP32Reader.php Activity Logs
+    // Card scan — used by both the serial bridge (ESP32Reader.php) and WiFi mode firmware
+    Route::post('/rfid-scan', [RfidController::class, 'scanCardDirect'])->name('api.rfid-scan');
     Route::post('/rfid/scan/direct', [RfidController::class, 'scanCardDirect'])->name('api.rfid.scan-direct');
-    Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid'); // NEW: Get latest UID from ESP32Reader.php
+
+    // Access verification (alternative endpoint if you want a verify-only flow)
+    Route::post('/rfid/verify', [RfidController::class, 'verifyAccess'])->name('api.rfid.verify');
+
+    // WiFi mode: ESP32 polls this every ~2 s to learn about pending web-scan requests
+    Route::get('/rfid/scan/pending', [RfidController::class, 'getPendingScanRequest'])->name('api.rfid.scan.pending');
+
+    // Retrieve latest scanned card UID (used by the card-registration UI)
+    Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid');
 });
 
 // Browser-facing RFID API routes (web-triggered scans + landlord dashboards)

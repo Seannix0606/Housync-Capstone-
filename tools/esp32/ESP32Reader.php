@@ -23,6 +23,8 @@ class ESP32Reader
 
     private $lastScanRequestCheck = 0;
 
+    private $apiKey; // X-ESP32-Key shared secret
+
     // De-duplication for rapid repeated lines from serial
     private $lastProcessedUid = null;
 
@@ -30,18 +32,20 @@ class ESP32Reader
 
     private $dedupeWindowSeconds = 10; // suppress repeats within 10 seconds - only allow one scan per card per 10s
 
-    public function __construct($port = 'COM3', $baudrate = 115200, $laravelUrl = 'https://housync.up.railway.app')
+    public function __construct($port = 'COM3', $baudrate = 115200, $laravelUrl = 'https://housync.up.railway.app', $apiKey = '')
     {
         $this->port = $port;
         $this->baudrate = $baudrate;
         $this->laravelUrl = rtrim($laravelUrl, '/');
         $this->apiEndpoint = $this->laravelUrl.'/api/rfid-scan';
+        $this->apiKey = $apiKey;
 
         echo "Enhanced ESP32 RFID Reader Initialized\n";
         echo "Port: {$this->port}\n";
         echo "Baudrate: {$this->baudrate}\n";
         echo "Laravel URL: {$this->laravelUrl}\n";
         echo "API Endpoint: {$this->apiEndpoint}\n";
+        echo "API Key: ".($this->apiKey ? '***set***' : '(not set — requests will be rejected!)')."\n";
         echo "Web Scan Requests: Enabled\n";
         echo str_repeat('-', 50)."\n";
     }
@@ -144,21 +148,27 @@ class ESP32Reader
 
         echo "JSON payload: $postData\n";
 
+        $headers = [
+            'Content-Type: application/json',
+            'Content-Length: '.strlen($postData),
+            'User-Agent: ESP32Reader/1.0',
+        ];
+
+        if ($this->apiKey) {
+            $headers[] = 'X-ESP32-Key: '.$this->apiKey;
+        }
+
         $context = stream_context_create([
             'http' => [
-                'method' => 'POST',
-                'header' => [
-                    'Content-Type: application/json',
-                    'Content-Length: '.strlen($postData),
-                    'User-Agent: ESP32Reader/1.0',
-                ],
+                'method'  => 'POST',
+                'header'  => $headers,
                 'content' => $postData,
                 'timeout' => 30,
             ],
             'ssl' => [
-                'verify_peer' => true,
+                'verify_peer'      => true,
                 'verify_peer_name' => true,
-                'allow_self_signed' => false,
+                'allow_self_signed'=> false,
             ],
         ]);
 
@@ -526,19 +536,22 @@ class ESP32Reader
 
         $testUrl = $this->laravelUrl.'/api/system-info';
 
+        $headers = ['User-Agent: ESP32Reader/1.0'];
+        if ($this->apiKey) {
+            $headers[] = 'X-ESP32-Key: '.$this->apiKey;
+        }
+
         // Create SSL context for HTTPS connections
         $context = stream_context_create([
             'http' => [
-                'method' => 'GET',
-                'header' => [
-                    'User-Agent: ESP32Reader/1.0',
-                ],
+                'method'  => 'GET',
+                'header'  => $headers,
                 'timeout' => 30,
             ],
             'ssl' => [
-                'verify_peer' => true,
+                'verify_peer'      => true,
                 'verify_peer_name' => true,
-                'allow_self_signed' => false,
+                'allow_self_signed'=> false,
             ],
         ]);
 
@@ -699,22 +712,26 @@ if (function_exists('pcntl_signal')) {
 if (php_sapi_name() === 'cli') {
     // Parse command line arguments
     $options = [
-        'port' => 'COM3',
-        'url' => 'https://housync.up.railway.app',
+        'port' => 'COM8',
+        'url'  => 'https://web-production-2bbdd0.up.railway.app',
+        'key'  => getenv('ESP32_API_KEY') ?: '',
         'help' => false,
     ];
 
     $shortopts = 'h';
-    $longopts = ['port:', 'url:', 'help'];
-    $parsed = getopt($shortopts, $longopts);
+    $longopts  = ['port:', 'url:', 'key:', 'help'];
+    $parsed    = getopt($shortopts, $longopts);
 
     if (isset($parsed['h']) || isset($parsed['help'])) {
-        echo "Enhanced ESP32 RFID Reader for Laravel\n";
+        echo "Enhanced ESP32 RFID Reader for Laravel (Serial Bridge)\n";
         echo "Usage: php ESP32Reader.php [options]\n\n";
         echo "Options:\n";
         echo "  --port=COMx    Serial port (default: COM3)\n";
         echo "  --url=URL      Laravel base URL (default: https://housync.up.railway.app)\n";
+        echo "  --key=SECRET   ESP32 API key (default: reads ESP32_API_KEY env var)\n";
         echo "  --help, -h     Show this help message\n\n";
+        echo "Note: In WiFi mode the ESP32 posts directly — this bridge is only needed\n";
+        echo "      when the ESP32 is connected via USB/serial.\n\n";
         echo "Features:\n";
         echo "   RFID data reading and Laravel API integration\n";
         echo "   Web scan request support for direct Card UID retrieval\n";
@@ -726,20 +743,22 @@ if (php_sapi_name() === 'cli') {
             echo "  - $port\n";
         }
         echo "\nExample:\n";
-        echo "php ESP32Reader.php --port=COM3 --url=https://housync.up.railway.app\n";
+        echo "php ESP32Reader.php --port=COM7 --url=https://housync.up.railway.app --key=your-esp32-api-key\n";
         exit(0);
     }
 
     if (isset($parsed['port'])) {
         $options['port'] = $parsed['port'];
     }
-
     if (isset($parsed['url'])) {
         $options['url'] = $parsed['url'];
     }
+    if (isset($parsed['key'])) {
+        $options['key'] = $parsed['key'];
+    }
 
     // Create and run the reader
-    $reader = new ESP32Reader($options['port'], 115200, $options['url']);
+    $reader = new ESP32Reader($options['port'], 115200, $options['url'], $options['key']);
 
     // Handle process control signals
     if (function_exists('pcntl_async_signals')) {

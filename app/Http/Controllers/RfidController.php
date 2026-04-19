@@ -427,7 +427,7 @@ class RfidController extends Controller
     }
 
     /**
-     * API endpoint for receiving RFID data from ESP32Reader.php
+     * API endpoint for receiving RFID data from ESP32 (serial bridge or WiFi mode)
      */
     public function scanCardDirect(Request $request)
     {
@@ -437,6 +437,8 @@ class RfidController extends Controller
             $readerLocation = $request->input('reader_location', 'main_entrance');
             $deviceId = $request->input('device_id', 'esp32_reader');
             $scanType = $request->input('scan_type', 'access_attempt'); // 'access_attempt' or 'card_registration'
+            // scan_id is supplied by the ESP32 when it is responding to a web-triggered scan request
+            $incomingScanId = $request->input('scan_id');
 
             if (! $cardUID) {
                 return response()->json([
@@ -534,6 +536,35 @@ class RfidController extends Controller
                     ]),
                 ]);
             }
+
+            // ── Fulfill any pending web-scan request ──────────────────────────
+            // Priority: (1) scan_id provided by the ESP32 directly, (2) global
+            // active-scan cache key set when the landlord clicked "Scan Card".
+            $scanIdToFulfill = $incomingScanId ?? Cache::get('rfid:active_scan_request');
+
+            if ($scanIdToFulfill) {
+                $scanCacheKey = 'rfid:scan_request:'.$scanIdToFulfill;
+                $scanData     = Cache::get($scanCacheKey);
+
+                if ($scanData && in_array($scanData['status'], ['pending', 'processing'], true)) {
+                    $scanData['status']       = 'completed';
+                    $scanData['card_uid']     = $cardUID;
+                    $scanData['completed_at'] = now()->toISOString();
+
+                    // Keep fulfilled data available long enough for the browser poller
+                    Cache::put($scanCacheKey, $scanData, now()->addSeconds(60));
+                    Cache::forget('rfid:active_scan_request');
+
+                    Log::info('Web scan request fulfilled', [
+                        'scan_id'  => $scanIdToFulfill,
+                        'card_uid' => $cardUID,
+                        'device'   => $deviceId,
+                    ]);
+
+                    $result['scan_request_fulfilled'] = $scanIdToFulfill;
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────
 
             return response()->json($result);
 
@@ -727,10 +758,14 @@ class RfidController extends Controller
 
             Cache::put($cacheKey, $scanRequest, now()->addSeconds($timeout + 5));
 
+            // Expose the scan_id globally so the ESP32 WiFi firmware can pick it up
+            // via GET /api/rfid/scan/pending (polled every few seconds by the device).
+            Cache::put('rfid:active_scan_request', $scanId, now()->addSeconds($timeout + 5));
+
             return response()->json([
                 'success' => true,
                 'scan_id' => $scanId,
-                'message' => 'Scan request created. ESP32Reader.php will process it.',
+                'message' => 'Scan request created. Tap the RFID card on the reader.',
                 'timeout' => $timeout,
             ]);
 
@@ -742,6 +777,55 @@ class RfidController extends Controller
                 'error' => 'Failed to create scan request. Please try again.',
             ], 500);
         }
+    }
+
+    /**
+     * ESP32 WiFi polling endpoint — returns the oldest pending web-scan request.
+     *
+     * The firmware calls GET /api/rfid/scan/pending every ~2 seconds.
+     * When a landlord clicks "Scan Card" in the UI, the scan_id is stored in
+     * rfid:active_scan_request cache. This endpoint returns that id so the
+     * ESP32 knows to tag the next card tap with it (closes the loop in scanCardDirect).
+     */
+    public function getPendingScanRequest(Request $request)
+    {
+        $activeScanId = Cache::get('rfid:active_scan_request');
+
+        if (! $activeScanId) {
+            return response()->json(['pending' => false]);
+        }
+
+        $scanData = Cache::get('rfid:scan_request:'.$activeScanId);
+
+        if (! $scanData || ! in_array($scanData['status'], ['pending', 'processing'], true)) {
+            Cache::forget('rfid:active_scan_request');
+
+            return response()->json(['pending' => false]);
+        }
+
+        // Auto-expire timed-out requests
+        $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
+        $timeout     = (int) ($scanData['timeout'] ?? 15);
+
+        if ($requestedAt->diffInSeconds(now()) > $timeout) {
+            $scanData['status'] = 'timeout';
+            Cache::put('rfid:scan_request:'.$activeScanId, $scanData, now()->addSeconds(30));
+            Cache::forget('rfid:active_scan_request');
+
+            return response()->json(['pending' => false]);
+        }
+
+        // Transition to 'processing' so the browser knows the device acknowledged it
+        if ($scanData['status'] === 'pending') {
+            $scanData['status'] = 'processing';
+            Cache::put('rfid:scan_request:'.$activeScanId, $scanData, now()->addSeconds($timeout + 5));
+        }
+
+        return response()->json([
+            'pending' => true,
+            'scan_id' => $activeScanId,
+            'timeout' => $timeout,
+        ]);
     }
 
     /**
