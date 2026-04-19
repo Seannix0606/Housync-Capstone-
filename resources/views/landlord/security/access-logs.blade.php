@@ -249,7 +249,7 @@
                 </div>
             @else
                 <div class="text-center py-4">
-                    @if(request()->hasAny(['apartment_id', 'card_uid', 'result', 'date_from', 'date_to']))
+                    @if(request()->hasAny(['property_id', 'card_uid', 'result', 'date_from', 'date_to']))
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
                         <h5>No Access Logs Found</h5>
                         <p class="text-muted">No access attempts match your current filters.</p>
