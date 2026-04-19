@@ -375,16 +375,20 @@
                                     <i class="fas fa-file-signature me-1"></i> Apply as Tenant
                                 </button>
                             @endif
-                        @else
-                            <button class="btn btn-apply btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#loginRequiredModal">
-                                <i class="fas fa-file-signature me-1"></i> Apply as Tenant
-                            </button>
                         @endauth
                     @else
                         <button class="btn btn-secondary w-100 mb-2" disabled>
                             <i class="fas fa-times-circle me-1"></i> Not Available
                         </button>
                     @endif
+
+                    @guest
+                        <div class="alert alert-info py-2 px-3 mb-2" role="alert" style="border-radius: 10px; font-size: 0.875rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Please <a href="{{ route('login') }}" class="fw-semibold">login</a> or
+                            <a href="{{ route('register') }}" class="fw-semibold">register</a> to apply as a tenant.
+                        </div>
+                    @endguest
 
                     <button class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-envelope me-1"></i> Contact Landlord
@@ -449,35 +453,6 @@
                 </div>
             </div>
         @endif
-    </div>
-
-    <!-- Login Required Modal -->
-    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                    <h5 class="modal-title" id="loginRequiredModalLabel">
-                        <i class="fas fa-user-lock me-2"></i>Login Required
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center" style="padding: 2rem;">
-                    <div class="mb-4">
-                        <i class="fas fa-home fa-3x text-primary mb-3"></i>
-                        <h4>Apply as Tenant</h4>
-                        <p class="text-muted">To apply for this unit, you need to have an account. Please login or register to continue.</p>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('login') }}" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login
-                        </a>
-                        <a href="{{ route('register') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus me-2"></i>Register as Tenant
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Apply as Tenant Modal -->
