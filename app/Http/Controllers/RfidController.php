@@ -143,7 +143,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['property_id' => $request->property_id])
+            return redirect()->route('landlord.security.index', ['property_id' => $request->property_id])
                 ->with('success', 'RFID card assigned successfully!');
 
         } catch (\Exception $exception) {
@@ -325,7 +325,7 @@ class RfidController extends Controller
 
             DB::commit();
 
-            return redirect()->route('landlord.security', ['property_id' => $card->property_id])
+            return redirect()->route('landlord.security.index', ['property_id' => $card->property_id])
                 ->with('success', 'RFID card reassigned successfully to '.$tenantAssignment->tenant->name.'!');
 
         } catch (\Exception $exception) {
