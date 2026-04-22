@@ -30,7 +30,41 @@
         nav.sidebar-nav a.nav-link.active, nav.sidebar-nav a.nav-link:hover { background: rgba(255,255,255,0.08); border-left: 4px solid #fff; color: #fff; text-decoration: none; }
         nav.sidebar-nav .nav-icon { min-width: 22px; text-align: center; font-size: 1.2em; }
         nav.sidebar-nav .nav-label { transition: opacity .2s, width .2s; }
+        nav.sidebar-nav .nav-badge {
+            margin-left: auto;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 9999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 22px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+            animation: pulseBadge 2s infinite;
+            transition: opacity .2s, transform .2s;
+        }
+        @keyframes pulseBadge {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25); }
+            50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        }
         .dashboard-container.collapsed nav.sidebar-nav .nav-label { opacity: 0; width: 0; overflow: hidden; }
+        .dashboard-container.collapsed nav.sidebar-nav .nav-badge {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            transform: scale(0.85);
+            min-width: 18px;
+            height: 18px;
+            line-height: 18px;
+            font-size: 0.65rem;
+        }
+        .dashboard-container.collapsed nav.sidebar-nav a.nav-link { position: relative; }
         .sidebar-footer { display:none; }
         .main-content { flex: 1 1 0%; background: #f8fafc; min-width: 0; padding: 2rem; transition: none; }
         /* Profile dropdown */
@@ -238,6 +272,179 @@
         body.dark-mode textarea::placeholder {
             color: #64748b !important;
         }
+
+        /* ========== Inline Color / Background Overrides ========== */
+        body.dark-mode [style*="background: white"],
+        body.dark-mode [style*="background:white"],
+        body.dark-mode [style*="background: #fff"],
+        body.dark-mode [style*="background:#fff"],
+        body.dark-mode [style*="background: #ffffff"],
+        body.dark-mode [style*="background:#ffffff"],
+        body.dark-mode [style*="background-color: white"],
+        body.dark-mode [style*="background-color:white"],
+        body.dark-mode [style*="background-color: #ffffff"],
+        body.dark-mode [style*="background-color:#ffffff"] {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode [style*="background: #f8fafc"],
+        body.dark-mode [style*="background:#f8fafc"],
+        body.dark-mode [style*="background: #f1f5f9"],
+        body.dark-mode [style*="background:#f1f5f9"],
+        body.dark-mode [style*="background: #f9fafb"],
+        body.dark-mode [style*="background:#f9fafb"],
+        body.dark-mode [style*="background: #f3f4f6"],
+        body.dark-mode [style*="background:#f3f4f6"],
+        body.dark-mode [style*="background: #f5f5f5"],
+        body.dark-mode [style*="background:#f5f5f5"] {
+            background: #0f172a !important;
+        }
+
+        body.dark-mode [style*="color: #1e293b"],
+        body.dark-mode [style*="color:#1e293b"],
+        body.dark-mode [style*="color: #0f172a"],
+        body.dark-mode [style*="color:#0f172a"],
+        body.dark-mode [style*="color: #111"],
+        body.dark-mode [style*="color:#111"],
+        body.dark-mode [style*="color: #000"],
+        body.dark-mode [style*="color:#000"],
+        body.dark-mode [style*="color: #333"],
+        body.dark-mode [style*="color:#333"] { color: #f1f5f9 !important; }
+
+        body.dark-mode [style*="color: #64748b"],
+        body.dark-mode [style*="color:#64748b"],
+        body.dark-mode [style*="color: #475569"],
+        body.dark-mode [style*="color:#475569"],
+        body.dark-mode [style*="color: #6b7280"],
+        body.dark-mode [style*="color:#6b7280"],
+        body.dark-mode [style*="color: #666"],
+        body.dark-mode [style*="color:#666"] { color: #94a3b8 !important; }
+
+        body.dark-mode [style*="border: 1px solid #e2e8f0"],
+        body.dark-mode [style*="border:1px solid #e2e8f0"],
+        body.dark-mode [style*="border: 1px solid #cbd5e1"],
+        body.dark-mode [style*="border:1px solid #cbd5e1"],
+        body.dark-mode [style*="border: 1px solid #d1d5db"],
+        body.dark-mode [style*="border:1px solid #d1d5db"],
+        body.dark-mode [style*="border: 1px solid #f1f5f9"],
+        body.dark-mode [style*="border:1px solid #f1f5f9"] {
+            border-color: #334155 !important;
+        }
+
+        /* ========== Bulk Edit / Floor Sections / Summary Stats ========== */
+        body.dark-mode .floor-section,
+        body.dark-mode .bulk-actions,
+        body.dark-mode .bulk-edit-container .floor-section,
+        body.dark-mode .bulk-edit-container .bulk-actions {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0;
+        }
+        body.dark-mode .floor-header { border-bottom-color: #334155 !important; }
+        body.dark-mode .floor-title,
+        body.dark-mode .bulk-actions h3 { color: #f1f5f9 !important; }
+        body.dark-mode .summary-stats .stat-card {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .summary-stats .stat-number { color: #f1f5f9 !important; }
+        body.dark-mode .summary-stats .stat-label { color: #94a3b8 !important; }
+
+        body.dark-mode .table-responsive { background: #1e293b !important; }
+        body.dark-mode .table thead.table-light th,
+        body.dark-mode thead.table-light th {
+            background: #0f172a !important;
+            color: #94a3b8 !important;
+            border-bottom-color: #334155 !important;
+        }
+        body.dark-mode tr.table-warning,
+        body.dark-mode tr.table-warning td {
+            background: #422006 !important;
+            color: #fbbf24 !important;
+        }
+
+        body.dark-mode [style*="background: #fef3c7"],
+        body.dark-mode [style*="background:#fef3c7"] {
+            background: #422006 !important;
+            border-color: #92400e !important;
+            color: #fbbf24 !important;
+        }
+        body.dark-mode [style*="color: #92400e"],
+        body.dark-mode [style*="color:#92400e"],
+        body.dark-mode [style*="color: #d97706"],
+        body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+
+        body.dark-mode #loadingModal > div { background: #1e293b !important; }
+        body.dark-mode #loadingModal .spinner {
+            border-color: #334155;
+            border-top-color: #f97316;
+        }
+
+        body.dark-mode .btn-outline {
+            background: #0f172a !important;
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark-mode .btn-outline:hover {
+            background: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .property-info {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .property-info h4 { color: #f1f5f9 !important; }
+        body.dark-mode .property-info p,
+        body.dark-mode .property-info p strong { color: #94a3b8 !important; }
+
+        /* ========== Universal Class Overrides ========== */
+        body.dark-mode .bg-white,
+        body.dark-mode .bg-body {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark-mode .content-wrapper,
+        body.dark-mode .page-content,
+        body.dark-mode .page-body,
+        body.dark-mode .section-card,
+        body.dark-mode .info-card,
+        body.dark-mode .detail-card,
+        body.dark-mode .summary-card,
+        body.dark-mode .form-card,
+        body.dark-mode .list-card {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0;
+        }
+        body.dark-mode .shadow-sm,
+        body.dark-mode .shadow,
+        body.dark-mode .shadow-lg {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+        }
+        body.dark-mode .alert-secondary {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #cbd5e1 !important;
+        }
+        body.dark-mode input.form-control-sm,
+        body.dark-mode select.form-control-sm,
+        body.dark-mode textarea.form-control-sm {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark-mode input[readonly],
+        body.dark-mode .form-control-plaintext {
+            background: #0f172a !important;
+            color: #cbd5e1 !important;
+        }
+        body.dark-mode .badge.bg-light,
+        body.dark-mode .badge.text-bg-light {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+        }
     </style>
     <link rel="stylesheet" href="{{ asset('css/saas-dashboard.css') }}">
     @stack('styles')
@@ -250,9 +457,16 @@
             <span class="saas-logo-mark" aria-hidden="true"><i class="fas fa-shield-alt"></i></span>
             <span class="portal-title-label">Super Admin Portal</span>
         </div>
+        @php
+            $pendingLandlordCount = \Illuminate\Support\Facades\Cache::remember(
+                'super_admin.pending_landlords_count',
+                30,
+                fn () => \App\Models\User::pendingLandlords()->count()
+            );
+        @endphp
         <nav class="sidebar-nav">
             <a class="nav-link{{ request()->routeIs('super-admin.dashboard') ? ' active' : '' }}" href="{{ route('super-admin.dashboard') }}"><span class="nav-icon"><i class="fas fa-home"></i></span> <span class="nav-label">Dashboard</span></a>
-            <a class="nav-link{{ request()->routeIs('super-admin.pending-landlords') ? ' active' : '' }}" href="{{ route('super-admin.pending-landlords') }}"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> <span class="nav-label">Pending Approvals</span></a>
+            <a class="nav-link{{ request()->routeIs('super-admin.pending-landlords') ? ' active' : '' }}" href="{{ route('super-admin.pending-landlords') }}"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> <span class="nav-label">Pending Approvals</span>@if($pendingLandlordCount > 0)<span class="nav-badge" aria-label="{{ $pendingLandlordCount }} pending approvals">{{ $pendingLandlordCount > 99 ? '99+' : $pendingLandlordCount }}</span>@endif</a>
             <a class="nav-link{{ request()->routeIs('super-admin.users') ? ' active' : '' }}" href="{{ route('super-admin.users') }}"><span class="nav-icon"><i class="fas fa-users"></i></span> <span class="nav-label">User Management</span></a>
             <a class="nav-link{{ request()->routeIs('super-admin.apartments') ? ' active' : '' }}" href="{{ route('super-admin.apartments') }}"><span class="nav-icon"><i class="fas fa-building"></i></span> <span class="nav-label">Properties</span></a>
             <a class="nav-link{{ request()->routeIs('super-admin.settings') ? ' active' : '' }}" href="{{ route('super-admin.settings') }}"><span class="nav-icon"><i class="fas fa-cog"></i></span> <span class="nav-label">System Settings</span></a>

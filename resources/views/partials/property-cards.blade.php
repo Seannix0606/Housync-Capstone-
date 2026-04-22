@@ -3,7 +3,20 @@
         @foreach($properties as $property)
             <div class="property-card">
                 <a href="{{ route('property.show', $property->slug) }}" class="property-image-link">
-                    @php($galleryImages = $property->gallery_images ?? [])
+                    @php
+                        $coverImage = $property->cover_image_url;
+                        $gallerySource = $property->gallery_urls ?? [];
+
+                        $galleryImages = [];
+                        if ($coverImage) {
+                            $galleryImages[] = $coverImage;
+                        }
+                        foreach ($gallerySource as $img) {
+                            if ($img && $img !== $coverImage) {
+                                $galleryImages[] = $img;
+                            }
+                        }
+                    @endphp
                     @if(count($galleryImages) > 0)
                         <div class="property-image-carousel" data-carousel-id="carousel-{{ $property->id }}">
                             <div class="carousel-container">

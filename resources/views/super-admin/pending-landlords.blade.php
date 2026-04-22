@@ -465,7 +465,7 @@
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">{{ $pendingLandlords->count() }}</div>
+                    <div class="stat-value">{{ \App\Models\User::pendingLandlords()->count() }}</div>
                     <div class="stat-label">Pending Approvals</div>
                 </div>
                 <div class="stat-card">
@@ -487,7 +487,12 @@
                     </div>
                 </div>
 
-                @if($pendingLandlords->count() > 0)
+                @php
+                    $visiblePendingLandlords = $pendingLandlords->filter(function ($landlord) {
+                        return optional($landlord->landlordProfile)->status === 'pending';
+                    });
+                @endphp
+                @if($visiblePendingLandlords->count() > 0)
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
@@ -502,7 +507,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pendingLandlords as $landlord)
+                                @foreach($visiblePendingLandlords as $landlord)
                                     <tr>
                                         <td>
                                             <div>

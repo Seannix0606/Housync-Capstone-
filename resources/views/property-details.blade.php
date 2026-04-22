@@ -106,8 +106,23 @@
     <div class="container mb-5">
         <div class="row">
             <div class="col-lg-8">
-                <!-- Property Image -->
-                @php($img = $property->image_url)
+                <!-- Property Image (cover first, then gallery) -->
+                @php
+                    $coverImage = $property->cover_image_url;
+                    $gallerySource = $property->gallery_urls ?? [];
+
+                    $images = [];
+                    if ($coverImage) {
+                        $images[] = $coverImage;
+                    }
+                    foreach ($gallerySource as $galleryImg) {
+                        if ($galleryImg && $galleryImg !== $coverImage) {
+                            $images[] = $galleryImg;
+                        }
+                    }
+
+                    $img = $images[0] ?? null;
+                @endphp
                 @if($img)
                     <img src="{{ $img }}" alt="{{ $property->title }}" class="property-image-main mb-4">
                 @else
@@ -223,7 +238,9 @@
                     @foreach($relatedProperties as $related)
                         <div class="col-md-3 mb-4">
                             <a href="{{ route('property.show', $related->slug) }}" class="related-property-card">
-                                @php($relatedImg = $related->image_url)
+                                @php
+                                    $relatedImg = $related->cover_image_url ?? ($related->gallery_urls[0] ?? null);
+                                @endphp
                                 @if($relatedImg)
                                     <img src="{{ $relatedImg }}" alt="{{ $related->title }}" style="width: 100%; height: 200px; object-fit: cover;">
                                 @else

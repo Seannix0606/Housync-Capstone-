@@ -292,15 +292,15 @@ class SupabaseService implements StorageServiceInterface
                 'url' => $this->url."/storage/v1/object/{$bucket}/{$path}",
             ]);
 
-            $storageHeaders = array_merge(
-                [
-                    'apikey' => $this->serviceKey,
-                    'Content-Type' => 'application/octet-stream',
-                ],
-                $this->authorizationHeaderForSupabaseKey($this->serviceKey)
-            );
+            // Storage API expects both `apikey` and `Authorization` to match the service key. Explicitly set
+            // Authorization so the Guzzle client's default anon Bearer header does not leak into this request,
+            // which triggers `signature verification failed` on projects using the new (sb_secret_*) key format.
+            $storageHeaders = [
+                'apikey' => $this->serviceKey,
+                'Authorization' => 'Bearer '.$this->serviceKey,
+                'Content-Type' => 'application/octet-stream',
+            ];
 
-            // Storage API expects apikey and (for JWT service role) Authorization aligned with service key.
             $response = $this->client->post("/storage/v1/object/{$bucket}/{$path}", [
                 'body' => $fileContents,
                 'headers' => $storageHeaders,
@@ -374,7 +374,12 @@ class SupabaseService implements StorageServiceInterface
         }
 
         try {
-            $this->client->delete("/storage/v1/object/{$bucket}/{$path}");
+            $this->client->delete("/storage/v1/object/{$bucket}/{$path}", [
+                'headers' => [
+                    'apikey' => $this->serviceKey,
+                    'Authorization' => 'Bearer '.$this->serviceKey,
+                ],
+            ]);
 
             return true;
         } catch (GuzzleException $exception) {

@@ -162,9 +162,24 @@
 </head>
 <body>
     @php
+        // Slide 1 = cover image (the whole unit / apartment). Slides 2+ = gallery (interior/details).
         $property = $unit->property;
-        $images = $unit->images ?? $property->gallery_images ?? [];
-        $mainImage = count($images) > 0 ? $images[0] : null;
+        $coverImage = $unit->cover_image_url ?? $property?->cover_image_url;
+        $gallerySource = ! empty($unit->gallery_urls)
+            ? $unit->gallery_urls
+            : ($property?->gallery_urls ?? []);
+
+        $images = [];
+        if ($coverImage) {
+            $images[] = $coverImage;
+        }
+        foreach ($gallerySource as $img) {
+            if ($img && $img !== $coverImage) {
+                $images[] = $img;
+            }
+        }
+
+        $mainImage = $images[0] ?? null;
     @endphp
 
     <div class="property-header">
@@ -416,8 +431,12 @@
                 <div class="row">
                     @foreach($relatedUnits as $related)
                         @php
-                            $relatedImages = $related->images ?? $related->property->gallery_images ?? [];
-                            $relatedImage = count($relatedImages) > 0 ? $relatedImages[0] : null;
+                            $relatedCover = $related->cover_image_url ?? $related->property?->cover_image_url;
+                            $relatedGallerySource = ! empty($related->gallery_urls)
+                                ? $related->gallery_urls
+                                : ($related->property?->gallery_urls ?? []);
+
+                            $relatedImage = $relatedCover ?? ($relatedGallerySource[0] ?? null);
                         @endphp
                         <div class="col-md-3 mb-4">
                             <a href="{{ route('property.show', ($related->property->slug ?? $related->property_id) . '-unit-' . $related->id) }}" class="related-property-card">
