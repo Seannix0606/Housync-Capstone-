@@ -113,7 +113,7 @@ class BillingController extends Controller
                         'tenant_id' => $tenantId,
                         'message' => $uploadResult['message'] ?? null,
                     ]);
-                    $proofStored = $file->storeAs('payment-proofs', $safeName, 'public');
+                    $proofStored = $file->storeAs('payment-proofs', $safeName, 'private');
                 }
             }
 
