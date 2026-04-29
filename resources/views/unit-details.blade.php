@@ -426,9 +426,9 @@
                         </a>
                     @endguest
                     
-                    <button class="btn btn-outline-secondary w-100">
+                    <!--<button class="btn btn-outline-secondary w-100">
                         <i class="fas fa-calendar me-1"></i> Schedule Viewing
-                    </button>
+                    </button>-->
 
                     @if($property->landlord)
                         <hr>
