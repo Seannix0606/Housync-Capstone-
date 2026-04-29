@@ -559,7 +559,11 @@ function addUnitToFloor(floor, unitData = null) {
         max_occupants: 4,
         is_furnished: false
     };
-    
+
+    defaultData.bedrooms = parseInt(defaultData.bedrooms, 10) || 0;
+    defaultData.bathrooms = parseInt(defaultData.bathrooms, 10) || 1;
+    defaultData.max_occupants = parseInt(defaultData.max_occupants, 10) || 4;
+
     console.log(`Creating unit with data:`, defaultData);
     
     const unitRow = document.createElement('tr');
