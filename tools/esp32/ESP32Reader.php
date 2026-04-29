@@ -30,7 +30,7 @@ class ESP32Reader
 
     private $dedupeWindowSeconds = 10; // suppress repeats within 10 seconds - only allow one scan per card per 10s
 
-    public function __construct($port = 'COM3', $baudrate = 115200, $laravelUrl = 'https://housync.up.railway.app')
+    public function __construct($port = 'COM8', $baudrate = 115200, $laravelUrl = 'https://housync.up.railway.app')
     {
         $this->port = $port;
         $this->baudrate = $baudrate;
@@ -699,7 +699,7 @@ if (function_exists('pcntl_signal')) {
 if (php_sapi_name() === 'cli') {
     // Parse command line arguments
     $options = [
-        'port' => 'COM3',
+        'port' => 'COM8',
         'url' => 'https://housync.up.railway.app',
         'help' => false,
     ];
@@ -712,7 +712,7 @@ if (php_sapi_name() === 'cli') {
         echo "Enhanced ESP32 RFID Reader for Laravel\n";
         echo "Usage: php ESP32Reader.php [options]\n\n";
         echo "Options:\n";
-        echo "  --port=COMx    Serial port (default: COM3)\n";
+        echo "  --port=COMx    Serial port (default: COM8)\n";
         echo "  --url=URL      Laravel base URL (default: https://housync.up.railway.app)\n";
         echo "  --help, -h     Show this help message\n\n";
         echo "Features:\n";
@@ -726,7 +726,7 @@ if (php_sapi_name() === 'cli') {
             echo "  - $port\n";
         }
         echo "\nExample:\n";
-        echo "php ESP32Reader.php --port=COM3 --url=https://housync.up.railway.app\n";
+        echo "php ESP32Reader.php --port=COM8 --url=https://housync.up.railway.app\n";
         exit(0);
     }
 
