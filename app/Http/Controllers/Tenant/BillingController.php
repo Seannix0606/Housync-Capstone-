@@ -8,9 +8,11 @@ use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PaymentProofSubmitted;
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class BillingController extends Controller
 {
@@ -76,9 +78,43 @@ class BillingController extends Controller
         }
 
         try {
-            $proofPath = null;
+            $proofStored = null;
             if ($request->hasFile('proof_image')) {
-                $proofPath = $request->file('proof_image')->store('payment-proofs', 'public');
+                $file = $request->file('proof_image');
+                $extension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->guessExtension()));
+                $extension = preg_replace('/[^a-z0-9]/', '', $extension);
+                if ($extension === '') {
+                    $extension = 'jpg';
+                }
+                $safeName = sprintf(
+                    'bill-%d-tenant-%d-%s.%s',
+                    $bill->id,
+                    $tenantId,
+                    Str::uuid()->toString(),
+                    $extension
+                );
+                $objectPath = 'payment-proofs/'.$safeName;
+
+                /** @var SupabaseService $supabase */
+                $supabase = app(SupabaseService::class);
+                $uploadResult = $supabase->uploadFile(
+                    config('services.supabase.bucket'),
+                    $objectPath,
+                    $file->getRealPath(),
+                );
+
+                if (! empty($uploadResult['success'])) {
+                    $proofStored = $uploadResult['url'] ?? null;
+                }
+
+                if (! $proofStored) {
+                    Log::warning('Payment proof Supabase upload unavailable or failed; using local storage', [
+                        'bill_id' => $bill->id,
+                        'tenant_id' => $tenantId,
+                        'message' => $uploadResult['message'] ?? null,
+                    ]);
+                    $proofStored = $file->storeAs('payment-proofs', $safeName, 'public');
+                }
             }
 
             $payment = Payment::create([
@@ -87,7 +123,7 @@ class BillingController extends Controller
                 'amount' => $request->amount,
                 'method' => $request->method,
                 'reference_number' => $request->reference_number,
-                'proof_image' => $proofPath,
+                'proof_image' => $proofStored,
                 'status' => 'pending_verification',
                 'notes' => $request->notes,
                 'paid_at' => now(),
