@@ -31,7 +31,7 @@ class RegistrationController extends Controller
     public function storeRegistration(Request $request)
     {
         $request->merge([
-            'phone' => preg_replace('/\D/', '', (string) $request->input('phone', '')),
+            'phone' => static::normalizePhone((string) $request->input('phone', '')),
         ]);
 
         $request->validate([

@@ -28,6 +28,10 @@ class SettingsController extends Controller
      */
     public function updateSettings(Request $request)
     {
+        $request->merge([
+            'phone' => static::normalizePhone((string) $request->input('phone', '')),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
