@@ -462,6 +462,12 @@
                 </div>
             @endif
 
+            @if(session('info'))
+                <div class="alert alert-info" style="background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; padding: 0.875rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-info-circle"></i> {{ session('info') }}
+                </div>
+            @endif
+
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -487,12 +493,7 @@
                     </div>
                 </div>
 
-                @php
-                    $visiblePendingLandlords = $pendingLandlords->filter(function ($landlord) {
-                        return optional($landlord->landlordProfile)->status === 'pending';
-                    });
-                @endphp
-                @if($visiblePendingLandlords->count() > 0)
+                @if($pendingLandlords->count() > 0)
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
@@ -507,7 +508,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($visiblePendingLandlords as $landlord)
+                                @foreach($pendingLandlords as $landlord)
                                     <tr>
                                         <td>
                                             <div>

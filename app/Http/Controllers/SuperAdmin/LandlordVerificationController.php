@@ -5,23 +5,21 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\LandlordDocument;
 use App\Models\User;
+use App\Services\LandlordVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class LandlordVerificationController extends Controller
 {
+    public function __construct(
+        private LandlordVerificationService $landlordVerification
+    ) {}
+
     public function pendingLandlords()
     {
-        $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
-            ->with([
-                'landlordProfile' => fn ($q) => $q->where('status', 'pending'),
-                'approvedBy',
-                'landlordDocuments',
-            ])
-            ->latest('users.created_at')
-            ->paginate(15);
+        $pendingLandlords = $this->landlordVerification->pendingLandlordsPaginated(15);
 
         return view('super-admin.pending-landlords', compact('pendingLandlords'));
     }
@@ -31,18 +29,32 @@ class LandlordVerificationController extends Controller
         $landlord = User::findOrFail($id);
 
         if ($landlord->role !== 'landlord') {
-            return back()->with('error', 'User is not a landlord.');
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('error', 'User is not a landlord.');
         }
 
-        if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'approved') {
-            return back()->with('error', 'This landlord is already approved.');
+        try {
+            $result = $this->landlordVerification->approvePendingLandlord($landlord, (int) Auth::id());
+        } catch (\RuntimeException $e) {
+            Log::warning('Landlord approve failed', ['landlord_id' => $landlord->id, 'message' => $e->getMessage()]);
+
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('error', $e->getMessage());
         }
 
-        $landlord->approve(Auth::id());
-        $landlord->load('landlordProfile');
         Cache::forget('super_admin.pending_landlords_count');
 
-        return back()->with('success', 'Landlord approved successfully.');
+        if ($result === 'already_approved') {
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('info', 'This landlord is already approved. They have been removed from the pending list.');
+        }
+
+        return redirect()
+            ->route('super-admin.pending-landlords')
+            ->with('success', 'Landlord approved successfully.');
     }
 
     public function rejectLandlord(Request $request, $id)
@@ -52,17 +64,36 @@ class LandlordVerificationController extends Controller
         $landlord = User::findOrFail($id);
 
         if ($landlord->role !== 'landlord') {
-            return back()->with('error', 'User is not a landlord.');
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('error', 'User is not a landlord.');
         }
 
-        if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'rejected') {
-            return back()->with('error', 'This landlord application has already been rejected.');
+        try {
+            $result = $this->landlordVerification->rejectPendingLandlord(
+                $landlord,
+                (int) Auth::id(),
+                $request->input('reason')
+            );
+        } catch (\RuntimeException $e) {
+            Log::warning('Landlord reject failed', ['landlord_id' => $landlord->id, 'message' => $e->getMessage()]);
+
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('error', $e->getMessage());
         }
 
-        $landlord->reject(Auth::id(), $request->reason);
         Cache::forget('super_admin.pending_landlords_count');
 
-        return back()->with('success', 'Landlord rejected successfully.');
+        if ($result === 'already_rejected') {
+            return redirect()
+                ->route('super-admin.pending-landlords')
+                ->with('info', 'This application was already rejected.');
+        }
+
+        return redirect()
+            ->route('super-admin.pending-landlords')
+            ->with('success', 'Landlord rejected successfully.');
     }
 
     public function reviewLandlordDocuments($id)

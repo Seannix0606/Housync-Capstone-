@@ -454,15 +454,9 @@
                 </a>
             @endif
         </div>
-        @php
-            // Filter to ensure only truly pending landlords are shown
-            $trulyPending = $pendingLandlords->filter(function($landlord) {
-                return $landlord->landlordProfile && $landlord->landlordProfile->status === 'pending';
-            });
-        @endphp
-        @if($trulyPending->count() > 0)
+        @if($pendingLandlords->count() > 0)
             <ul class="activity-list">
-                @foreach($trulyPending->take(5) as $landlord)
+                @foreach($pendingLandlords->take(5) as $landlord)
                     <li class="activity-item">
                         <div class="activity-avatar">
                             {{ substr($landlord->name, 0, 1) }}

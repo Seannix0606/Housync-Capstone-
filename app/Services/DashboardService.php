@@ -9,6 +9,10 @@ use App\Models\User;
 
 class DashboardService
 {
+    public function __construct(
+        private LandlordVerificationService $landlordVerification
+    ) {}
+
     /**
      * Get dashboard data and view for the given user's role.
      *
@@ -68,15 +72,7 @@ class DashboardService
             'total_properties' => Property::count(),
         ];
 
-        $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', fn ($q) => $q->where('status', 'pending'))
-            ->with('landlordProfile')
-            ->latest('users.created_at')
-            ->take(5)
-            ->get()
-            ->filter(fn ($l) => $l->landlordProfile && $l->landlordProfile->status === 'pending')
-            ->unique('id')
-            ->values();
+        $pendingLandlords = $this->landlordVerification->recentPendingLandlords(5);
 
         $recentUsers = User::with('landlordProfile')->latest()->take(10)->get();
 
