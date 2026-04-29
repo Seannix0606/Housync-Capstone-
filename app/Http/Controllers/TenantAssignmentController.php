@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class TenantAssignmentController extends Controller
 {
@@ -298,7 +299,7 @@ class TenantAssignmentController extends Controller
         $tenant = Auth::user();
 
         // Get the active assignment if one exists (optional now)
-        $assignment = $tenant->tenantAssignments()->with(['unit.apartment', 'documents'])->first();
+        $assignment = $tenant->tenantAssignments()->with(['unit.apartment'])->first();
 
         // Get tenant's personal documents (uploaded before assignment)
         $personalDocuments = $tenant->documents()->orderBy('created_at', 'desc')->get();
@@ -325,7 +326,7 @@ class TenantAssignmentController extends Controller
         try {
             $request->validate([
                 'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'document_types.*' => 'required|string|in:government_id,proof_of_income,employment_contract,bank_statement,character_reference,rental_history,other',
+                'document_types.*' => ['required', 'string', Rule::in(TenantDocument::uploadableDocumentTypes())],
             ], [
                 'documents.*.required' => 'Please select at least one document to upload',
                 'documents.*.file' => 'The uploaded file is not valid',

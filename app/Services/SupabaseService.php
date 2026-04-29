@@ -33,20 +33,23 @@ class SupabaseService implements StorageServiceInterface
             return;
         }
 
+        $defaultHeaders = array_merge(
+            [
+                'Content-Type' => 'application/json',
+                'apikey' => $this->key,
+            ],
+            $this->authorizationHeaderForSupabaseKey($this->key)
+        );
+
         $this->client = new Client([
             'base_uri' => $this->url.'/',
             'verify' => $this->resolveSslCaBundlePath(),
-            'headers' => [
-                'apikey' => $this->key,
-                'Authorization' => 'Bearer '.$this->key,
-                'Content-Type' => 'application/json',
-            ],
+            'headers' => $defaultHeaders,
         ]);
     }
 
     /**
-     * True when a Guzzle client can safely be created (non-empty URL, both keys present and
-     * Supabase-shaped: legacy JWT or sb_publishable_* / sb_secret_*).
+     * True when a Guzzle client can safely be created (valid URL, both keys present and recognized shape).
      */
     protected function hasValidSupabaseConfig(): bool
     {
@@ -54,12 +57,17 @@ class SupabaseService implements StorageServiceInterface
             return false;
         }
 
+        if (str_starts_with(strtolower($this->url), 'http://')
+            && ! app()->environment(['local', 'testing'])) {
+            return false;
+        }
+
         if ($this->key === null || $this->serviceKey === null) {
             return false;
         }
 
-        return $this->isLikelySupabaseKey($this->key)
-            && $this->isLikelySupabaseKey($this->serviceKey);
+        return $this->isLikelySupabaseApiKey($this->key)
+            && $this->isLikelySupabaseApiKey($this->serviceKey);
     }
 
     protected function clientAvailable(): bool
@@ -79,26 +87,35 @@ class SupabaseService implements StorageServiceInterface
     }
 
     /**
-     * Accepts legacy Supabase JWT API keys or modern sb_publishable_* / sb_secret_* keys.
+     * Legacy JWT anon/service_role keys (three segments) or modern sb_publishable_* / sb_secret_* keys.
      */
-    protected function isLikelySupabaseKey(?string $token): bool
+    protected function isLikelySupabaseApiKey(?string $token): bool
     {
         if ($token === null || $token === '') {
             return false;
         }
 
-        return $this->isLikelySupabaseApiJwt($token)
+        return substr_count($token, '.') === 2
             || str_starts_with($token, 'sb_publishable_')
             || str_starts_with($token, 'sb_secret_');
     }
 
-    protected function isLikelySupabaseApiJwt(?string $token): bool
+    /**
+     * Opaque Supabase keys must not be sent as Bearer tokens; JWT-style keys use Bearer.
+     *
+     * @return array<string, string>
+     */
+    protected function authorizationHeaderForSupabaseKey(?string $key): array
     {
-        if ($token === null || $token === '') {
-            return false;
+        if ($key === null || $key === '') {
+            return [];
         }
 
-        return substr_count($token, '.') === 2;
+        if (substr_count($key, '.') === 2) {
+            return ['Authorization' => 'Bearer '.$key];
+        }
+
+        return [];
     }
 
     /**
@@ -109,6 +126,11 @@ class SupabaseService implements StorageServiceInterface
         $configured = config('services.supabase.ca_bundle');
         if (is_string($configured) && $configured !== '' && is_readable($configured)) {
             return $configured;
+        }
+        if (is_string($configured) && $configured !== '') {
+            Log::warning('Supabase Guzzle SSL: configured CA bundle is not readable, falling back', [
+                'path' => $configured,
+            ]);
         }
 
         try {
@@ -270,14 +292,18 @@ class SupabaseService implements StorageServiceInterface
                 'url' => $this->url."/storage/v1/object/{$bucket}/{$path}",
             ]);
 
-            // Storage API expects apikey and Authorization to use the same JWT for service-role uploads.
+            // Storage API expects both `apikey` and `Authorization` to match the service key. Explicitly set
+            // Authorization so the Guzzle client's default anon Bearer header does not leak into this request,
+            // which triggers `signature verification failed` on projects using the new (sb_secret_*) key format.
+            $storageHeaders = [
+                'apikey' => $this->serviceKey,
+                'Authorization' => 'Bearer '.$this->serviceKey,
+                'Content-Type' => 'application/octet-stream',
+            ];
+
             $response = $this->client->post("/storage/v1/object/{$bucket}/{$path}", [
                 'body' => $fileContents,
-                'headers' => [
-                    'apikey' => $this->serviceKey,
-                    'Authorization' => 'Bearer '.$this->serviceKey,
-                    'Content-Type' => 'application/octet-stream',
-                ],
+                'headers' => $storageHeaders,
             ]);
 
             $statusCode = $response->getStatusCode();
@@ -348,7 +374,12 @@ class SupabaseService implements StorageServiceInterface
         }
 
         try {
-            $this->client->delete("/storage/v1/object/{$bucket}/{$path}");
+            $this->client->delete("/storage/v1/object/{$bucket}/{$path}", [
+                'headers' => [
+                    'apikey' => $this->serviceKey,
+                    'Authorization' => 'Bearer '.$this->serviceKey,
+                ],
+            ]);
 
             return true;
         } catch (GuzzleException $exception) {
@@ -390,12 +421,16 @@ class SupabaseService implements StorageServiceInterface
         }
 
         try {
+            $rpcHeaders = array_merge(
+                [
+                    'apikey' => $this->serviceKey,
+                ],
+                $this->authorizationHeaderForSupabaseKey($this->serviceKey)
+            );
+
             $response = $this->client->post('/rest/v1/rpc/sql_query', [
                 'json' => ['query' => $query],
-                'headers' => [
-                    'apikey' => $this->serviceKey,
-                    'Authorization' => 'Bearer '.$this->serviceKey,
-                ],
+                'headers' => $rpcHeaders,
             ]);
 
             return json_decode($response->getBody()->getContents(), true);

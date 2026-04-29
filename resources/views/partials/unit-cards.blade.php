@@ -2,8 +2,22 @@
     <div class="properties-grid">
         @foreach($units as $unit)
             @php
+                // Build slides: cover image (whole unit / apartment) first, then gallery (interior/details).
                 $property = $unit->property;
-                $galleryImages = $unit->images ?? $property->gallery_images ?? [];
+                $coverImage = $unit->cover_image_url ?? $property?->cover_image_url;
+                $gallerySource = ! empty($unit->gallery_urls)
+                    ? $unit->gallery_urls
+                    : ($property?->gallery_urls ?? []);
+
+                $galleryImages = [];
+                if ($coverImage) {
+                    $galleryImages[] = $coverImage;
+                }
+                foreach ($gallerySource as $img) {
+                    if ($img && $img !== $coverImage) {
+                        $galleryImages[] = $img;
+                    }
+                }
             @endphp
             <div class="property-card">
                 <a href="{{ route('property.show', ($property->slug ?? $property->id) . '-unit-' . $unit->id) }}" class="property-image-link">

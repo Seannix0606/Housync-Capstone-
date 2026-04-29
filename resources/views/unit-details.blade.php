@@ -162,9 +162,24 @@
 </head>
 <body>
     @php
+        // Slide 1 = cover image (the whole unit / apartment). Slides 2+ = gallery (interior/details).
         $property = $unit->property;
-        $images = $unit->images ?? $property->gallery_images ?? [];
-        $mainImage = count($images) > 0 ? $images[0] : null;
+        $coverImage = $unit->cover_image_url ?? $property?->cover_image_url;
+        $gallerySource = ! empty($unit->gallery_urls)
+            ? $unit->gallery_urls
+            : ($property?->gallery_urls ?? []);
+
+        $images = [];
+        if ($coverImage) {
+            $images[] = $coverImage;
+        }
+        foreach ($gallerySource as $img) {
+            if ($img && $img !== $coverImage) {
+                $images[] = $img;
+            }
+        }
+
+        $mainImage = $images[0] ?? null;
     @endphp
 
     <div class="property-header">
@@ -375,16 +390,20 @@
                                     <i class="fas fa-file-signature me-1"></i> Apply as Tenant
                                 </button>
                             @endif
-                        @else
-                            <button class="btn btn-apply btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#loginRequiredModal">
-                                <i class="fas fa-file-signature me-1"></i> Apply as Tenant
-                            </button>
                         @endauth
                     @else
                         <button class="btn btn-secondary w-100 mb-2" disabled>
                             <i class="fas fa-times-circle me-1"></i> Not Available
                         </button>
                     @endif
+
+                    @guest
+                        <div class="alert alert-info py-2 px-3 mb-2" role="alert" style="border-radius: 10px; font-size: 0.875rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Please <a href="{{ route('login') }}" class="fw-semibold">login</a> or
+                            <a href="{{ route('register') }}" class="fw-semibold">register</a> to apply as a tenant.
+                        </div>
+                    @endguest
 
                     <button class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-envelope me-1"></i> Contact Landlord
@@ -412,8 +431,12 @@
                 <div class="row">
                     @foreach($relatedUnits as $related)
                         @php
-                            $relatedImages = $related->images ?? $related->property->gallery_images ?? [];
-                            $relatedImage = count($relatedImages) > 0 ? $relatedImages[0] : null;
+                            $relatedCover = $related->cover_image_url ?? $related->property?->cover_image_url;
+                            $relatedGallerySource = ! empty($related->gallery_urls)
+                                ? $related->gallery_urls
+                                : ($related->property?->gallery_urls ?? []);
+
+                            $relatedImage = $relatedCover ?? ($relatedGallerySource[0] ?? null);
                         @endphp
                         <div class="col-md-3 mb-4">
                             <a href="{{ route('property.show', ($related->property->slug ?? $related->property_id) . '-unit-' . $related->id) }}" class="related-property-card">
@@ -449,35 +472,6 @@
                 </div>
             </div>
         @endif
-    </div>
-
-    <!-- Login Required Modal -->
-    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                    <h5 class="modal-title" id="loginRequiredModalLabel">
-                        <i class="fas fa-user-lock me-2"></i>Login Required
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center" style="padding: 2rem;">
-                    <div class="mb-4">
-                        <i class="fas fa-home fa-3x text-primary mb-3"></i>
-                        <h4>Apply as Tenant</h4>
-                        <p class="text-muted">To apply for this unit, you need to have an account. Please login or register to continue.</p>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('login') }}" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login
-                        </a>
-                        <a href="{{ route('register') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus me-2"></i>Register as Tenant
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Apply as Tenant Modal -->
@@ -525,15 +519,6 @@
                                 <div class="mb-3">
                                     <label for="applicant_occupation" class="form-label">Occupation <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="applicant_occupation" name="occupation" placeholder="e.g., Software Engineer" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="applicant_monthly_income" class="form-label">Monthly Income <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="applicant_monthly_income" name="monthly_income" placeholder="e.g., 50000" min="0" required>
-                                    </div>
-                                    <small class="text-muted">Your monthly income helps the landlord assess your application.</small>
                                 </div>
 
                                 <!-- Move-in Date -->

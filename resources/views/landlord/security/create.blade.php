@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}">Security</a>
+                        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Assign Card</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
+        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -177,7 +177,7 @@
 
                         <!-- Action Buttons -->
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
+                            <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}" 
                                class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardUidInput.classList.add('d-none');
         
         // 1) Immediately load the most recent UID from latest_card.json
-        fetch('/api/rfid/latest-uid', {
+        fetch('/api/rfid/web/latest-uid', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         })
@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(latestPollTimer);
                 return;
             }
-            fetch('/api/rfid/latest-uid')
+            fetch('/api/rfid/web/latest-uid')
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(d => {
                     if (d && d.success && d.card_uid) {
@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
         isScanning = true;
         
         // Check for the latest card from ESP32Reader.php
-        fetch('/api/rfid/latest-uid', {
+        fetch('/api/rfid/web/latest-uid', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

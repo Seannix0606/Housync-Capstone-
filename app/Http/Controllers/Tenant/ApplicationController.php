@@ -24,8 +24,10 @@ class ApplicationController extends Controller
 
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
 
-        if ($personalDocuments->isEmpty()) {
-            return back()->with('error', 'You must upload your personal documents before applying for a property. Please visit your profile or upload documents page to add required documents.');
+        if (! TenantDocument::tenantMeetsRequiredDocuments($tenant->id)) {
+            $missing = TenantDocument::missingRequiredDocumentMessages($tenant->id);
+
+            return back()->with('error', 'You must complete all required documents before applying: '.implode(' ', $missing).' Go to Upload Documents to finish.');
         }
 
         $request->validate([
@@ -33,7 +35,6 @@ class ApplicationController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'occupation' => 'required|string|max:255',
-            'monthly_income' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -102,7 +103,7 @@ class ApplicationController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => $request->monthly_income,
+                    'monthly_income' => null,
                     'notes' => $request->notes,
                 ]);
             });
@@ -143,8 +144,10 @@ class ApplicationController extends Controller
 
         $personalDocuments = TenantDocument::where('tenant_id', $tenant->id)->get();
 
-        if ($personalDocuments->isEmpty()) {
-            return back()->with('error', 'You must upload your personal documents before applying for a unit. Please visit your profile or upload documents page to add required documents.');
+        if (! TenantDocument::tenantMeetsRequiredDocuments($tenant->id)) {
+            $missing = TenantDocument::missingRequiredDocumentMessages($tenant->id);
+
+            return back()->with('error', 'You must complete all required documents before applying: '.implode(' ', $missing).' Go to Upload Documents to finish.');
         }
 
         $request->validate([
@@ -152,7 +155,6 @@ class ApplicationController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'occupation' => 'required|string|max:255',
-            'monthly_income' => 'required|numeric|min:0',
             'move_in_date' => 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -199,7 +201,7 @@ class ApplicationController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => $request->monthly_income,
+                    'monthly_income' => null,
                     'notes' => $request->notes,
                 ]);
             });

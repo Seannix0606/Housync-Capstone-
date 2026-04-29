@@ -580,6 +580,163 @@
         body.dark-mode [style*="background:#f1f5f9"] {
             background: #0f172a !important;
         }
+
+        /* ========== Bulk Edit / Floor Sections / Summary Stats ========== */
+        body.dark-mode .floor-section,
+        body.dark-mode .bulk-actions,
+        body.dark-mode .bulk-edit-container .floor-section,
+        body.dark-mode .bulk-edit-container .bulk-actions {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .floor-header { border-bottom-color: #334155 !important; }
+        body.dark-mode .floor-title,
+        body.dark-mode .bulk-actions h3 { color: #f1f5f9 !important; }
+
+        body.dark-mode .summary-stats .stat-card {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .summary-stats .stat-number { color: #f1f5f9 !important; }
+        body.dark-mode .summary-stats .stat-label { color: #94a3b8 !important; }
+
+        body.dark-mode .table-responsive { background: #1e293b !important; }
+        body.dark-mode .table thead.table-light th,
+        body.dark-mode thead.table-light th {
+            background: #0f172a !important;
+            color: #94a3b8 !important;
+            border-bottom-color: #334155 !important;
+        }
+        body.dark-mode tr.table-warning,
+        body.dark-mode tr.table-warning td {
+            background: #422006 !important;
+            color: #fbbf24 !important;
+        }
+
+        body.dark-mode [style*="background: #fef3c7"],
+        body.dark-mode [style*="background:#fef3c7"] {
+            background: #422006 !important;
+            border-color: #92400e !important;
+            color: #fbbf24 !important;
+        }
+
+        body.dark-mode [style*="color: #92400e"],
+        body.dark-mode [style*="color:#92400e"],
+        body.dark-mode [style*="color: #d97706"],
+        body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+
+        body.dark-mode #loadingModal > div { background: #1e293b !important; }
+        body.dark-mode #loadingModal .spinner {
+            border-color: #334155;
+            border-top-color: #f97316;
+        }
+
+        body.dark-mode .btn-outline {
+            background: #0f172a !important;
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark-mode .btn-outline:hover {
+            background: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .property-info {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .property-info h4 { color: #f1f5f9 !important; }
+        body.dark-mode .property-info p,
+        body.dark-mode .property-info p strong { color: #94a3b8 !important; }
+
+        /* ========== Universal Light-Surface Overrides ========== */
+        body.dark-mode .bg-white,
+        body.dark-mode .bg-body,
+        body.dark-mode [style*="background: #ffffff"],
+        body.dark-mode [style*="background:#ffffff"],
+        body.dark-mode [style*="background-color: #ffffff"],
+        body.dark-mode [style*="background-color:#ffffff"] {
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode [style*="background: #f9fafb"],
+        body.dark-mode [style*="background:#f9fafb"],
+        body.dark-mode [style*="background: #f3f4f6"],
+        body.dark-mode [style*="background:#f3f4f6"],
+        body.dark-mode [style*="background: #f5f5f5"],
+        body.dark-mode [style*="background:#f5f5f5"] {
+            background: #0f172a !important;
+        }
+
+        body.dark-mode [style*="border: 1px solid #cbd5e1"],
+        body.dark-mode [style*="border:1px solid #cbd5e1"],
+        body.dark-mode [style*="border: 1px solid #d1d5db"],
+        body.dark-mode [style*="border:1px solid #d1d5db"],
+        body.dark-mode [style*="border: 1px solid #f1f5f9"],
+        body.dark-mode [style*="border:1px solid #f1f5f9"] {
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode [style*="color: #111"],
+        body.dark-mode [style*="color:#111"],
+        body.dark-mode [style*="color: #000"],
+        body.dark-mode [style*="color:#000"],
+        body.dark-mode [style*="color: #333"],
+        body.dark-mode [style*="color:#333"] { color: #e2e8f0 !important; }
+
+        body.dark-mode [style*="color: #475569"],
+        body.dark-mode [style*="color:#475569"],
+        body.dark-mode [style*="color: #6b7280"],
+        body.dark-mode [style*="color:#6b7280"] { color: #94a3b8 !important; }
+
+        body.dark-mode .content-wrapper,
+        body.dark-mode .page-content,
+        body.dark-mode .page-body,
+        body.dark-mode .section-card,
+        body.dark-mode .info-card,
+        body.dark-mode .detail-card,
+        body.dark-mode .summary-card,
+        body.dark-mode .form-card,
+        body.dark-mode .list-card {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .shadow-sm,
+        body.dark-mode .shadow,
+        body.dark-mode .shadow-lg {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        body.dark-mode .alert-secondary {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode input.form-control-sm,
+        body.dark-mode select.form-control-sm,
+        body.dark-mode textarea.form-control-sm {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode input[readonly],
+        body.dark-mode .form-control-plaintext {
+            background: #0f172a !important;
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .badge.bg-light,
+        body.dark-mode .badge.text-bg-light {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+        }
     </style>
     <link rel="stylesheet" href="{{ asset('css/saas-dashboard.css') }}">
     @stack('styles')

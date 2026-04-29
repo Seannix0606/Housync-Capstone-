@@ -106,8 +106,23 @@
     <div class="container mb-5">
         <div class="row">
             <div class="col-lg-8">
-                <!-- Property Image -->
-                @php($img = $property->image_url)
+                <!-- Property Image (cover first, then gallery) -->
+                @php
+                    $coverImage = $property->cover_image_url;
+                    $gallerySource = $property->gallery_urls ?? [];
+
+                    $images = [];
+                    if ($coverImage) {
+                        $images[] = $coverImage;
+                    }
+                    foreach ($gallerySource as $galleryImg) {
+                        if ($galleryImg && $galleryImg !== $coverImage) {
+                            $images[] = $galleryImg;
+                        }
+                    }
+
+                    $img = $images[0] ?? null;
+                @endphp
                 @if($img)
                     <img src="{{ $img }}" alt="{{ $property->title }}" class="property-image-main mb-4">
                 @else
@@ -172,6 +187,14 @@
 
                     <hr>
 
+                    @guest
+                        <div class="alert alert-info py-2 px-3 mb-2" role="alert" style="border-radius: 10px; font-size: 0.875rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Please <a href="{{ route('login') }}" class="fw-semibold">login</a> or
+                            <a href="{{ route('register') }}" class="fw-semibold">register</a> to apply as a tenant.
+                        </div>
+                    @endguest
+
                     <button class="btn btn-primary w-100 mb-2">
                         <i class="fas fa-envelope me-1"></i> Contact Landlord
                     </button>
@@ -201,10 +224,6 @@
                                     </small>
                                 @endif
                             @endif
-                        @else
-                            <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#loginRequiredModal">
-                                <i class="fas fa-file-signature me-1"></i> Apply as Tenant
-                            </button>
                         @endauth
                     @endif
                 </div>
@@ -219,7 +238,9 @@
                     @foreach($relatedProperties as $related)
                         <div class="col-md-3 mb-4">
                             <a href="{{ route('property.show', $related->slug) }}" class="related-property-card">
-                                @php($relatedImg = $related->image_url)
+                                @php
+                                    $relatedImg = $related->cover_image_url ?? ($related->gallery_urls[0] ?? null);
+                                @endphp
                                 @if($relatedImg)
                                     <img src="{{ $relatedImg }}" alt="{{ $related->title }}" style="width: 100%; height: 200px; object-fit: cover;">
                                 @else
@@ -237,35 +258,6 @@
                 </div>
             </div>
         @endif
-    </div>
-
-    <!-- Login Required Modal -->
-    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                    <h5 class="modal-title" id="loginRequiredModalLabel">
-                        <i class="fas fa-user-lock me-2"></i>Login Required
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center" style="padding: 2rem;">
-                    <div class="mb-4">
-                        <i class="fas fa-home fa-3x text-primary mb-3"></i>
-                        <h4>Apply as Tenant</h4>
-                        <p class="text-muted">To apply for this property, you need to have an account. Please login or register to continue.</p>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('login') }}" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login
-                        </a>
-                        <a href="{{ route('register') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus me-2"></i>Register
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Apply as Tenant Modal -->
@@ -314,16 +306,6 @@
                                     <label for="applicant_occupation" class="form-label">Occupation <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="applicant_occupation" name="occupation" placeholder="e.g., Software Engineer" required>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label for="applicant_monthly_income" class="form-label">Monthly Income <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="applicant_monthly_income" name="monthly_income" placeholder="e.g., 50000" min="0" required>
-                                    </div>
-                                    <small class="text-muted">Your monthly income helps the landlord assess your application.</small>
-                                </div>
-
 
                                 <!-- Additional Notes -->
                                 <div class="mb-3">

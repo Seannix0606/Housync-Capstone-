@@ -26,6 +26,17 @@ class LandlordProfile extends Model
         'approved_at' => 'datetime',
     ];
 
+    public function setPhoneAttribute(mixed $value): void
+    {
+        if ($value === null || $value === '') {
+            $this->attributes['phone'] = null;
+
+            return;
+        }
+
+        $this->attributes['phone'] = preg_replace('/\D+/', '', (string) $value);
+    }
+
     public function approvedBy()
     {
         return $this->belongsTo(\App\Models\SuperAdminProfile::class, 'approved_by');

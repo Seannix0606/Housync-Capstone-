@@ -10,13 +10,13 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}">Security</a>
+                        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}">Security</a>
                     </li>
                     <li class="breadcrumb-item active">Access Logs</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('landlord.security', ['property_id' => $propertyId]) }}" 
+        <a href="{{ route('landlord.security.index', ['property_id' => $propertyId]) }}" 
            class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Security
         </a>
@@ -249,7 +249,7 @@
                 </div>
             @else
                 <div class="text-center py-4">
-                    @if(request()->hasAny(['apartment_id', 'card_uid', 'result', 'date_from', 'date_to']))
+                    @if(request()->hasAny(['property_id', 'card_uid', 'result', 'date_from', 'date_to']))
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
                         <h5>No Access Logs Found</h5>
                         <p class="text-muted">No access attempts match your current filters.</p>

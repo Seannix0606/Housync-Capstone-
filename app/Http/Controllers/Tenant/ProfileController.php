@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -68,11 +69,18 @@ class ProfileController extends Controller
         /** @var \App\Models\User $tenant */
         $tenant = Auth::user();
 
-        $assignment = $tenant->tenantAssignments()->with(['unit.property', 'documents'])->first();
+        $assignment = $tenant->tenantAssignments()->with(['unit.property'])->first();
 
         $personalDocuments = $tenant->documents()->orderBy('created_at', 'desc')->get();
+        $documentRequirementProgress = TenantDocument::requirementProgressForTenant($tenant->id);
+        $documentsRequirementComplete = TenantDocument::tenantMeetsRequiredDocuments($tenant->id);
 
-        return view('tenant.upload-documents', compact('assignment', 'personalDocuments'));
+        return view('tenant.upload-documents', compact(
+            'assignment',
+            'personalDocuments',
+            'documentRequirementProgress',
+            'documentsRequirementComplete'
+        ));
     }
 
     /**
@@ -92,7 +100,7 @@ class ProfileController extends Controller
         try {
             $request->validate([
                 'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'document_types.*' => 'required|string|in:government_id,proof_of_income,employment_contract,bank_statement,character_reference,rental_history,other',
+                'document_types.*' => ['required', 'string', Rule::in(TenantDocument::uploadableDocumentTypes())],
             ], [
                 'documents.*.required' => 'Please select at least one document to upload',
                 'documents.*.file' => 'The uploaded file is not valid',

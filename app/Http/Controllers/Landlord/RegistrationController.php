@@ -10,6 +10,7 @@ use App\Services\SupabaseService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class RegistrationController extends Controller
     public function storeRegistration(Request $request)
     {
         $request->merge([
-            'phone' => preg_replace('/\D/', '', (string) $request->input('phone', '')),
+            'phone' => static::normalizePhone((string) $request->input('phone', '')),
         ]);
 
         $request->validate([
@@ -106,19 +107,42 @@ class RegistrationController extends Controller
                     $docType = $slot['type'];
                     $extension = $file->getClientOriginalExtension();
                     $fileName = 'landlord-doc-'.$landlord->id.'-'.time().'-'.$index.'-'.uniqid().'.'.$extension;
-                    $path = 'landlord-documents/'.$fileName;
+                    $remotePath = 'landlord-documents/'.$fileName;
 
-                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
+                    $fileUrl = null;
 
-                    if (! $uploadResult['success']) {
-                        throw new \RuntimeException('Failed to upload document "'.$file->getClientOriginalName().'": '.($uploadResult['message'] ?? 'Unknown error'));
+                    try {
+                        $uploadResult = $supabase->uploadFile(
+                            config('services.supabase.bucket'),
+                            $remotePath,
+                            $file->getRealPath(),
+                        );
+
+                        if (! empty($uploadResult['success'])) {
+                            $fileUrl = $uploadResult['url'] ?? null;
+                        } else {
+                            throw new \RuntimeException($uploadResult['message'] ?? 'Supabase upload failed');
+                        }
+                    } catch (\Throwable $supabaseException) {
+                        Log::warning('Supabase landlord-document upload failed, falling back to local storage', [
+                            'error' => $supabaseException->getMessage(),
+                            'doc_type' => $docType,
+                            'index' => $index,
+                        ]);
+
+                        $storedPath = $file->storeAs('landlord-documents', $fileName, 'public');
+                        $fileUrl = $storedPath ? asset('storage/'.$storedPath) : null;
+                    }
+
+                    if (! $fileUrl) {
+                        throw new \RuntimeException('Failed to save document "'.$file->getClientOriginalName().'".');
                     }
 
                     LandlordDocument::create([
                         'landlord_id' => $landlord->id,
                         'document_type' => $docType,
                         'file_name' => $file->getClientOriginalName(),
-                        'file_path' => $uploadResult['url'],
+                        'file_path' => $fileUrl,
                         'file_size' => $file->getSize(),
                         'mime_type' => $file->getMimeType(),
                         'uploaded_at' => now(),
@@ -130,13 +154,15 @@ class RegistrationController extends Controller
             });
         } catch (\Exception $e) {
             Log::error('Landlord registration failed', [
+                'message' => $e->getMessage(),
                 'exception' => $e,
             ]);
 
-            return back()->with('error', true)->withInput();
+            return back()->with('registration_error', true)->withInput();
         }
 
         event(new Registered($landlord));
+        Cache::forget('super_admin.pending_landlords_count');
 
         return redirect()->route('landlord.pending')->with('success', 'Registration submitted successfully. Please wait for admin approval.');
     }

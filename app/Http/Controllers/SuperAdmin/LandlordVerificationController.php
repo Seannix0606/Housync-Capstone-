@@ -7,6 +7,7 @@ use App\Models\LandlordDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class LandlordVerificationController extends Controller
 {
@@ -14,7 +15,11 @@ class LandlordVerificationController extends Controller
     {
         $pendingLandlords = User::where('role', 'landlord')
             ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
-            ->with(['landlordProfile', 'approvedBy', 'landlordDocuments'])
+            ->with([
+                'landlordProfile' => fn ($q) => $q->where('status', 'pending'),
+                'approvedBy',
+                'landlordDocuments',
+            ])
             ->latest('users.created_at')
             ->paginate(15);
 
@@ -35,6 +40,7 @@ class LandlordVerificationController extends Controller
 
         $landlord->approve(Auth::id());
         $landlord->load('landlordProfile');
+        Cache::forget('super_admin.pending_landlords_count');
 
         return back()->with('success', 'Landlord approved successfully.');
     }
@@ -54,6 +60,7 @@ class LandlordVerificationController extends Controller
         }
 
         $landlord->reject(Auth::id(), $request->reason);
+        Cache::forget('super_admin.pending_landlords_count');
 
         return back()->with('success', 'Landlord rejected successfully.');
     }
