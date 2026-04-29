@@ -40,7 +40,7 @@
                     {{ $conversation->last_message_at?->diffForHumans(null, true) ?? 'New' }}
                 </div>
                 @if($unread > 0)
-                    <span style="background: #3b82f6; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 999px; font-weight: 600;">{{ $unread }}</span>
+                    <span style="background: #ef4444; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 999px; font-weight: 600;">{{ $unread }}</span>
                 @endif
             </div>
         </a>

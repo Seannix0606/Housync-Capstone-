@@ -120,7 +120,7 @@
     .notif-unread-dot {
         width: 8px;
         height: 8px;
-        background: #3b82f6;
+        background: #ef4444;
         border-radius: 50%;
         flex-shrink: 0;
         align-self: center;

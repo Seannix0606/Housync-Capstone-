@@ -26,7 +26,7 @@
     }
     
     .unread-badge {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        background: linear-gradient(135deg, #ef4444, #dc2626);
         color: #fff;
         font-size: 0.8rem;
         padding: 4px 12px;
@@ -155,7 +155,7 @@
     }
     
     .unread-count {
-        background: #3b82f6;
+        background: #ef4444;
         color: #fff;
         font-size: 0.75rem;
         padding: 3px 8px;

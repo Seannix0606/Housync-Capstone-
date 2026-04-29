@@ -195,6 +195,15 @@
         .main-content .occupancy-percentage { font-size: 2rem; font-weight: 700; color: #818cf8; }
         .main-content .occupancy-label { font-size: 0.875rem; color: #64748b; }
         .main-content .badge-count { background: #ef4444; color: white; border-radius: 9999px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+        .sidebar nav .badge-count {
+            background: #ef4444;
+            color: #fff;
+            border-radius: 9999px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
         .main-content .activity-section, .main-content .quick-actions, .main-content .property-summary { background: white; border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 1.5rem; }
         .main-content .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
         .main-content .section-title { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
