@@ -28,7 +28,7 @@
         color: #1e293b;
     }
     .notif-page-header .btn-mark-all {
-        background: #f97316;
+        background: #3b82f6;
         color: #fff;
         border: none;
         padding: .5rem 1.25rem;
@@ -42,7 +42,7 @@
         gap: .5rem;
     }
     .notif-page-header .btn-mark-all:hover {
-        background: #ea580c;
+        background: #2563eb;
     }
     .notif-card {
         background: #fff;
@@ -85,7 +85,7 @@
         font-size: 1rem;
         flex-shrink: 0;
     }
-    .notif-list-icon.maintenance { background: #fef3c7; color: #d97706; }
+    .notif-list-icon.maintenance { background: #dbeafe; color: #2563eb; }
     .notif-list-icon.billing     { background: #d1fae5; color: #059669; }
     .notif-list-icon.announcement{ background: #dbeafe; color: #2563eb; }
     .notif-list-icon.general     { background: #f1f5f9; color: #64748b; }
@@ -156,13 +156,13 @@
         padding: .4rem .75rem;
     }
     .notif-pagination .page-item.active .page-link {
-        background: #f97316;
-        border-color: #f97316;
+        background: #3b82f6;
+        border-color: #3b82f6;
         color: #fff;
     }
     .notif-pagination .page-link:hover {
-        background: #fff7ed;
-        color: #ea580c;
+        background: #eff6ff;
+        color: #2563eb;
     }
 
     /* Dark mode overrides */
@@ -178,11 +178,11 @@
     body.dark-mode .notif-empty-state { color: #64748b; }
     body.dark-mode .notif-empty-state i { color: #475569; }
     body.dark-mode .notif-pagination .page-link { background: #1e293b; border-color: #334155; color: #94a3b8; }
-    body.dark-mode .notif-pagination .page-item.active .page-link { background: #f97316; border-color: #f97316; color: #fff; }
+    body.dark-mode .notif-pagination .page-item.active .page-link { background: #3b82f6; border-color: #3b82f6; color: #fff; }
 </style>
 
 <div class="notif-page-header">
-    <h1><i class="fas fa-bell" style="margin-right:.5rem;color:#f97316"></i>Notifications</h1>
+    <h1><i class="fas fa-bell" style="margin-right:.5rem;color:#3b82f6"></i>Notifications</h1>
     @if($notifications->count() > 0)
         <form action="{{ route('notifications.mark-all-read') }}" method="POST">
             @csrf

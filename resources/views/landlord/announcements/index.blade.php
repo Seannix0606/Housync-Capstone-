@@ -35,7 +35,7 @@
     <div class="card" style="border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <h5 class="card-title mb-0"><i class="fas fa-bullhorn me-2" style="color: #f97316;"></i>All Announcements</h5>
+                <h5 class="card-title mb-0"><i class="fas fa-bullhorn me-2" style="color: #3b82f6;"></i>All Announcements</h5>
                 <a href="{{ route('landlord.announcements.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-1"></i> New Announcement
                 </a>
@@ -118,7 +118,7 @@
                                     </td>
                                     <td>
                                         @if($announcement->is_pinned)
-                                            <i class="fas fa-thumbtack" style="color: #f97316;" title="Pinned"></i>
+                                            <i class="fas fa-thumbtack" style="color: #3b82f6;" title="Pinned"></i>
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif

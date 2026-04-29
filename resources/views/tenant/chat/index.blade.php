@@ -26,7 +26,7 @@
     }
     
     .unread-badge {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         font-size: 0.8rem;
         padding: 4px 12px;
@@ -52,14 +52,14 @@
     }
     
     .action-btn.primary {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border: none;
     }
     
     .action-btn.primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
     
     .action-btn.secondary {
@@ -69,8 +69,8 @@
     }
     
     .action-btn.secondary:hover {
-        border-color: #f97316;
-        color: #f97316;
+        border-color: #3b82f6;
+        color: #3b82f6;
     }
     
     .conversation-list {
@@ -100,14 +100,14 @@
     }
     
     .conversation-item.unread {
-        background: #fff7ed;
+        background: #eff6ff;
     }
     
     .conversation-avatar {
         width: 52px;
         height: 52px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         display: flex;
         align-items: center;
@@ -155,7 +155,7 @@
     }
     
     .unread-count {
-        background: #f97316;
+        background: #3b82f6;
         color: #fff;
         font-size: 0.75rem;
         padding: 3px 8px;
@@ -172,7 +172,7 @@
     }
     
     .priority-urgent { background: #fee2e2; color: #dc2626; }
-    .priority-high { background: #fef3c7; color: #d97706; }
+    .priority-high { background: #dbeafe; color: #2563eb; }
     .priority-normal { background: #dbeafe; color: #2563eb; }
     .priority-low { background: #d1fae5; color: #059669; }
     
@@ -195,7 +195,7 @@
         width: 100px;
         height: 100px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -310,7 +310,7 @@
     .form-group textarea:focus,
     .form-group select:focus {
         outline: none;
-        border-color: #f97316;
+        border-color: #3b82f6;
     }
     
     .form-actions {
@@ -325,7 +325,7 @@
 <div class="chat-page">
     <div class="chat-header-section">
         <h1>
-            <i class="fas fa-comments" style="color: #f97316;"></i>
+            <i class="fas fa-comments" style="color: #3b82f6;"></i>
             Messages
             @if($totalUnread > 0)
                 <span class="unread-badge">{{ $totalUnread }} new</span>

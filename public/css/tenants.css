@@ -293,8 +293,8 @@
 }
 
 .payment-status.pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .payment-status.overdue {
@@ -371,14 +371,14 @@
 }
 
 .action-btn.warning {
-    background: #f59e0b;
-    border-color: #f59e0b;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: white;
 }
 
 .action-btn.warning:hover {
-    background: #d97706;
-    border-color: #d97706;
+    background: #2563eb;
+    border-color: #2563eb;
 }
 
 .action-btn.danger {

@@ -53,7 +53,7 @@
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background:  #6366f1;
         color: #fff;
         display: flex;
         align-items: center;
@@ -95,7 +95,7 @@
     }
     
     .priority-urgent { background: #fee2e2; color: #dc2626; }
-    .priority-high { background: #fef3c7; color: #d97706; }
+    .priority-high { background: #dbeafe; color: #2563eb; }
     .priority-normal { background: #dbeafe; color: #2563eb; }
     .priority-low { background: #d1fae5; color: #059669; }
     
@@ -146,7 +146,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #64748b, #475569);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: #fff;
         display: flex;
         align-items: center;
@@ -157,7 +157,7 @@
     }
     
     .message.sent .message-avatar {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: #6366f1;
     }
     
     .message-content {
@@ -169,7 +169,7 @@
     }
     
     .message.sent .message-content {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: #fff;
         border-radius: 16px;
         border-top-right-radius: 4px;
@@ -303,7 +303,7 @@
     
     .chat-input:focus {
         outline: none;
-        border-color: #f97316;
+        border-color: #3b82f6;
     }
     
     .input-actions {
@@ -333,7 +333,7 @@
     
     .send-btn {
         padding: 14px 24px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: #fff;
         border: none;
         border-radius: 12px;
@@ -347,7 +347,7 @@
     
     .send-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
     
     .send-btn:disabled {

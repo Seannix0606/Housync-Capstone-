@@ -42,8 +42,8 @@
     }
     .form-control:focus {
         outline: none;
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     textarea.form-control {
         min-height: 100px;
@@ -60,7 +60,7 @@
         }
     }
     .btn-save {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
         border: none;
         padding: 0.7rem 1.5rem;
@@ -70,7 +70,7 @@
         transition: all 0.2s;
     }
     .btn-save:hover {
-        background: linear-gradient(135deg, #ea580c, #dc2626);
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
         transform: translateY(-1px);
     }
     .alert {
@@ -100,7 +100,7 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
         display: flex;
         align-items: center;
@@ -150,7 +150,7 @@
     }
 
     body.dark-mode .form-control:focus {
-        border-color: #f97316 !important;
+        border-color: #3b82f6 !important;
     }
 
     body.dark-mode .form-control:disabled,

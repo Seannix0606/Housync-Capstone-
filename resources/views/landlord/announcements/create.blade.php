@@ -41,7 +41,7 @@
         <div class="col-xl-8">
             <div class="card" style="border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                 <div class="card-body">
-                    <h5 class="card-title mb-4"><i class="fas fa-bullhorn me-2" style="color: #f97316;"></i>New Announcement</h5>
+                    <h5 class="card-title mb-4"><i class="fas fa-bullhorn me-2" style="color: #3b82f6;"></i>New Announcement</h5>
 
                     <form method="POST" action="{{ route('landlord.announcements.store') }}">
                         @csrf
@@ -109,7 +109,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="is_pinned" name="is_pinned" value="1" {{ old('is_pinned') ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_pinned">
-                                        <i class="fas fa-thumbtack me-1" style="color: #f97316;"></i> Pin this announcement
+                                        <i class="fas fa-thumbtack me-1" style="color: #3b82f6;"></i> Pin this announcement
                                     </label>
                                 </div>
                             </div>

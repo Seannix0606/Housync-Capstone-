@@ -89,29 +89,29 @@
 }
 
 .btn-primary {
-    background: #f97316; /* Orange color */
+    background: #3b82f6; /* Primary accent */
     color: white;
-    border: 1px solid #f97316;
+    border: 1px solid #3b82f6;
 }
 
 .btn-primary:hover {
-    background: #ea580c; /* Darker orange on hover */
-    border-color: #ea580c;
+    background: #2563eb; /* Darker on hover */
+    border-color: #2563eb;
 }
 
 /* Prevent button from staying blue after clicking */
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active {
-    background: #f97316 !important; /* Keep orange color */
-    border-color: #f97316 !important;
-    box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25) !important;
+    background: #3b82f6 !important; /* Primary accent */
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
 }
 
 .btn-primary:focus:hover,
 .btn-primary:active:hover {
-    background: #ea580c !important; /* Darker orange on hover even when focused/active */
-    border-color: #ea580c !important;
+    background: #2563eb !important; /* Darker on hover when focused/active */
+    border-color: #2563eb !important;
 }
 
 /* Security Status Cards */
@@ -154,7 +154,7 @@
 }
 
 .status-card.security-alerts::before {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .status-card.active-cards::before {
@@ -186,7 +186,7 @@
 }
 
 .security-alerts .status-icon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .active-cards .status-icon {
@@ -213,7 +213,7 @@
 }
 
 .status-value.warning {
-    color: #f59e0b;
+    color: #3b82f6;
 }
 
 .status-detail {
@@ -334,11 +334,11 @@
 
 .log-entry.recent {
     animation: highlight 2s ease-out;
-    background: #fef3c7 !important;
+    background: #dbeafe !important;
 }
 
 @keyframes highlight {
-    0% { background: #fbbf24; }
+    0% { background: #93c5fd; }
     100% { background: transparent; }
 }
 
@@ -535,7 +535,7 @@
 }
 
 .device-status-indicator.warning {
-    color: #f59e0b;
+    color: #3b82f6;
 }
 
 .status-dot {
@@ -581,8 +581,8 @@
 }
 
 .alert-item.medium {
-    background: #fef3c7;
-    border-left-color: #f59e0b;
+    background: #dbeafe;
+    border-left-color: #3b82f6;
 }
 
 .alert-item.low {
@@ -607,7 +607,7 @@
 }
 
 .alert-item.medium .alert-icon {
-    background: #f59e0b;
+    background: #3b82f6;
 }
 
 .alert-item.low .alert-icon {

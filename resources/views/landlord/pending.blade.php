@@ -73,8 +73,8 @@
         }
         
         .status-icon.pending {
-            background-color: #fef3c7;
-            color: #f59e0b;
+            background-color: #dbeafe;
+            color: #3b82f6;
         }
         
         .status-message {

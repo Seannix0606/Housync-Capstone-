@@ -10,7 +10,7 @@
             border: none;
         }
         .create-bill-modal .modal-header {
-            background: linear-gradient(135deg, #f97316, #ea580c);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border-radius: 12px 12px 0 0;
         }
@@ -18,7 +18,7 @@
             filter: brightness(0) invert(1);
         }
         .btn-create-bill {
-            background: linear-gradient(135deg, #f97316, #ea580c);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             border: none;
             color: white;
             padding: 0.6rem 1.2rem;
@@ -26,7 +26,7 @@
             font-weight: 500;
         }
         .btn-create-bill:hover {
-            background: linear-gradient(135deg, #ea580c, #dc2626);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
             transform: translateY(-1px);
         }
@@ -36,7 +36,7 @@
         }
         .status.paid { background: #d1fae5; color: #065f46; }
         .status.unpaid { background: #fee2e2; color: #991b1b; }
-        .status.partially_paid { background: #fef3c7; color: #92400e; }
+        .status.partially_paid { background: #dbeafe; color: #1e40af; }
         .status.overdue { background: #fecaca; color: #7f1d1d; }
     </style>
 @endpush

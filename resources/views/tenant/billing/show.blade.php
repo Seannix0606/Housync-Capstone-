@@ -86,7 +86,7 @@
     }
     .status-badge.paid { background: #d1fae5; color: #065f46; }
     .status-badge.unpaid { background: #fee2e2; color: #991b1b; }
-    .status-badge.partially_paid { background: #fef3c7; color: #92400e; }
+    .status-badge.partially_paid { background: #dbeafe; color: #1e40af; }
     .status-badge.overdue { background: #fecaca; color: #7f1d1d; }
     .payment-history {
         margin-top: 2rem;

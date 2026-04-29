@@ -128,7 +128,7 @@
     }
 
     .table tbody tr.table-warning {
-        background: #fef3c7;
+        background: #dbeafe;
     }
 
     .form-control-sm {
@@ -211,12 +211,12 @@
 
     @if(isset($existingUnitsCount) && $existingUnitsCount > 0)
     <!-- Existing Units Warning -->
-    <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
+    <div style="background: #dbeafe; border: 1px solid #3b82f6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <i class="fas fa-exclamation-triangle" style="color: #d97706; font-size: 1.25rem;"></i>
+            <i class="fas fa-exclamation-triangle" style="color: #2563eb; font-size: 1.25rem;"></i>
             <div>
-                <h4 style="color: #92400e; margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;">This property already has {{ $existingUnitsCount }} units</h4>
-                <p style="color: #92400e; margin: 0; font-size: 0.875rem;">Units with duplicate numbers will be skipped. Only new unit numbers will be created.</p>
+                <h4 style="color: #1e40af; margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;">This property already has {{ $existingUnitsCount }} units</h4>
+                <p style="color: #1e40af; margin: 0; font-size: 0.875rem;">Units with duplicate numbers will be skipped. Only new unit numbers will be created.</p>
             </div>
         </div>
     </div>

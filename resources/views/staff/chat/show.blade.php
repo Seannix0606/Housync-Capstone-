@@ -57,7 +57,7 @@
     }
     
     .message.sent .message-avatar {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
     }
     
     .message-content {
@@ -69,7 +69,7 @@
     }
     
     .message.sent .message-content {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border-radius: 16px;
         border-top-right-radius: 4px;
@@ -93,12 +93,12 @@
     
     .chat-input:focus {
         outline: none;
-        border-color: #f97316;
+        border-color: #3b82f6;
     }
     
     .send-btn {
         padding: 14px 24px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border: none;
         border-radius: 12px;
@@ -114,7 +114,7 @@
         <a href="{{ route('staff.chat') }}" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; color: #64748b; text-decoration: none;">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem;">
             {{ $otherParticipants->first() ? strtoupper(substr($otherParticipants->first()->name, 0, 1)) : '?' }}
         </div>
         <div>

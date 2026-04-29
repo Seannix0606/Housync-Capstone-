@@ -82,7 +82,7 @@
     <div class="saas-widget-card">
         <h3 class="saas-widget-title">Occupancy split</h3>
         <div class="saas-donut-wrap">
-            <div class="saas-donut" style="background: conic-gradient(#2563eb 0deg {{ $occDeg }}deg, #fb923c {{ $occDeg }}deg 360deg);">
+            <div class="saas-donut" style="background: conic-gradient(#2563eb 0deg {{ $occDeg }}deg, #93c5fd {{ $occDeg }}deg 360deg);">
                 <div class="saas-donut-label">
                     <span class="saas-donut-pct">{{ $occPct }}%</span>
                     <span class="saas-donut-caption">Occupied</span>
@@ -143,7 +143,7 @@
             @else
                 <tr>
                     <td colspan="4" class="text-center text-muted p-4">
-                        No units found. <a href="{{ route('landlord.create-apartment') }}" style="color: #f97316;">Add your first property</a>
+                        No units found. <a href="{{ route('landlord.create-apartment') }}" style="color: #3b82f6;">Add your first property</a>
                     </td>
                 </tr>
             @endif

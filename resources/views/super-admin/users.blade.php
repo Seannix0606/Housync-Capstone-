@@ -226,8 +226,8 @@
         }
 
         .role-landlord {
-            background: #fef3c7;
-            color: #92400e;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .role-tenant {
@@ -242,7 +242,7 @@
         }
 
         body.dark-mode .role-landlord {
-            background: #f59e0b;
+            background: #3b82f6;
             color: #fff;
         }
 
@@ -252,8 +252,8 @@
         }
 
         .status-pending {
-            background: #fef3c7;
-            color: #d97706;
+            background: #dbeafe;
+            color: #2563eb;
         }
 
         .status-approved {
@@ -278,8 +278,8 @@
         }
 
         body.dark-mode .status-pending {
-            background: #78350f;
-            color: #fbbf24;
+            background: #1e3a8a;
+            color: #93c5fd;
         }
 
         body.dark-mode .status-approved {

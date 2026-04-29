@@ -177,8 +177,8 @@
         }
 
         .status-pending {
-            background: #fef3c7;
-            color: #d97706;
+            background: #dbeafe;
+            color: #2563eb;
         }
 
         .status-approved {
@@ -214,9 +214,9 @@
         }
 
         .alert-warning {
-            background: #fef3c7;
+            background: #dbeafe;
             border: 1px solid #fde68a;
-            color: #d97706;
+            color: #2563eb;
         }
 
         .empty-state {
@@ -378,8 +378,8 @@
         }
 
         body.dark-mode .status-pending {
-            background: #78350f !important;
-            color: #fbbf24 !important;
+            background: #1e3a8a !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .status-approved {
@@ -405,9 +405,9 @@
         }
 
         body.dark-mode .alert-warning {
-            background: #78350f !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            background: #1e3a8a !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .empty-icon {
@@ -645,7 +645,7 @@
                     } else {
                         document.getElementById('documentsContent').innerHTML = `
                             <div style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #f59e0b;"></i>
+                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #3b82f6;"></i>
                                 <p style="margin-top: 1rem;">No documents found for this landlord.</p>
                             </div>
                         `;

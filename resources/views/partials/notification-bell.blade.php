@@ -9,7 +9,7 @@
 .notification-dropdown.show{display:block}
 .notification-dropdown .notif-header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid #f1f5f9}
 .notification-dropdown .notif-header h6{margin:0;font-size:.875rem;font-weight:600;color:#1e293b}
-.notification-dropdown .notif-header a{font-size:.75rem;color:#f97316;text-decoration:none}
+.notification-dropdown .notif-header a{font-size:.75rem;color:#3b82f6;text-decoration:none}
 .notification-dropdown .notif-header a:hover{text-decoration:underline}
 .notification-dropdown .notif-list{max-height:360px;overflow-y:auto}
 .notification-dropdown .notif-item{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid #f8fafc;transition:background .15s;text-decoration:none;color:inherit}
@@ -17,7 +17,7 @@
 .notification-dropdown .notif-item.unread{background:#eff6ff}
 .notification-dropdown .notif-item.unread:hover{background:#dbeafe}
 .notification-dropdown .notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.875rem;flex-shrink:0}
-.notification-dropdown .notif-icon.maintenance{background:#fef3c7;color:#d97706}
+.notification-dropdown .notif-icon.maintenance{background:#dbeafe;color:#2563eb}
 .notification-dropdown .notif-icon.billing{background:#d1fae5;color:#059669}
 .notification-dropdown .notif-icon.announcement{background:#dbeafe;color:#2563eb}
 .notification-dropdown .notif-icon.general{background:#f1f5f9;color:#64748b}
@@ -26,7 +26,7 @@
 .notification-dropdown .notif-body .notif-time{font-size:.7rem;color:#94a3b8;margin-top:2px}
 .notification-dropdown .notif-empty{text-align:center;padding:2rem 1rem;color:#94a3b8;font-size:.85rem}
 .notification-dropdown .notif-footer{padding:.5rem;text-align:center;border-top:1px solid #f1f5f9}
-.notification-dropdown .notif-footer a{font-size:.8rem;color:#f97316;text-decoration:none;font-weight:500}
+.notification-dropdown .notif-footer a{font-size:.8rem;color:#3b82f6;text-decoration:none;font-weight:500}
 
 body.dark-mode .notification-bell .bell-btn{color:#94a3b8}
 body.dark-mode .notification-bell .bell-btn:hover{background:#334155;color:#e2e8f0}

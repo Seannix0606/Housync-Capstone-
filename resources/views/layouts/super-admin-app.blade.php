@@ -206,8 +206,8 @@
         }
         
         body.dark-mode .status-pending {
-            background: #78350f;
-            color: #fbbf24;
+            background: #1e3a8a;
+            color: #93c5fd;
         }
         
         body.dark-mode .status-approved {
@@ -361,24 +361,24 @@
         body.dark-mode tr.table-warning,
         body.dark-mode tr.table-warning td {
             background: #422006 !important;
-            color: #fbbf24 !important;
+            color: #93c5fd !important;
         }
 
-        body.dark-mode [style*="background: #fef3c7"],
-        body.dark-mode [style*="background:#fef3c7"] {
+        body.dark-mode [style*="background: #dbeafe"],
+        body.dark-mode [style*="background:#dbeafe"] {
             background: #422006 !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
-        body.dark-mode [style*="color: #92400e"],
-        body.dark-mode [style*="color:#92400e"],
-        body.dark-mode [style*="color: #d97706"],
-        body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+        body.dark-mode [style*="color: #1e40af"],
+        body.dark-mode [style*="color:#1e40af"],
+        body.dark-mode [style*="color: #2563eb"],
+        body.dark-mode [style*="color:#2563eb"] { color: #93c5fd !important; }
 
         body.dark-mode #loadingModal > div { background: #1e293b !important; }
         body.dark-mode #loadingModal .spinner {
             border-color: #334155;
-            border-top-color: #f97316;
+            border-top-color: #3b82f6;
         }
 
         body.dark-mode .btn-outline {

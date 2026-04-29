@@ -161,8 +161,8 @@
 }
 
 .type-badge.type-maintenance {
-    background: #fffbeb;
-    color: #d97706;
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .type-badge.type-event {
@@ -190,8 +190,8 @@
 }
 
 .priority-badge.priority-high {
-    background: #fffbeb;
-    color: #d97706;
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .priority-badge.priority-normal {

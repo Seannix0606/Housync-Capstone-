@@ -87,29 +87,29 @@
 }
 
 .btn-primary {
-    background: #f97316; /* Orange color */
+    background: #3b82f6; /* Primary accent */
     color: white;
-    border: 1px solid #f97316;
+    border: 1px solid #3b82f6;
 }
 
 .btn-primary:hover {
-    background: #ea580c; /* Darker orange on hover */
-    border-color: #ea580c;
+    background: #2563eb; /* Darker on hover */
+    border-color: #2563eb;
 }
 
 /* Prevent button from staying blue after clicking */
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active {
-    background: #f97316 !important; /* Keep orange color */
-    border-color: #f97316 !important;
-    box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25) !important;
+    background: #3b82f6 !important; /* Primary accent */
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
 }
 
 .btn-primary:focus:hover,
 .btn-primary:active:hover {
-    background: #ea580c !important; /* Darker orange on hover even when focused/active */
-    border-color: #ea580c !important;
+    background: #2563eb !important; /* Darker on hover when focused/active */
+    border-color: #2563eb !important;
 }
 
 /* Financial Summary */
@@ -156,7 +156,7 @@
 }
 
 .summary-card.pending::before {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .summary-card:hover {
@@ -188,7 +188,7 @@
 }
 
 .pending .summary-icon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .summary-info h3 {
@@ -224,8 +224,8 @@
 }
 
 .summary-change.neutral {
-    background: #fef3c7;
-    color: #d97706;
+    background: #dbeafe;
+    color: #2563eb;
 }
 
 /* Main Billing Area */
@@ -352,8 +352,8 @@
 }
 
 .status.pending {
-    background: #fef3c7;
-    color: #d97706;
+    background: #dbeafe;
+    color: #2563eb;
 }
 
 .status.overdue {
@@ -693,8 +693,8 @@ body.dark-mode .status.paid {
 }
 
 body.dark-mode .status.pending {
-    background: #78350f;
-    color: #fbbf24;
+    background: #1e3a8a;
+    color: #93c5fd;
 }
 
 body.dark-mode .status.overdue {
@@ -708,8 +708,8 @@ body.dark-mode .status.unpaid {
 }
 
 body.dark-mode .status.partially_paid {
-    background: #78350f;
-    color: #fbbf24;
+    background: #1e3a8a;
+    color: #93c5fd;
 }
 
 body.dark-mode .action-btn {

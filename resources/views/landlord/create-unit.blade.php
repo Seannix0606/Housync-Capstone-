@@ -41,7 +41,7 @@
         }
 
         .breadcrumb a {
-            color: #ea580c;
+            color: #2563eb;
             text-decoration: none;
         }
 
@@ -105,7 +105,7 @@
 
         .form-control:focus {
             outline: none;
-            border-color: #ea580c;
+            border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
         }
 
@@ -128,7 +128,7 @@
         .checkbox-group input[type="checkbox"] {
             width: 1.25rem;
             height: 1.25rem;
-            accent-color: #ea580c;
+            accent-color: #2563eb;
         }
 
         .checkbox-group label {
@@ -152,7 +152,7 @@
         .amenity-item input[type="checkbox"] {
             width: 1rem;
             height: 1rem;
-            accent-color: #ea580c;
+            accent-color: #2563eb;
         }
 
         /* Buttons */
@@ -171,7 +171,7 @@
         }
 
         .btn-primary {
-            background-color: #ea580c;
+            background-color: #2563eb;
             color: white;
         }
 
@@ -194,12 +194,12 @@
 
         .btn-outline {
             background-color: transparent;
-            color: #ea580c;
-            border: 1px solid #ea580c;
+            color: #2563eb;
+            border: 1px solid #2563eb;
         }
 
         .btn-outline:hover {
-            background-color: #ea580c;
+            background-color: #2563eb;
             color: white;
             text-decoration: none;
         }

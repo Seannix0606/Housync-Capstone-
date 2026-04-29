@@ -388,14 +388,14 @@
         .password-section {
             margin: 30px 0;
             padding: 20px;
-            background-color: #fffbeb;
+            background-color: #eff6ff;
             border-radius: 8px;
-            border: 1px solid #fbbf24;
+            border: 1px solid #93c5fd;
         }
         
         .password-section h3 {
             margin-bottom: 5px;
-            color: #92400e;
+            color: #1e40af;
         }
         
         .landlord-info,
@@ -516,7 +516,7 @@
         }
         
         .badge-pending {
-            background-color: #f59e0b;
+            background-color: #3b82f6;
             color: white;
         }
         
@@ -613,12 +613,12 @@
         }
 
         body.dark-mode .password-section {
-            background-color: #78350f !important;
-            border-color: #92400e !important;
+            background-color: #1e3a8a !important;
+            border-color: #1e40af !important;
         }
 
         body.dark-mode .password-section h3 {
-            color: #fbbf24 !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .landlord-info,

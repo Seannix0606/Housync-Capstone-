@@ -6,13 +6,13 @@
 body.saas-dashboard {
   --saas-blue: #2563eb;
   --saas-blue-soft: #eff6ff;
-  --saas-orange: #fb923c;
-  --saas-orange-soft: #fff7ed;
+  --saas-orange: #3b82f6;
+  --saas-orange-soft: #eff6ff;
   --saas-page: #eef1f7;
   --saas-card-border: #e8ecf4;
   --saas-text: #1e293b;
   --saas-muted: #64748b;
-  --saas-sidebar-active: #fff1eb;
+  --saas-sidebar-active: #eff6ff;
 }
 
 /* ----- Light mode: page & main ----- */
@@ -269,7 +269,7 @@ body.saas-dashboard:not(.dark-mode) .main-content .stat-card-feature .saas-stat-
 
 .saas-stat-icon-orange {
   background: var(--saas-orange-soft);
-  color: #ea580c;
+  color: #3b82f6;
 }
 
 .saas-stat-icon-green {
@@ -571,7 +571,7 @@ body.saas-dashboard.dark-mode .saas-logo-mark {
 body.saas-dashboard.dark-mode .saas-icon-btn.dark-mode-toggle {
   background: #0f172a;
   border-color: #334155;
-  color: #fbbf24;
+  color: #93c5fd;
 }
 
 body.saas-dashboard.dark-mode .main-content .saas-stat-card::before {

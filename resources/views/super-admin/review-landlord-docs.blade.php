@@ -7,7 +7,7 @@
         .documents-section th, .documents-section td { border: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; }
         .documents-section th { background: #f8fafc; color: #64748b; font-weight: 600; font-size: 0.875rem; }
         .documents-section .status { font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; }
-        .documents-section .pending { background: #fef3c7; color: #d97706; }
+        .documents-section .pending { background: #dbeafe; color: #2563eb; }
         .documents-section .verified { background: #d1fae5; color: #059669; }
         .documents-section .rejected { background: #fee2e2; color: #dc2626; }
         .documents-section .btn { padding: 0.375rem 0.75rem; border: none; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500; cursor: pointer; margin-right: 0.5rem; }
@@ -25,7 +25,7 @@
         body.dark-mode .documents-section p { color: #94a3b8 !important; }
         body.dark-mode .documents-section th { background: #0f172a !important; color: #94a3b8 !important; border-color: #334155 !important; }
         body.dark-mode .documents-section td { border-color: #334155 !important; color: #e2e8f0 !important; }
-        body.dark-mode .documents-section .pending { background: #78350f !important; color: #fbbf24 !important; }
+        body.dark-mode .documents-section .pending { background: #1e3a8a !important; color: #93c5fd !important; }
         body.dark-mode .documents-section .verified { background: #064e3b !important; color: #6ee7b7 !important; }
         body.dark-mode .documents-section .rejected { background: #7f1d1d !important; color: #fca5a5 !important; }
         body.dark-mode .documents-section input[type="text"] { background: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }

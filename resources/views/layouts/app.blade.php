@@ -202,7 +202,7 @@
         .main-content .btn-primary:hover { background: #818cf8; color: #fff; }
         .main-content .status-badge.status-available { background: #d1fae5; color: #059669; }
         .main-content .status-badge.status-occupied { background: #dbeafe; color: #2563eb; }
-        .main-content .status-badge.status-maintenance { background: #fef3c7; color: #d97706; }
+        .main-content .status-badge.status-maintenance { background: #dbeafe; color: #2563eb; }
         @media (max-width: 1200px) { .main-content .content-grid { grid-template-columns: 1fr; } }
         @media (max-width: 900px) { aside.sidebar { position: fixed; left: 0; height: 100vh; z-index: 1040; } .main-content { padding: 1.5rem .5rem .5rem 1rem; } }
         @media (max-width: 600px) { .main-content { padding: .6rem .2rem; } .main-content .stats-grid { grid-template-columns: 1fr; } }
@@ -377,9 +377,9 @@
         }
 
         body.dark-mode .alert-warning {
-            background: #78350f !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            background: #1e3a8a !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .alert-info {
@@ -399,8 +399,8 @@
         }
 
         body.dark-mode .status-badge.status-maintenance {
-            background: #78350f !important;
-            color: #fbbf24 !important;
+            background: #1e3a8a !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .modal-content {
@@ -454,12 +454,12 @@
 
         body.dark-mode .dark-mode-toggle {
             border-color: #475569;
-            color: #fbbf24;
+            color: #93c5fd;
         }
 
         body.dark-mode .dark-mode-toggle:hover {
             background: #334155;
-            color: #fbbf24;
+            color: #93c5fd;
         }
 
         /* ========== Chat / Messages Dark Mode ========== */
@@ -612,25 +612,25 @@
         body.dark-mode tr.table-warning,
         body.dark-mode tr.table-warning td {
             background: #422006 !important;
-            color: #fbbf24 !important;
+            color: #93c5fd !important;
         }
 
-        body.dark-mode [style*="background: #fef3c7"],
-        body.dark-mode [style*="background:#fef3c7"] {
+        body.dark-mode [style*="background: #dbeafe"],
+        body.dark-mode [style*="background:#dbeafe"] {
             background: #422006 !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
 
-        body.dark-mode [style*="color: #92400e"],
-        body.dark-mode [style*="color:#92400e"],
-        body.dark-mode [style*="color: #d97706"],
-        body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+        body.dark-mode [style*="color: #1e40af"],
+        body.dark-mode [style*="color:#1e40af"],
+        body.dark-mode [style*="color: #2563eb"],
+        body.dark-mode [style*="color:#2563eb"] { color: #93c5fd !important; }
 
         body.dark-mode #loadingModal > div { background: #1e293b !important; }
         body.dark-mode #loadingModal .spinner {
             border-color: #334155;
-            border-top-color: #f97316;
+            border-top-color: #3b82f6;
         }
 
         body.dark-mode .btn-outline {

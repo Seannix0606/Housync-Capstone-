@@ -116,8 +116,8 @@
 }
 
 .pagination .active span {
-    background: #f97316;
-    border-color: #f97316;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: white;
 }
 
@@ -157,8 +157,8 @@ body.dark-mode .pagination a:hover {
 }
 
 body.dark-mode .pagination .active span {
-    background: #f97316;
-    border-color: #f97316;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: white;
 }
 
@@ -282,7 +282,7 @@ body.dark-mode .badge[style*="background: #e0e7ff"] {
                         </div>
                         <div class="list-column text-center">
                             <div class="occupancy-bar" style="width: 100%; max-width: 80px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative;">
-                                <div style="position: absolute; left: 0; top: 0; height: 100%; background: {{ $occupancyRate >= 80 ? '#22c55e' : ($occupancyRate >= 50 ? '#f59e0b' : '#ef4444') }}; width: {{ $occupancyRate }}%;"></div>
+                                <div style="position: absolute; left: 0; top: 0; height: 100%; background: {{ $occupancyRate >= 80 ? '#22c55e' : ($occupancyRate >= 50 ? '#3b82f6' : '#ef4444') }}; width: {{ $occupancyRate }}%;"></div>
                             </div>
                             <span style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; display: block;">{{ $occupancyRate }}%</span>
                         </div>

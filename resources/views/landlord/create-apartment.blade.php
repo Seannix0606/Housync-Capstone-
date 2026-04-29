@@ -37,7 +37,7 @@
     }
 
     .progress-step.active i {
-        background: #f97316;
+        background: #3b82f6;
         color: white;
     }
 
@@ -48,7 +48,7 @@
     }
 
     .progress-step.active span {
-        color: #f97316;
+        color: #3b82f6;
         font-weight: 600;
     }
 
@@ -84,7 +84,7 @@
     }
 
     .form-section-title i {
-        color: #f97316;
+        color: #3b82f6;
     }
 
     .form-grid {
@@ -124,8 +124,8 @@
 
     .form-control:focus {
         outline: none;
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .form-control.error {
@@ -187,8 +187,8 @@
     }
 
     .amenity-item:hover {
-        border-color: #f97316;
-        background: #fff7ed;
+        border-color: #3b82f6;
+        background: #eff6ff;
     }
 
     .amenity-item input[type="checkbox"] {
@@ -198,7 +198,7 @@
     }
 
     .amenity-item input[type="checkbox"]:checked + label {
-        color: #f97316;
+        color: #3b82f6;
         font-weight: 600;
     }
 
@@ -212,7 +212,7 @@
     }
 
     .amenity-item i {
-        color: #f97316;
+        color: #3b82f6;
     }
 
     /* Form Actions */

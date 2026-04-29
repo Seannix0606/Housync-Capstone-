@@ -108,8 +108,8 @@
 }
 
 .type-badge.type-maintenance {
-    background: #fffbeb;
-    color: #d97706;
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .type-badge.type-event {
@@ -137,8 +137,8 @@
 }
 
 .priority-badge.priority-high {
-    background: #fffbeb;
-    color: #d97706;
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .priority-badge.priority-normal {
@@ -194,10 +194,10 @@
 
 .detail-footer {
     padding: 1rem 2rem;
-    background: #fffbeb;
-    color: #92400e;
+    background: #eff6ff;
+    color: #1e40af;
     font-size: 0.88rem;
-    border-top: 1px solid #fef3c7;
+    border-top: 1px solid #dbeafe;
 }
 
 .detail-footer i {

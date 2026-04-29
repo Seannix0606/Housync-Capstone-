@@ -170,9 +170,9 @@
         }
 
         body.dark-mode .alert-warning {
-            background: #78350f !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            background: #1e3a8a !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
 
         body.dark-mode .alert-info {
@@ -236,12 +236,12 @@
 
         body.dark-mode .dark-mode-toggle {
             border-color: #475569;
-            color: #fbbf24;
+            color: #93c5fd;
         }
 
         body.dark-mode .dark-mode-toggle:hover {
             background: #334155;
-            color: #fbbf24;
+            color: #93c5fd;
         }
 
         /* ========== Chat / Messages Dark Mode ========== */
@@ -345,25 +345,25 @@
         body.dark-mode tr.table-warning,
         body.dark-mode tr.table-warning td {
             background: #422006 !important;
-            color: #fbbf24 !important;
+            color: #93c5fd !important;
         }
 
-        body.dark-mode [style*="background: #fef3c7"],
-        body.dark-mode [style*="background:#fef3c7"] {
+        body.dark-mode [style*="background: #dbeafe"],
+        body.dark-mode [style*="background:#dbeafe"] {
             background: #422006 !important;
-            border-color: #92400e !important;
-            color: #fbbf24 !important;
+            border-color: #1e40af !important;
+            color: #93c5fd !important;
         }
 
-        body.dark-mode [style*="color: #92400e"],
-        body.dark-mode [style*="color:#92400e"],
-        body.dark-mode [style*="color: #d97706"],
-        body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+        body.dark-mode [style*="color: #1e40af"],
+        body.dark-mode [style*="color:#1e40af"],
+        body.dark-mode [style*="color: #2563eb"],
+        body.dark-mode [style*="color:#2563eb"] { color: #93c5fd !important; }
 
         body.dark-mode #loadingModal > div { background: #1e293b !important; }
         body.dark-mode #loadingModal .spinner {
             border-color: #334155;
-            border-top-color: #f97316;
+            border-top-color: #3b82f6;
         }
 
         body.dark-mode .btn-outline {

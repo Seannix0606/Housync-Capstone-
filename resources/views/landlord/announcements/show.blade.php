@@ -65,7 +65,7 @@
                                     <span class="badge bg-secondary"><i class="fas fa-file-alt me-1"></i>Draft</span>
                                 @endif
                                 @if($announcement->is_pinned)
-                                    <span class="badge" style="background: #fff7ed; color: #ea580c;"><i class="fas fa-thumbtack me-1"></i>Pinned</span>
+                                    <span class="badge" style="background: #eff6ff; color: #2563eb;"><i class="fas fa-thumbtack me-1"></i>Pinned</span>
                                 @endif
                             </div>
                         </div>
@@ -101,7 +101,7 @@
         <div class="col-xl-4">
             <div class="card" style="border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-cogs me-2" style="color: #f97316;"></i>Actions</h5>
+                    <h5 class="card-title"><i class="fas fa-cogs me-2" style="color: #3b82f6;"></i>Actions</h5>
 
                     <div class="d-grid gap-2">
                         @if(!$announcement->is_published)

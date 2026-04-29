@@ -42,7 +42,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #f97316, #ea580c);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -107,8 +107,8 @@
         }
 
         .property-card:hover {
-            border-color: #f97316;
-            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
             transform: translateY(-2px);
         }
 
@@ -150,7 +150,7 @@
         .info-item i {
             width: 16px;
             margin-right: 0.5rem;
-            color: #f97316;
+            color: #3b82f6;
         }
 
         .property-stats {
@@ -184,7 +184,7 @@
         .select-btn {
             width: 100%;
             padding: 0.75rem;
-            background: #f97316;
+            background: #3b82f6;
             color: white;
             border: none;
             border-radius: 0.5rem;
@@ -199,7 +199,7 @@
         }
 
         .select-btn:hover {
-            background: #ea580c;
+            background: #2563eb;
             color: white;
             text-decoration: none;
         }
@@ -233,7 +233,7 @@
             align-items: center;
             gap: 0.5rem;
             padding: 0.75rem 1.5rem;
-            background: #f97316;
+            background: #3b82f6;
             color: white;
             text-decoration: none;
             border-radius: 0.5rem;
@@ -242,7 +242,7 @@
         }
 
         .btn:hover {
-            background: #ea580c;
+            background: #2563eb;
             color: white;
             text-decoration: none;
         }

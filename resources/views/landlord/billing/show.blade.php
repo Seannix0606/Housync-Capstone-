@@ -33,7 +33,7 @@
         }
         .bill-status.paid { background: #d1fae5; color: #065f46; }
         .bill-status.unpaid { background: #fee2e2; color: #991b1b; }
-        .bill-status.partially_paid { background: #fef3c7; color: #92400e; }
+        .bill-status.partially_paid { background: #dbeafe; color: #1e40af; }
         .bill-status.overdue { background: #fecaca; color: #7f1d1d; }
         .info-grid {
             display: grid;
@@ -110,7 +110,7 @@
 
         body.dark-mode .bill-status.paid { background: #064e3b; color: #6ee7b7; }
         body.dark-mode .bill-status.unpaid { background: #7f1d1d; color: #fca5a5; }
-        body.dark-mode .bill-status.partially_paid { background: #78350f; color: #fbbf24; }
+        body.dark-mode .bill-status.partially_paid { background: #1e3a8a; color: #93c5fd; }
         body.dark-mode .bill-status.overdue { background: #450a0a; color: #fca5a5; }
 
         body.dark-mode .info-item label {

@@ -39,7 +39,7 @@
     }
     
     .unread-badge {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         font-size: 0.75rem;
         padding: 2px 8px;
@@ -50,7 +50,7 @@
     .new-chat-btn {
         width: 100%;
         padding: 10px 16px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border: none;
         border-radius: 10px;
@@ -65,7 +65,7 @@
     
     .new-chat-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
     
     .conversation-list {
@@ -93,19 +93,19 @@
     
     .conversation-item.active {
         background: #fff;
-        box-shadow: 0 2px 12px rgba(249, 115, 22, 0.15);
-        border-left: 3px solid #f97316;
+        box-shadow: 0 2px 12px rgba(59, 130, 246, 0.15);
+        border-left: 3px solid #3b82f6;
     }
     
     .conversation-item.unread {
-        background: #fff7ed;
+        background: #eff6ff;
     }
     
     .conversation-avatar {
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: #fff;
         display: flex;
         align-items: center;
@@ -153,7 +153,7 @@
     }
     
     .unread-count {
-        background: #f97316;
+        background: #3b82f6;
         color: #fff;
         font-size: 0.7rem;
         padding: 2px 7px;
@@ -170,7 +170,7 @@
     }
     
     .priority-urgent { background: #fee2e2; color: #dc2626; }
-    .priority-high { background: #fef3c7; color: #d97706; }
+    .priority-high { background: #dbeafe; color: #2563eb; }
     .priority-normal { background: #dbeafe; color: #2563eb; }
     .priority-low { background: #d1fae5; color: #059669; }
     
@@ -190,7 +190,7 @@
         width: 120px;
         height: 120px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -300,15 +300,15 @@
     }
     
     .tenant-item:hover {
-        border-color: #f97316;
-        background: #fff7ed;
+        border-color: #3b82f6;
+        background: #eff6ff;
     }
     
     .tenant-item .avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         display: flex;
         align-items: center;
@@ -341,7 +341,7 @@
 
 @section('content')
 <div class="content-header">
-    <h1><i class="fas fa-comments" style="color: #f97316; margin-right: 10px;"></i>Messages</h1>
+    <h1><i class="fas fa-comments" style="color: #3b82f6; margin-right: 10px;"></i>Messages</h1>
 </div>
 
 <div class="chat-container">

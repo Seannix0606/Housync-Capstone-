@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="content-header">
-    <h1><i class="fas fa-comments" style="color: #f97316; margin-right: 10px;"></i>Messages</h1>
+    <h1><i class="fas fa-comments" style="color: #3b82f6; margin-right: 10px;"></i>Messages</h1>
 </div>
 
 <div style="background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
@@ -14,10 +14,10 @@
             $unread = $conversation->getUnreadCountFor(auth()->id());
         @endphp
         <a href="{{ route('staff.chat.show', $conversation->id) }}" 
-           style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; text-decoration: none; transition: background 0.2s; {{ $unread > 0 ? 'background: #fff7ed;' : '' }}"
+           style="display: flex; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; text-decoration: none; transition: background 0.2s; {{ $unread > 0 ? 'background: #eff6ff;' : '' }}"
            onmouseover="this.style.background='#f8fafc'" 
-           onmouseout="this.style.background='{{ $unread > 0 ? '#fff7ed' : '#fff' }}'">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;">
+           onmouseout="this.style.background='{{ $unread > 0 ? '#eff6ff' : '#fff' }}'">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;">
                 {{ $other ? strtoupper(substr($other->name, 0, 1)) : '?' }}
             </div>
             <div style="flex: 1; min-width: 0;">
@@ -40,13 +40,13 @@
                     {{ $conversation->last_message_at?->diffForHumans(null, true) ?? 'New' }}
                 </div>
                 @if($unread > 0)
-                    <span style="background: #f97316; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 999px; font-weight: 600;">{{ $unread }}</span>
+                    <span style="background: #3b82f6; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 999px; font-weight: 600;">{{ $unread }}</span>
                 @endif
             </div>
         </a>
     @empty
         <div style="padding: 60px 40px; text-align: center;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                 <i class="fas fa-comments" style="font-size: 32px; color: #fff;"></i>
             </div>
             <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">No messages yet</h3>

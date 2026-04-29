@@ -10,7 +10,7 @@
     .stat-box .stat-num{font-size:1.75rem;font-weight:700;color:#1e293b}
     .stat-box .stat-lbl{font-size:.8rem;color:#64748b;margin-top:2px}
     .stat-box.green .stat-num{color:#059669}
-    .stat-box.orange .stat-num{color:#f97316}
+    .stat-box.orange .stat-num{color:#3b82f6}
     .stat-box.red .stat-num{color:#ef4444}
     .stat-box.blue .stat-num{color:#2563eb}
     .stat-box.purple .stat-num{color:#7c3aed}
@@ -25,7 +25,7 @@
     .filter-bar select{padding:.45rem .8rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;color:#334155;background:#fff}
     .badge-pill{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.72rem;font-weight:600}
     .badge-success{background:#d1fae5;color:#059669}
-    .badge-warning{background:#fef3c7;color:#d97706}
+    .badge-warning{background:#dbeafe;color:#2563eb}
     .badge-danger{background:#fee2e2;color:#ef4444}
     .badge-info{background:#dbeafe;color:#2563eb}
     .section-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
@@ -41,7 +41,7 @@
     body.dark-mode .stat-box{background:#0f172a!important;border-color:#334155!important}
     body.dark-mode .stat-box .stat-num{color:#f1f5f9}
     body.dark-mode .stat-box.green .stat-num{color:#34d399!important}
-    body.dark-mode .stat-box.orange .stat-num{color:#fb923c!important}
+    body.dark-mode .stat-box.orange .stat-num{color:#3b82f6!important}
     body.dark-mode .stat-box.red .stat-num{color:#f87171!important}
     body.dark-mode .stat-box.blue .stat-num{color:#60a5fa!important}
     body.dark-mode .stat-box.purple .stat-num{color:#c084fc!important}
@@ -56,7 +56,7 @@
     body.dark-mode .report-divider-row .text-label{color:#94a3b8!important}
     body.dark-mode .report-divider-row .text-value{color:#f1f5f9!important}
     body.dark-mode .badge-pill.badge-success{background:rgba(16,185,129,.2);color:#6ee7b7}
-    body.dark-mode .badge-pill.badge-warning{background:rgba(245,158,11,.2);color:#fbbf24}
+    body.dark-mode .badge-pill.badge-warning{background:rgba(59,130,246,.2);color:#93c5fd}
     body.dark-mode .badge-pill.badge-danger{background:rgba(239,68,68,.2);color:#fca5a5}
     body.dark-mode .badge-pill.badge-info{background:rgba(59,130,246,.2);color:#93c5fd}
     body.dark-mode .badge-neutral{background:#334155!important;color:#e2e8f0!important}
@@ -65,7 +65,7 @@
 </style>
 
 <div class="content-header">
-    <h1><i class="fas fa-chart-bar" style="color:#f97316"></i> Reports & Analytics</h1>
+    <h1><i class="fas fa-chart-bar" style="color:#3b82f6"></i> Reports & Analytics</h1>
     <a href="{{ route('landlord.reports.export-financial', ['year' => $year]) }}" class="btn btn-primary">
         <i class="fas fa-download"></i> Export CSV
     </a>
@@ -114,7 +114,7 @@
             <div class="stat-num">{{ $financial['collection_rate'] }}%</div>
             <div class="stat-lbl">Collection Rate</div>
             <div class="progress-bar-custom">
-                <div class="progress-bar-fill" style="width:{{ $financial['collection_rate'] }}%;background:{{ $financial['collection_rate'] >= 80 ? '#059669' : ($financial['collection_rate'] >= 50 ? '#f97316' : '#ef4444') }}"></div>
+                <div class="progress-bar-fill" style="width:{{ $financial['collection_rate'] }}%;background:{{ $financial['collection_rate'] >= 80 ? '#059669' : ($financial['collection_rate'] >= 50 ? '#3b82f6' : '#ef4444') }}"></div>
             </div>
         </div>
     </div>
@@ -146,7 +146,7 @@
 
     {{-- MAINTENANCE SUMMARY --}}
     <div class="report-card">
-        <h3><i class="fas fa-wrench" style="color:#d97706"></i> Maintenance Summary</h3>
+        <h3><i class="fas fa-wrench" style="color:#2563eb"></i> Maintenance Summary</h3>
         <div class="stat-grid">
             <div class="stat-box">
                 <div class="stat-num">{{ $maintenance['total'] }}</div>
@@ -164,7 +164,7 @@
                 <span class="badge-pill badge-neutral">Avg Resolution: {{ $maintenance['avg_resolution_days'] }} days</span>
             @endif
             @if($maintenance['avg_rating'])
-                <span class="badge-pill" style="background:#fef3c7;color:#92400e"><i class="fas fa-star"></i> {{ $maintenance['avg_rating'] }}/5</span>
+                <span class="badge-pill" style="background:#dbeafe;color:#1e40af"><i class="fas fa-star"></i> {{ $maintenance['avg_rating'] }}/5</span>
             @endif
         </div>
     </div>
@@ -193,7 +193,7 @@
                         @php $rate = $entry['billed'] > 0 ? round(($entry['collected'] / $entry['billed']) * 100) : 0; @endphp
                         <div style="display:flex;align-items:center;gap:.5rem">
                             <div class="progress-bar-custom" style="flex:1;min-width:60px">
-                                <div class="progress-bar-fill" style="width:{{ $rate }}%;background:{{ $rate >= 80 ? '#059669' : ($rate >= 50 ? '#f97316' : '#ef4444') }}"></div>
+                                <div class="progress-bar-fill" style="width:{{ $rate }}%;background:{{ $rate >= 80 ? '#059669' : ($rate >= 50 ? '#3b82f6' : '#ef4444') }}"></div>
                             </div>
                             <span style="font-size:.8rem;font-weight:500">{{ $rate }}%</span>
                         </div>
@@ -208,7 +208,7 @@
 {{-- PROPERTY PERFORMANCE --}}
 @if(count($propertyPerformance) > 0)
 <div class="report-card">
-    <h3><i class="fas fa-building" style="color:#f97316"></i> Property Performance</h3>
+    <h3><i class="fas fa-building" style="color:#3b82f6"></i> Property Performance</h3>
     <div style="overflow-x:auto">
         <table class="table-report">
             <thead>
@@ -282,7 +282,7 @@
 @if(!empty($maintenance['by_category']))
 <div class="section-grid">
     <div class="report-card">
-        <h3><i class="fas fa-tags" style="color:#d97706"></i> Maintenance by Category</h3>
+        <h3><i class="fas fa-tags" style="color:#2563eb"></i> Maintenance by Category</h3>
         @foreach($maintenance['by_category'] as $category => $count)
         <div class="report-divider-row">
             <span class="text-label">{{ $category }}</span>
@@ -296,7 +296,7 @@
         @php
             $pColor = match($priority) {
                 'urgent' => '#ef4444',
-                'high' => '#f97316',
+                'high' => '#3b82f6',
                 'medium' => '#eab308',
                 'low' => '#22c55e',
                 default => '#64748b',

@@ -17,7 +17,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .bill-card.unpaid { border-left-color: #ef4444; }
-        .bill-card.partially_paid { border-left-color: #f59e0b; }
+        .bill-card.partially_paid { border-left-color: #3b82f6; }
         .bill-card.paid { border-left-color: #10b981; }
         .bill-card.overdue { border-left-color: #dc2626; }
         .bill-header {
@@ -38,7 +38,7 @@
         }
         .bill-status.paid { background: #d1fae5; color: #065f46; }
         .bill-status.unpaid { background: #fee2e2; color: #991b1b; }
-        .bill-status.partially_paid { background: #fef3c7; color: #92400e; }
+        .bill-status.partially_paid { background: #dbeafe; color: #1e40af; }
         .bill-status.overdue { background: #fecaca; color: #7f1d1d; }
         .bill-details {
             display: flex;

@@ -42,7 +42,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #f97316, #ea580c);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -103,7 +103,7 @@
             padding: 1.5rem;
             background: #f8fafc;
             border-radius: 0.75rem;
-            border-left: 4px solid #f97316;
+            border-left: 4px solid #3b82f6;
         }
 
         .form-section-title {
@@ -117,7 +117,7 @@
         }
 
         .form-section-title i {
-            color: #f97316;
+            color: #3b82f6;
         }
 
         .form-grid {
@@ -158,8 +158,8 @@
 
         .form-control:focus {
             outline: none;
-            border-color: #f97316;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .form-control.error {
@@ -212,14 +212,14 @@
         }
 
         .amenity-item:hover {
-            border-color: #f97316;
+            border-color: #3b82f6;
             background: #fef7ed;
         }
 
         .amenity-item input[type="checkbox"] {
             width: 1rem;
             height: 1rem;
-            accent-color: #f97316;
+            accent-color: #3b82f6;
         }
 
         .amenity-item label {
@@ -232,7 +232,7 @@
         }
 
         .amenity-item i {
-            color: #f97316;
+            color: #3b82f6;
             width: 16px;
         }
 
@@ -252,12 +252,12 @@
         }
 
         .btn-primary {
-            background: #f97316;
+            background: #3b82f6;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #ea580c;
+            background: #2563eb;
             color: white;
         }
 
@@ -281,12 +281,12 @@
 
         .btn-outline-primary {
             background: transparent;
-            border: 2px solid #f97316;
-            color: #f97316;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
         }
 
         .btn-outline-primary:hover {
-            background: #f97316;
+            background: #3b82f6;
             color: white;
         }
 
@@ -379,7 +379,7 @@
         }
 
         .preview-item i {
-            color: #f97316;
+            color: #3b82f6;
             width: 16px;
         }
 

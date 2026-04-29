@@ -59,7 +59,7 @@
 
     .stat-card.primary { border-left-color: #3b82f6; }
     .stat-card.success { border-left-color: #10b981; }
-    .stat-card.warning { border-left-color: #f59e0b; }
+    .stat-card.warning { border-left-color: #3b82f6; }
     .stat-card.danger { border-left-color: #ef4444; }
     .stat-card.purple { border-left-color: #8b5cf6; }
     .stat-card.teal { border-left-color: #14b8a6; }
@@ -91,7 +91,7 @@
 
     .stat-card.primary .stat-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
     .stat-card.success .stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
-    .stat-card.warning .stat-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .stat-card.warning .stat-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
     .stat-card.danger .stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .stat-card.purple .stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
     .stat-card.teal .stat-icon { background: linear-gradient(135deg, #14b8a6, #0d9488); }
@@ -232,8 +232,8 @@
     }
 
     .status-pending {
-        background: #fef3c7;
-        color: #d97706;
+        background: #dbeafe;
+        color: #2563eb;
     }
 
     .status-approved {
@@ -343,8 +343,8 @@
     }
 
     body.dark-mode .status-pending {
-        background: #78350f !important;
-        color: #fbbf24 !important;
+        background: #1e3a8a !important;
+        color: #93c5fd !important;
     }
 
     body.dark-mode .status-approved {

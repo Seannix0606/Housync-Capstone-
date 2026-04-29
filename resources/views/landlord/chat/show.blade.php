@@ -70,14 +70,14 @@
     .conversation-item.active {
         background: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        border-left: 3px solid #f97316;
+        border-left: 3px solid #3b82f6;
     }
     
     .conversation-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         display: flex;
         align-items: center;
@@ -132,7 +132,7 @@
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         display: flex;
         align-items: center;
@@ -239,7 +239,7 @@
     }
     
     .message.sent .message-avatar {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
     }
     
     .message-content {
@@ -251,7 +251,7 @@
     }
     
     .message.sent .message-content {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border-radius: 16px;
         border-top-right-radius: 4px;
@@ -356,7 +356,7 @@
     
     .chat-input:focus {
         outline: none;
-        border-color: #f97316;
+        border-color: #3b82f6;
     }
     
     .input-actions {
@@ -388,7 +388,7 @@
     
     .send-btn {
         padding: 14px 24px;
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: #fff;
         border: none;
         border-radius: 12px;
@@ -402,7 +402,7 @@
     
     .send-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
     
     .send-btn:disabled {
