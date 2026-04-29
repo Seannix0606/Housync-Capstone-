@@ -328,6 +328,101 @@
         margin: 0;
     }
 
+    .contact-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .contact-item:hover {
+        border-color: #f97316;
+        background: #fff7ed;
+    }
+
+    .contact-item .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .contact-item .avatar.landlord {
+        background: linear-gradient(135deg, #f97316, #ea580c);
+    }
+
+    .contact-item .avatar.staff {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    }
+
+    .contact-item .avatar.tenant {
+        background: linear-gradient(135deg, #22c55e, #15803d);
+    }
+
+    .contact-item .info h4 {
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    .contact-item .info p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 4px 0 0 0;
+    }
+
+    .suggested-heading {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+    }
+
+    .directory-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .directory-section label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1e293b;
+        font-size: 0.9rem;
+    }
+
+    .directory-search-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+    }
+
+    .directory-search-input:focus {
+        outline: none;
+        border-color: #f97316;
+    }
+
     @media (max-width: 768px) {
         .chat-container {
             height: calc(100vh - 140px);
@@ -413,8 +508,8 @@
         <div class="chat-empty-icon">
             <i class="fas fa-comments"></i>
         </div>
-        <h3>Select a Conversation</h3>
-        <p>Choose a conversation from the list or start a new one to begin messaging.</p>
+        <h3>Select a conversation</h3>
+        <p>Open an existing thread, pick a suggested contact, or search anyone on Housync.</p>
         <button class="new-chat-btn" onclick="openNewChatModal()">
             <i class="fas fa-plus"></i> Start New Conversation
         </button>
@@ -425,15 +520,21 @@
 <div class="modal-overlay" id="newChatModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Start New Conversation</h3>
-            <button class="modal-close" onclick="closeNewChatModal()">&times;</button>
+            <h3>Start new conversation</h3>
+            <button type="button" class="modal-close" onclick="closeNewChatModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <p style="color: #64748b; margin-bottom: 16px;">Select a tenant to message:</p>
-            <div class="tenant-list" id="tenantList">
+            <p style="color: #64748b; margin-bottom: 12px;">Tenants, applicants, staff from your portfolio, or search the full directory.</p>
+            <div class="suggested-heading">Suggested</div>
+            <div class="contact-list" id="contactList">
                 <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-spinner fa-spin"></i> Loading tenants...
+                    <i class="fas fa-spinner fa-spin"></i> Loading contacts…
                 </div>
+            </div>
+            <div class="directory-section">
+                <label for="directorySearch">Search directory (name or email)</label>
+                <input type="search" class="directory-search-input" id="directorySearch" placeholder="Type at least 2 characters…" autocomplete="off">
+                <div class="contact-list" id="directoryResults" style="margin-top: 12px;"></div>
             </div>
         </div>
     </div>
@@ -444,69 +545,108 @@
 <script>
     function openNewChatModal() {
         document.getElementById('newChatModal').classList.add('show');
-        loadTenants();
+        var ds = document.getElementById('directorySearch');
+        if (ds) { ds.value = ''; }
+        var dr = document.getElementById('directoryResults');
+        if (dr) { dr.innerHTML = ''; }
+        loadContacts();
     }
-    
+
     function closeNewChatModal() {
         document.getElementById('newChatModal').classList.remove('show');
     }
-    
-    async function loadTenants() {
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderContactRows(contacts, formAction) {
+        if (!contacts || contacts.length === 0) {
+            return '';
+        }
+        return contacts.map(function (c) {
+            var initial = (c.name || 'U').charAt(0).toUpperCase();
+            var roleClass = c.role === 'staff' ? 'staff' : (c.role === 'tenant' ? 'tenant' : 'landlord');
+            return (
+                '<form action="' + formAction + '" method="POST" style="margin:0;">' +
+                '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
+                '<input type="hidden" name="user_id" value="' + Number(c.id) + '">' +
+                '<button type="submit" class="contact-item" style="width:100%;background:none;text-align:left;">' +
+                '<div class="avatar ' + roleClass + '">' + initial + '</div>' +
+                '<div class="info" style="flex:1;min-width:0;">' +
+                '<h4>' + escapeHtml(c.name || 'User') + '</h4>' +
+                '<p>' + escapeHtml(c.subtitle || '') + '</p>' +
+                '</div>' +
+                '<i class="fas fa-chevron-right" style="color:#94a3b8;flex-shrink:0;"></i>' +
+                '</button></form>'
+            );
+        }).join('');
+    }
+
+    async function loadContacts() {
         try {
-            const response = await fetch('{{ route("landlord.chat.tenants-list") }}');
-            const data = await response.json();
-            
-            const tenantList = document.getElementById('tenantList');
-            
-            if (data.tenants.length === 0) {
-                tenantList.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #64748b;">
-                        <i class="fas fa-users" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                        <p>No active tenants found</p>
-                    </div>
-                `;
-                return;
+            var response = await fetch('{{ route("landlord.chat.contacts-list") }}');
+            var data = await response.json();
+            var listEl = document.getElementById('contactList');
+            if (!data.success || !data.contacts || data.contacts.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center;padding:16px;color:#64748b;font-size:0.9rem;">No suggested contacts yet. Use the search below.</div>';
+            } else {
+                listEl.innerHTML = renderContactRows(data.contacts, '{{ route("landlord.chat.start-with-user") }}');
             }
-            
-            tenantList.innerHTML = data.tenants.map(tenant => `
-                <form action="{{ route('landlord.chat.start-with-tenant') }}" method="POST" style="margin: 0;">
-                    @csrf
-                    <input type="hidden" name="tenant_id" value="${tenant.id}">
-                    <button type="submit" class="tenant-item" style="width: 100%; background: none; text-align: left;">
-                        <div class="avatar">${tenant.name.charAt(0).toUpperCase()}</div>
-                        <div class="info">
-                            <h4>${tenant.name}</h4>
-                            <p>${tenant.property} - Unit ${tenant.unit}</p>
-                        </div>
-                        <i class="fas fa-chevron-right" style="color: #94a3b8;"></i>
-                    </button>
-                </form>
-            `).join('');
-        } catch (error) {
-            console.error('Error loading tenants:', error);
-            document.getElementById('tenantList').innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #dc2626;">
-                    <i class="fas fa-exclamation-circle"></i> Failed to load tenants
-                </div>
-            `;
+        } catch (e) {
+            console.error(e);
+            document.getElementById('contactList').innerHTML =
+                '<div style="text-align: center; padding: 20px; color: #dc2626;"><i class="fas fa-exclamation-circle"></i> Failed to load contacts</div>';
         }
     }
-    
-    // Close modal on overlay click
-    document.getElementById('newChatModal').addEventListener('click', function(e) {
+
+    var directorySearchTimer = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        var ds = document.getElementById('directorySearch');
+        if (!ds) return;
+        ds.addEventListener('input', function () {
+            clearTimeout(directorySearchTimer);
+            var q = ds.value.trim();
+            var dr = document.getElementById('directoryResults');
+            if (!dr) return;
+            if (q.length < 2) {
+                dr.innerHTML = '';
+                return;
+            }
+            directorySearchTimer = setTimeout(function () { runLandlordDirectorySearch(q); }, 300);
+        });
+    });
+
+    async function runLandlordDirectorySearch(q) {
+        var dr = document.getElementById('directoryResults');
+        if (!dr) return;
+        dr.innerHTML = '<div style="text-align:center;padding:12px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i></div>';
+        try {
+            var url = '{{ route("landlord.chat.directory-search") }}' + '?q=' + encodeURIComponent(q);
+            var response = await fetch(url);
+            var data = await response.json();
+            if (!data.success || !data.contacts || data.contacts.length === 0) {
+                dr.innerHTML = '<div style="text-align:center;padding:12px;color:#64748b;font-size:0.9rem;">No matches</div>';
+                return;
+            }
+            dr.innerHTML = renderContactRows(data.contacts, '{{ route("landlord.chat.start-with-user") }}');
+        } catch (e) {
+            console.error(e);
+            dr.innerHTML = '<div style="text-align:center;padding:12px;color:#dc2626;">Search failed</div>';
+        }
+    }
+
+    document.getElementById('newChatModal').addEventListener('click', function (e) {
         if (e.target === this) closeNewChatModal();
     });
-    
-    // Poll for new messages
+
     setInterval(async () => {
         try {
-            const response = await fetch('{{ route("landlord.chat.unread-count") }}');
-            const data = await response.json();
-            // Update unread badge if needed
-        } catch (error) {
-            console.error('Error checking unread count:', error);
-        }
-    }, 30000); // Every 30 seconds
+            await fetch('{{ route("landlord.chat.unread-count") }}');
+        } catch (e) { /* ignore */ }
+    }, 30000);
 </script>
 @endpush
 

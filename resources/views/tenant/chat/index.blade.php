@@ -421,6 +421,42 @@
         background: #fff;
     }
 
+    .suggested-heading {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+    }
+
+    .directory-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .directory-section label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1e293b;
+        font-size: 0.9rem;
+    }
+
+    .directory-search-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+    }
+
+    .directory-search-input:focus {
+        outline: none;
+        border-color: #f97316;
+    }
+
     @media (max-width: 768px) {
         .chat-container {
             height: calc(100vh - 140px);
@@ -515,7 +551,7 @@
             <i class="fas fa-comments"></i>
         </div>
         <h3>Select a conversation</h3>
-        <p>Choose someone you have messaged before, or start a new conversation with your landlord, neighbors at your property, or building staff.</p>
+        <p>Pick a thread from the list, start a new chat from suggestions, or search anyone on Housync.</p>
         <button type="button" class="new-chat-btn" onclick="openNewChatModal()">
             <i class="fas fa-plus"></i> New conversation
         </button>
@@ -529,11 +565,17 @@
             <button type="button" class="modal-close" onclick="closeNewChatModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <p style="color: #64748b; margin-bottom: 16px;">Message your landlord, other tenants at your property, or staff assigned to your building:</p>
+            <p style="color: #64748b; margin-bottom: 12px;">Suggested people from your leases, applications, and property. You can also search everyone on Housync below.</p>
+            <div class="suggested-heading">Suggested</div>
             <div class="contact-list" id="contactList">
                 <div style="text-align: center; padding: 20px;">
                     <i class="fas fa-spinner fa-spin"></i> Loading contacts…
                 </div>
+            </div>
+            <div class="directory-section">
+                <label for="directorySearch">Search directory (name or email)</label>
+                <input type="search" class="directory-search-input" id="directorySearch" placeholder="Type at least 2 characters…" autocomplete="off">
+                <div class="contact-list" id="directoryResults" style="margin-top: 12px;"></div>
             </div>
         </div>
     </div>
@@ -586,6 +628,10 @@
 <script>
     function openNewChatModal() {
         document.getElementById('newChatModal').classList.add('show');
+        var ds = document.getElementById('directorySearch');
+        if (ds) { ds.value = ''; }
+        var dr = document.getElementById('directoryResults');
+        if (dr) { dr.innerHTML = ''; }
         loadContacts();
     }
 
@@ -601,53 +647,87 @@
         document.getElementById('ticketModal').classList.remove('show');
     }
 
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderContactRows(contacts, formAction) {
+        if (!contacts || contacts.length === 0) {
+            return '';
+        }
+        return contacts.map(function (c) {
+            var initial = (c.name || 'U').charAt(0).toUpperCase();
+            var roleClass = c.role === 'staff' ? 'staff' : (c.role === 'tenant' ? 'tenant' : 'landlord');
+            return (
+                '<form action="' + formAction + '" method="POST" style="margin:0;">' +
+                '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
+                '<input type="hidden" name="user_id" value="' + Number(c.id) + '">' +
+                '<button type="submit" class="contact-item" style="width:100%;background:none;text-align:left;">' +
+                '<div class="avatar ' + roleClass + '">' + initial + '</div>' +
+                '<div class="info" style="flex:1;min-width:0;">' +
+                '<h4>' + escapeHtml(c.name || 'User') + '</h4>' +
+                '<p>' + escapeHtml(c.subtitle || '') + '</p>' +
+                '</div>' +
+                '<i class="fas fa-chevron-right" style="color:#94a3b8;flex-shrink:0;"></i>' +
+                '</button></form>'
+            );
+        }).join('');
+    }
+
     async function loadContacts() {
         try {
-            const response = await fetch('{{ route("tenant.chat.contacts-list") }}');
-            const data = await response.json();
-            const listEl = document.getElementById('contactList');
-
+            var response = await fetch('{{ route("tenant.chat.contacts-list") }}');
+            var data = await response.json();
+            var listEl = document.getElementById('contactList');
+            var rows = renderContactRows(data.contacts, '{{ route("tenant.chat.start-with-user") }}');
             if (!data.success || !data.contacts || data.contacts.length === 0) {
-                listEl.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #64748b;">
-                        <i class="fas fa-address-book" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                        <p>No contacts available. You need an active lease to message people at your property.</p>
-                    </div>
-                `;
-                return;
+                listEl.innerHTML = '<div style="text-align:center;padding:16px;color:#64748b;font-size:0.9rem;">No suggested contacts yet. Use the search below to find landlords, tenants, or staff on Housync.</div>';
+            } else {
+                listEl.innerHTML = rows;
             }
-
-            listEl.innerHTML = data.contacts.map(function (c) {
-                const initial = (c.name || 'U').charAt(0).toUpperCase();
-                const roleClass = c.role === 'staff' ? 'staff' : (c.role === 'tenant' ? 'tenant' : 'landlord');
-                return `
-                <form action="{{ route('tenant.chat.start-with-user') }}" method="POST" style="margin:0;">
-                    @csrf
-                    <input type="hidden" name="user_id" value="${c.id}">
-                    <button type="submit" class="contact-item" style="width:100%;background:none;text-align:left;">
-                        <div class="avatar ${roleClass}">${initial}</div>
-                        <div class="info" style="flex:1;min-width:0;">
-                            <h4>${escapeHtml(c.name || 'User')}</h4>
-                            <p>${escapeHtml(c.subtitle || '')}</p>
-                        </div>
-                        <i class="fas fa-chevron-right" style="color:#94a3b8;flex-shrink:0;"></i>
-                    </button>
-                </form>`;
-            }).join('');
         } catch (e) {
             console.error(e);
-            document.getElementById('contactList').innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #dc2626;">
-                    <i class="fas fa-exclamation-circle"></i> Failed to load contacts
-                </div>
-            `;
+            document.getElementById('contactList').innerHTML =
+                '<div style="text-align: center; padding: 20px; color: #dc2626;"><i class="fas fa-exclamation-circle"></i> Failed to load contacts</div>';
         }
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    var directorySearchTimer = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        var ds = document.getElementById('directorySearch');
+        if (!ds) return;
+        ds.addEventListener('input', function () {
+            clearTimeout(directorySearchTimer);
+            var q = ds.value.trim();
+            var dr = document.getElementById('directoryResults');
+            if (!dr) return;
+            if (q.length < 2) {
+                dr.innerHTML = '';
+                return;
+            }
+            directorySearchTimer = setTimeout(function () { runTenantDirectorySearch(q); }, 300);
+        });
+    });
+
+    async function runTenantDirectorySearch(q) {
+        var dr = document.getElementById('directoryResults');
+        if (!dr) return;
+        dr.innerHTML = '<div style="text-align:center;padding:12px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i></div>';
+        try {
+            var url = '{{ route("tenant.chat.directory-search") }}' + '?q=' + encodeURIComponent(q);
+            var response = await fetch(url);
+            var data = await response.json();
+            if (!data.success || !data.contacts || data.contacts.length === 0) {
+                dr.innerHTML = '<div style="text-align:center;padding:12px;color:#64748b;font-size:0.9rem;">No matches</div>';
+                return;
+            }
+            dr.innerHTML = renderContactRows(data.contacts, '{{ route("tenant.chat.start-with-user") }}');
+        } catch (e) {
+            console.error(e);
+            dr.innerHTML = '<div style="text-align:center;padding:12px;color:#dc2626;">Search failed</div>';
+        }
     }
 
     document.getElementById('newChatModal').addEventListener('click', function (e) {

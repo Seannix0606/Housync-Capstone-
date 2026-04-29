@@ -7,9 +7,9 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
-use App\Models\StaffAssignment;
 use App\Models\TenantAssignment;
 use App\Models\User;
+use App\Services\DirectMessagingAllowlist;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -88,7 +88,7 @@ class ChatController extends Controller
     }
 
     /**
-     * List users the tenant may start a direct message with (landlords, same-property tenants, assigned staff).
+     * Suggested contacts (leases, applications, property peers) plus relationships for quick picks.
      */
     public function getContactsList()
     {
@@ -96,12 +96,29 @@ class ChatController extends Controller
 
         return response()->json([
             'success' => true,
-            'contacts' => $this->sortedMessageableContacts($tenant),
+            'contacts' => DirectMessagingAllowlist::suggestedContactsForTenant($tenant),
         ]);
     }
 
     /**
-     * Start a direct conversation with an allowed contact.
+     * Search all tenants, landlords, and staff on Housync by name or email.
+     */
+    public function getDirectorySearch(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:100',
+        ]);
+
+        $tenant = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => DirectMessagingAllowlist::searchDirectoryUsers($tenant, $request->q),
+        ]);
+    }
+
+    /**
+     * Start a direct conversation with any directory-eligible user; uses property scope when assignments link both parties.
      */
     public function startWithUser(Request $request)
     {
@@ -112,22 +129,13 @@ class ChatController extends Controller
 
         $tenant = Auth::user();
         $otherId = (int) $request->user_id;
+        $other = User::find($otherId);
 
-        if ($otherId === $tenant->id) {
-            return back()->with('error', 'Invalid recipient.');
-        }
-
-        $allowedIds = $this->messageableContacts($tenant)->pluck('id')->all();
-
-        if (! in_array($otherId, $allowedIds, true)) {
+        if (! DirectMessagingAllowlist::canStartDirectMessage($tenant, $other)) {
             return back()->with('error', 'You cannot message this user.');
         }
 
-        $apartmentId = $this->resolveApartmentIdForNewDirectMessage($tenant, $otherId);
-
-        if ($apartmentId === null) {
-            return back()->with('error', 'Could not start a conversation. Check your lease or try again.');
-        }
+        $apartmentId = DirectMessagingAllowlist::resolvePropertyScopedApartmentId($tenant, $other);
 
         $conversation = Conversation::getOrCreateDirect(
             $tenant->id,
@@ -481,132 +489,5 @@ class ChatController extends Controller
         } else {
             return 'file';
         }
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, role: string, subtitle: string}>
-     */
-    private function messageableContacts(User $tenant): \Illuminate\Support\Collection
-    {
-        $assignments = TenantAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
-            ->with(['unit', 'landlord'])
-            ->get();
-
-        if ($assignments->isEmpty()) {
-            return collect();
-        }
-
-        $propertyIds = $assignments->pluck('unit.property_id')->unique()->filter()->values();
-
-        $contacts = collect();
-
-        foreach ($assignments as $assignment) {
-            if ($assignment->landlord && $assignment->landlord->id !== $tenant->id) {
-                $contacts->push([
-                    'id' => $assignment->landlord->id,
-                    'name' => $assignment->landlord->name,
-                    'role' => 'landlord',
-                    'subtitle' => 'Your landlord',
-                ]);
-            }
-        }
-
-        $otherAssignments = TenantAssignment::where('status', 'active')
-            ->where('tenant_id', '!=', $tenant->id)
-            ->whereHas('unit', fn ($q) => $q->whereIn('property_id', $propertyIds))
-            ->with(['tenant', 'unit'])
-            ->get();
-
-        foreach ($otherAssignments as $oa) {
-            if (! $oa->tenant) {
-                continue;
-            }
-            $contacts->push([
-                'id' => $oa->tenant->id,
-                'name' => $oa->tenant->name,
-                'role' => 'tenant',
-                'subtitle' => 'Tenant · Unit '.($oa->unit->unit_number ?? '—'),
-            ]);
-        }
-
-        $staffAssignments = StaffAssignment::where('status', 'active')
-            ->whereHas('unit', fn ($q) => $q->whereIn('property_id', $propertyIds))
-            ->with(['staff', 'unit'])
-            ->get();
-
-        foreach ($staffAssignments as $sa) {
-            if (! $sa->staff || $sa->staff->id === $tenant->id) {
-                continue;
-            }
-            $contacts->push([
-                'id' => $sa->staff->id,
-                'name' => $sa->staff->name,
-                'role' => 'staff',
-                'subtitle' => $sa->staff_type_display.' · Unit '.($sa->unit->unit_number ?? '—'),
-            ]);
-        }
-
-        return $contacts
-            ->groupBy('id')
-            ->map(fn ($group) => $group->first())
-            ->values();
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection<int, array{id: int, name: string, role: string, subtitle: string}>
-     */
-    private function sortedMessageableContacts(User $tenant): \Illuminate\Support\Collection
-    {
-        $order = ['landlord' => 0, 'staff' => 1, 'tenant' => 2];
-
-        return $this->messageableContacts($tenant)
-            ->sortBy([
-                fn (array $c) => $order[$c['role']] ?? 99,
-                fn (array $c) => mb_strtolower($c['name']),
-            ])
-            ->values();
-    }
-
-    private function resolveApartmentIdForNewDirectMessage(User $tenant, int $otherUserId): ?int
-    {
-        $myAssignments = TenantAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
-            ->with('unit')
-            ->get();
-
-        if ($myAssignments->isEmpty()) {
-            return null;
-        }
-
-        $myPropertyIds = $myAssignments->pluck('unit.property_id')->unique()->filter();
-
-        foreach ($myAssignments as $a) {
-            if ($a->landlord_id === $otherUserId && $a->unit) {
-                return (int) $a->unit->property_id;
-            }
-        }
-
-        $theirAssignment = TenantAssignment::where('tenant_id', $otherUserId)
-            ->where('status', 'active')
-            ->whereHas('unit', fn ($q) => $q->whereIn('property_id', $myPropertyIds))
-            ->with('unit')
-            ->first();
-
-        if ($theirAssignment && $theirAssignment->unit) {
-            return (int) $theirAssignment->unit->property_id;
-        }
-
-        $staffAssignment = StaffAssignment::where('staff_id', $otherUserId)
-            ->where('status', 'active')
-            ->whereHas('unit', fn ($q) => $q->whereIn('property_id', $myPropertyIds))
-            ->with('unit')
-            ->first();
-
-        if ($staffAssignment && $staffAssignment->unit) {
-            return (int) $staffAssignment->unit->property_id;
-        }
-
-        return null;
     }
 }
