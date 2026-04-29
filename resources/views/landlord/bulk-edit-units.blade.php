@@ -190,6 +190,27 @@
     </div>
 </div>
 
+<!-- Bulk create confirmation (summary only; no full unit list) -->
+<div id="bulkConfirmModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;" aria-modal="true" role="dialog" aria-labelledby="bulkConfirmTitle">
+    <div style="background: #fff; border-radius: 12px; max-width: 440px; width: 100%; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); border: 1px solid #e2e8f0;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0;">
+            <h3 id="bulkConfirmTitle" style="margin: 0; font-size: 1.125rem; color: #0f172a; font-weight: 600;">Create these units?</h3>
+            <p style="margin: 0.35rem 0 0; font-size: 0.875rem; color: #64748b;">Review the summary below. This cannot be undone in one step.</p>
+        </div>
+        <div style="padding: 1.25rem 1.5rem;">
+            <ul id="bulkConfirmSummary" style="margin: 0; padding-left: 1.15rem; color: #334155; font-size: 0.9375rem; line-height: 1.6;"></ul>
+            <div id="bulkConfirmDuplicateWarn" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; font-size: 0.875rem; color: #92400e;"></div>
+            <p id="bulkConfirmSample" style="margin: 1rem 0 0; font-size: 0.8125rem; color: #64748b; word-break: break-word;"></p>
+        </div>
+        <div style="padding: 1rem 1.5rem 1.25rem; display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid #e2e8f0; background: #f8fafc; border-radius: 0 0 12px 12px;">
+            <button type="button" class="btn btn-outline" id="bulkConfirmCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="bulkConfirmSubmit">
+                <i class="fas fa-check"></i> Create units
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="bulk-edit-container">
     <!-- Header -->
     <div class="content-header">
@@ -736,118 +757,178 @@ function duplicateFloor() {
     alert('Duplicate floor functionality will be implemented');
 }
 
-function finalizeUnits() {
-    console.log('Starting finalizeUnits...');
-    
-    // Get all existing unit inputs from the form
+/**
+ * Collect unit rows from the bulk edit form into a normalized array (no DOM mutation).
+ */
+function collectBulkUnitsFromForm() {
     const form = document.getElementById('bulkEditForm');
     const allUnitInputs = form.querySelectorAll('input[name*="units["], select[name*="units["]');
-    
-    console.log('Found existing unit inputs:', allUnitInputs.length);
-    
-    // Group inputs by unit ID
     const unitsMap = new Map();
-    
+
     allUnitInputs.forEach(input => {
         const name = input.name;
         const match = name.match(/units\[([^\]]+)\]\[([^\]]+)\]/);
-        
+
         if (match) {
             const unitId = match[1];
             const fieldName = match[2];
             const value = input.type === 'checkbox' ? input.checked : input.value;
-            
+
             if (!unitsMap.has(unitId)) {
                 unitsMap.set(unitId, {});
             }
-            
+
             unitsMap.get(unitId)[fieldName] = value;
         }
     });
-    
-    console.log('Units map:', unitsMap);
-    
-    // Convert to array and filter out empty units
+
     const units = [];
-    let unitIndex = 0;
-    
-    unitsMap.forEach((unitData, unitId) => {
-        // Only include units that have a unit_number
+
+    unitsMap.forEach((unitData) => {
         if (unitData.unit_number && unitData.unit_number.trim() !== '') {
-            // Add floor_number if not present
             if (!unitData.floor_number) {
-                // Try to determine floor from unit number
                 const unitNum = unitData.unit_number.toString();
                 if (unitNum.length >= 3) {
-                    unitData.floor_number = parseInt(unitNum.substring(0, unitNum.length - 2));
+                    unitData.floor_number = parseInt(unitNum.substring(0, unitNum.length - 2), 10);
                 } else {
                     unitData.floor_number = 1;
                 }
             }
-            
-            // Convert numeric fields
+
             unitData.rent_amount = parseFloat(unitData.rent_amount) || 0;
-            unitData.bedrooms = parseInt(unitData.bedrooms) || 0;
-            unitData.bathrooms = parseInt(unitData.bathrooms) || 1;
-            unitData.max_occupants = parseInt(unitData.max_occupants) || 4;
+            unitData.bedrooms = parseInt(unitData.bedrooms, 10) || 0;
+            unitData.bathrooms = parseInt(unitData.bathrooms, 10) || 1;
+            unitData.max_occupants = parseInt(unitData.max_occupants, 10) || 4;
             unitData.is_furnished = unitData.is_furnished === 'true' || unitData.is_furnished === true || unitData.is_furnished === '1';
-            
+
             units.push(unitData);
-            unitIndex++;
         }
     });
-    
-    console.log('Final units array:', units);
-    
-    if (units.length === 0) {
-        alert('No units to create. Please add at least one unit with a unit number.');
+
+    return { form, allUnitInputs, units };
+}
+
+function hideBulkConfirmModal() {
+    const modal = document.getElementById('bulkConfirmModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function showBulkConfirmModal(units) {
+    const modal = document.getElementById('bulkConfirmModal');
+    const summaryEl = document.getElementById('bulkConfirmSummary');
+    const dupWarn = document.getElementById('bulkConfirmDuplicateWarn');
+    const sampleEl = document.getElementById('bulkConfirmSample');
+    const existingCount = {{ $existingUnitsCount ?? 0 }};
+
+    if (!modal || !summaryEl) {
         return;
     }
-    
-    // Remove all existing unit inputs
+
+    const totalFloors = document.querySelectorAll('.floor-section').length;
+    const totalRent = units.reduce((sum, u) => sum + (parseFloat(u.rent_amount) || 0), 0);
+    const unitNumbers = units.map(u => String(u.unit_number).trim());
+    const sampleCap = 5;
+    let sampleNote = '';
+    if (unitNumbers.length <= sampleCap) {
+        sampleNote = 'Unit numbers: ' + unitNumbers.join(', ') + '.';
+    } else {
+        sampleNote = 'Examples: ' + unitNumbers.slice(0, sampleCap).join(', ') + ` — and ${unitNumbers.length - sampleCap} more (not all listed).`;
+    }
+
+    summaryEl.innerHTML = '';
+    const items = [
+        '<li><strong>' + units.length + '</strong> new unit(s) will be submitted.</li>',
+        '<li><strong>' + totalFloors + '</strong> floor section(s) in this layout.</li>',
+        '<li>Combined monthly rent shown: <strong>₱' + totalRent.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '</strong> (sum of line items).</li>',
+    ];
+    summaryEl.innerHTML = items.join('');
+
+    if (existingCount > 0) {
+        dupWarn.style.display = 'block';
+        dupWarn.textContent = 'This property already has ' + existingCount + ' unit(s). Duplicate unit numbers will be skipped and not created.';
+    } else {
+        dupWarn.style.display = 'none';
+    }
+
+    sampleEl.textContent = sampleNote;
+
+    modal.style.display = 'flex';
+}
+
+/**
+ * Replace visible unit fields with sequential hidden inputs and POST (after user confirms in modal).
+ */
+function submitBulkUnitsWithHiddenInputs(form, allUnitInputs, units) {
     allUnitInputs.forEach(input => input.remove());
-    
-    // Add new properly formatted inputs
-    let totalInputsAdded = 0;
+
     units.forEach((unit, index) => {
         Object.keys(unit).forEach(key => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = `units[${index}][${key}]`;
-            input.value = unit[key];
+            const v = unit[key];
+            input.value = v === null || v === undefined ? '' : String(v);
             form.appendChild(input);
-            totalInputsAdded++;
         });
     });
-    
-    console.log('Form prepared with', units.length, 'units');
-    console.log('Total hidden inputs added:', totalInputsAdded);
-    
-    // Count all form inputs to verify
-    const allInputs = form.querySelectorAll('input');
-    console.log('Total form inputs after preparation:', allInputs.length);
-    console.log('Form data before submit:', new FormData(form));
-    
-    // Show confirmation with existing units info
-    const existingCount = {{ $existingUnitsCount ?? 0 }};
-    let confirmMessage = `Are you sure you want to create ${units.length} units?`;
-    if (existingCount > 0) {
-        confirmMessage += `\n\n⚠️ Note: This property already has ${existingCount} units. Units with duplicate numbers will be skipped.`;
+
+    form.submit();
+}
+
+function finalizeUnits() {
+    const { form, allUnitInputs, units } = collectBulkUnitsFromForm();
+
+    if (units.length === 0) {
+        alert('No units to create. Please add at least one unit with a unit number.');
+        return;
     }
-    confirmMessage += `\n\nUnits: ${units.map(u => u.unit_number).join(', ')}`;
-    
-    if (confirm(confirmMessage)) {
-        console.log('Submitting form...');
-        
-        // Debug: Log the form data before submission
-        const formData = new FormData(form);
-        console.log('Form data entries:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}: ${value}`);
+
+    const modal = document.getElementById('bulkConfirmModal');
+    const cancelBtn = document.getElementById('bulkConfirmCancel');
+    const submitBtn = document.getElementById('bulkConfirmSubmit');
+
+    if (!modal || !cancelBtn || !submitBtn) {
+        console.error('Confirmation modal markup missing');
+        return;
+    }
+
+    const onConfirm = () => {
+        cancelBtn.removeEventListener('click', onCancel);
+        submitBtn.removeEventListener('click', onConfirm);
+        modal.removeEventListener('click', onBackdrop);
+        document.removeEventListener('keydown', onEscape);
+        hideBulkConfirmModal();
+        submitBulkUnitsWithHiddenInputs(form, allUnitInputs, units);
+    };
+
+    const onCancel = () => {
+        cancelBtn.removeEventListener('click', onCancel);
+        submitBtn.removeEventListener('click', onConfirm);
+        modal.removeEventListener('click', onBackdrop);
+        document.removeEventListener('keydown', onEscape);
+        hideBulkConfirmModal();
+    };
+
+    const onBackdrop = (e) => {
+        if (e.target === modal) {
+            onCancel();
         }
-        
-        form.submit();
-    }
+    };
+
+    const onEscape = (e) => {
+        if (e.key === 'Escape') {
+            onCancel();
+        }
+    };
+
+    cancelBtn.addEventListener('click', onCancel);
+    submitBtn.addEventListener('click', onConfirm);
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onEscape);
+
+    showBulkConfirmModal(units);
 }
 </script>
 @endsection
