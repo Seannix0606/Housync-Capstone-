@@ -45,7 +45,8 @@ class SupabaseService implements StorageServiceInterface
     }
 
     /**
-     * True when a Guzzle client can safely be created (non-empty URL, both keys present and JWT-shaped).
+     * True when a Guzzle client can safely be created (non-empty URL, both keys present and
+     * Supabase-shaped: legacy JWT or sb_publishable_* / sb_secret_*).
      */
     protected function hasValidSupabaseConfig(): bool
     {
@@ -57,8 +58,8 @@ class SupabaseService implements StorageServiceInterface
             return false;
         }
 
-        return $this->isLikelySupabaseApiJwt($this->key)
-            && $this->isLikelySupabaseApiJwt($this->serviceKey);
+        return $this->isLikelySupabaseKey($this->key)
+            && $this->isLikelySupabaseKey($this->serviceKey);
     }
 
     protected function clientAvailable(): bool
@@ -75,6 +76,20 @@ class SupabaseService implements StorageServiceInterface
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    /**
+     * Accepts legacy Supabase JWT API keys or modern sb_publishable_* / sb_secret_* keys.
+     */
+    protected function isLikelySupabaseKey(?string $token): bool
+    {
+        if ($token === null || $token === '') {
+            return false;
+        }
+
+        return $this->isLikelySupabaseApiJwt($token)
+            || str_starts_with($token, 'sb_publishable_')
+            || str_starts_with($token, 'sb_secret_');
     }
 
     protected function isLikelySupabaseApiJwt(?string $token): bool
