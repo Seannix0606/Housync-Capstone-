@@ -69,7 +69,7 @@
                     @if(session('error'))
                         <div class="alert alert-error">
                             <i class="fas fa-exclamation-circle"></i>
-                            {{ session('error') }}
+                            An unexpected error occurred. Please try again.
                         </div>
                     @endif
 
