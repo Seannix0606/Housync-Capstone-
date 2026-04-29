@@ -195,9 +195,26 @@
                         </div>
                     @endguest
 
-                    <button class="btn btn-primary w-100 mb-2">
-                        <i class="fas fa-envelope me-1"></i> Contact Landlord
-                    </button>
+                    @auth
+                        @if(Auth::user()->role === 'tenant' && $property->landlord_id)
+                            <form action="{{ route('tenant.chat.start-from-listing') }}" method="post" class="mb-2">
+                                @csrf
+                                <input type="hidden" name="property_id" value="{{ $property->id }}">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-envelope me-1"></i> Contact Landlord
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" class="btn btn-primary w-100 mb-2" disabled title="{{ Auth::user()->role === 'tenant' ? 'No landlord on file for this listing' : 'Only tenants can contact landlords from listings' }}">
+                                <i class="fas fa-envelope me-1"></i> Contact Landlord
+                            </button>
+                        @endif
+                    @endauth
+                    @guest
+                        <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-envelope me-1"></i> Contact Landlord
+                        </a>
+                    @endguest
                     <button class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-calendar me-1"></i> Schedule Viewing
                     </button>
