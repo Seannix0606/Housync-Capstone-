@@ -108,7 +108,7 @@ class User extends Authenticatable
     // Profiles
     public function landlordProfile()
     {
-        return $this->hasOne(LandlordProfile::class);
+        return $this->hasOne(LandlordProfile::class)->latestOfMany('id');
     }
 
     public function tenantProfile()
@@ -342,25 +342,31 @@ class User extends Authenticatable
     public function scopePendingLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function ($profileQuery) {
-                $profileQuery->where('status', 'pending');
-            });
+            ->whereExists(fn ($q) => $q->selectRaw('1')
+                ->from('landlord_profiles as lp')
+                ->whereColumn('lp.user_id', 'users.id')
+                ->where('lp.status', 'pending')
+                ->whereRaw('lp.id = (select max(lp2.id) from landlord_profiles as lp2 where lp2.user_id = lp.user_id)'));
     }
 
     public function scopeApprovedLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function ($profileQuery) {
-                $profileQuery->where('status', 'approved');
-            });
+            ->whereExists(fn ($q) => $q->selectRaw('1')
+                ->from('landlord_profiles as lp')
+                ->whereColumn('lp.user_id', 'users.id')
+                ->where('lp.status', 'approved')
+                ->whereRaw('lp.id = (select max(lp2.id) from landlord_profiles as lp2 where lp2.user_id = lp.user_id)'));
     }
 
     public function scopeRejectedLandlords($query)
     {
         return $query->where('role', 'landlord')
-            ->whereHas('landlordProfile', function ($profileQuery) {
-                $profileQuery->where('status', 'rejected');
-            });
+            ->whereExists(fn ($q) => $q->selectRaw('1')
+                ->from('landlord_profiles as lp')
+                ->whereColumn('lp.user_id', 'users.id')
+                ->where('lp.status', 'rejected')
+                ->whereRaw('lp.id = (select max(lp2.id) from landlord_profiles as lp2 where lp2.user_id = lp.user_id)'));
     }
 
     public function scopeByRole($query, $role)

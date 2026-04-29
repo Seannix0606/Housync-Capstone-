@@ -13,9 +13,7 @@ class LandlordVerificationService
      */
     public function pendingLandlordsQuery(): Builder
     {
-        return User::query()
-            ->where('role', 'landlord')
-            ->whereHas('landlordProfile', fn ($q) => $q->where('status', 'pending'));
+        return User::query()->pendingLandlords();
     }
 
     public function pendingLandlordsPaginated(int $perPage = 15)

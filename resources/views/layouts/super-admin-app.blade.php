@@ -458,11 +458,7 @@
             <span class="portal-title-label">Super Admin Portal</span>
         </div>
         @php
-            $pendingLandlordCount = \Illuminate\Support\Facades\Cache::remember(
-                'super_admin.pending_landlords_count',
-                30,
-                fn () => \App\Models\User::pendingLandlords()->count()
-            );
+            $pendingLandlordCount = \App\Models\User::pendingLandlords()->count();
         @endphp
         <nav class="sidebar-nav">
             <a class="nav-link{{ request()->routeIs('super-admin.dashboard') ? ' active' : '' }}" href="{{ route('super-admin.dashboard') }}"><span class="nav-icon"><i class="fas fa-home"></i></span> <span class="nav-label">Dashboard</span></a>
