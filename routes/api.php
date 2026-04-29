@@ -16,11 +16,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ESP32 device callback API routes (secured with shared ESP32 key)
+// All routes here require the X-ESP32-Key header to match ESP32_API_KEY in .env.
 Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
-    Route::post('/rfid/verify', [RfidController::class, 'verifyAccess'])->name('api.rfid.verify');
-    Route::post('/rfid-scan', [RfidController::class, 'scanCardDirect'])->name('api.rfid-scan'); // For ESP32Reader.php Activity Logs
+    // Card scan — used by both the serial bridge (ESP32Reader.php) and WiFi mode firmware
+    Route::post('/rfid-scan', [RfidController::class, 'scanCardDirect'])->name('api.rfid-scan');
     Route::post('/rfid/scan/direct', [RfidController::class, 'scanCardDirect'])->name('api.rfid.scan-direct');
-    Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid'); // NEW: Get latest UID from ESP32Reader.php
+
+    // Access verification (alternative endpoint if you want a verify-only flow)
+    Route::post('/rfid/verify', [RfidController::class, 'verifyAccess'])->name('api.rfid.verify');
+
+    // WiFi mode: ESP32 polls this every ~2 s to learn about pending web-scan requests
+    Route::get('/rfid/scan/pending', [RfidController::class, 'getPendingScanRequest'])->name('api.rfid.scan.pending');
 });
 
 // Browser-facing RFID API routes (Blade dashboards use fetch(); needs `web` middleware
@@ -28,6 +34,11 @@ Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
 Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
     Route::post('/rfid/scan/request', [RfidController::class, 'getCardUIDFromESP32Reader'])->name('api.rfid.scan.request');
     Route::get('/rfid/scan/status/{scanId}', [RfidController::class, 'checkScanRequestStatus'])->name('api.rfid.scan.status');
+
+    // Latest scanned card UID (card-registration UI — landlord/security/create.blade.php)
+    Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid');
+
+    // Recent logs JSON for dynamic UI (landlord-specific)
     Route::get('/rfid/recent-logs', [RfidController::class, 'recentLogsJson'])->name('api.rfid.recent-logs');
     /** Same handler as GET /rfid/latest-uid but for logged-in browsers (ESP32 route stays API-key-only). */
     Route::get('/rfid/web/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.web.latest-uid');
