@@ -23,15 +23,14 @@ Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
     Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid'); // NEW: Get latest UID from ESP32Reader.php
 });
 
-// Browser-facing RFID API routes (web-triggered scans + landlord dashboards)
-// These use the app's normal user auth and do NOT require the ESP32 shared secret.
-Route::middleware(['throttle:60,1', 'auth'])->group(function () {
-    // Web-triggered scanning (request + status polling)
+// Browser-facing RFID API routes (Blade dashboards use fetch(); needs `web` middleware
+// so session cookies + CSRF apply — plain `api` stack has no session, so `auth` returned login HTML).
+Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
     Route::post('/rfid/scan/request', [RfidController::class, 'getCardUIDFromESP32Reader'])->name('api.rfid.scan.request');
     Route::get('/rfid/scan/status/{scanId}', [RfidController::class, 'checkScanRequestStatus'])->name('api.rfid.scan.status');
-
-    // Recent logs JSON for dynamic UI (landlord-specific)
     Route::get('/rfid/recent-logs', [RfidController::class, 'recentLogsJson'])->name('api.rfid.recent-logs');
+    /** Same handler as GET /rfid/latest-uid but for logged-in browsers (ESP32 route stays API-key-only). */
+    Route::get('/rfid/web/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.web.latest-uid');
 });
 
 // Private storage serving route.
