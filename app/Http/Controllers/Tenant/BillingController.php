@@ -78,7 +78,7 @@ class BillingController extends Controller
         try {
             $proofPath = null;
             if ($request->hasFile('proof_image')) {
-                $proofPath = $request->file('proof_image')->store('payment-proofs', 'local');
+                $proofPath = $request->file('proof_image')->store('payment-proofs', 'public');
             }
 
             $payment = Payment::create([
@@ -88,7 +88,7 @@ class BillingController extends Controller
                 'method' => $request->method,
                 'reference_number' => $request->reference_number,
                 'proof_image' => $proofPath,
-                'status' => 'pending',
+                'status' => 'pending_verification',
                 'notes' => $request->notes,
                 'paid_at' => now(),
             ]);
