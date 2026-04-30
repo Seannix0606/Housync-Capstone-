@@ -237,11 +237,24 @@ export function mountBulkEditPage(rawConfig) {
 
         const merged = { ...baseDefaults, ...(unitData || {}) };
 
+        const normalizedExistingUnits = allExistingUnits
+            .map((value) => String(value ?? '').trim())
+            .filter((value) => value !== '');
+
         let unitNum = merged.unit_number;
         if (unitNum != null && String(unitNum).trim() !== '') {
             unitNum = String(unitNum).trim();
+            if (normalizedExistingUnits.includes(unitNum)) {
+                unitNum = getNextAvailableUnitNumber(
+                    String(floor),
+                    normalizedExistingUnits,
+                );
+            }
         } else {
-            unitNum = getNextAvailableUnitNumber(String(floor), allExistingUnits);
+            unitNum = getNextAvailableUnitNumber(
+                String(floor),
+                normalizedExistingUnits,
+            );
         }
 
         if (unitNum == null) {
@@ -259,9 +272,10 @@ export function mountBulkEditPage(rawConfig) {
         unitRow.id = unitId;
         unitRow.appendChild(buildUnitRowCellsFragment(unitId, floor, merged));
 
-        const hiddenInputs = document.createElement('div');
-        appendHiddenInputs(hiddenInputs, unitId, floor, merged);
-        unitRow.appendChild(hiddenInputs);
+        const hiddenCell = document.createElement('td');
+        hiddenCell.style.display = 'none';
+        appendHiddenInputs(hiddenCell, unitId, floor, merged);
+        unitRow.appendChild(hiddenCell);
 
         floorContainer.appendChild(unitRow);
         updateStats();
@@ -454,14 +468,55 @@ export function mountBulkEditPage(rawConfig) {
                     }
                 }
 
-                unitData.rent_amount = parseFloat(unitData.rent_amount) || 0;
-                unitData.bedrooms = parseInt(unitData.bedrooms, 10) || 0;
-                unitData.bathrooms = parseInt(unitData.bathrooms, 10) || 1;
-                unitData.max_occupants = parseInt(unitData.max_occupants, 10) || 4;
-                unitData.is_furnished =
-                    unitData.is_furnished === 'true' ||
-                    unitData.is_furnished === true ||
-                    unitData.is_furnished === '1';
+                const rentRaw = String(unitData.rent_amount ?? '').trim();
+                if (rentRaw !== '') {
+                    const parsedRent = parseFloat(rentRaw);
+                    unitData.rent_amount = Number.isFinite(parsedRent)
+                        ? parsedRent
+                        : null;
+                } else {
+                    unitData.rent_amount = null;
+                }
+
+                const bedroomsRaw = String(unitData.bedrooms ?? '').trim();
+                if (bedroomsRaw !== '') {
+                    const parsedBedrooms = parseInt(bedroomsRaw, 10);
+                    unitData.bedrooms = Number.isFinite(parsedBedrooms)
+                        ? parsedBedrooms
+                        : null;
+                } else {
+                    unitData.bedrooms = null;
+                }
+
+                const bathroomsRaw = String(unitData.bathrooms ?? '').trim();
+                if (bathroomsRaw !== '') {
+                    const parsedBathrooms = parseInt(bathroomsRaw, 10);
+                    unitData.bathrooms = Number.isFinite(parsedBathrooms)
+                        ? parsedBathrooms
+                        : null;
+                } else {
+                    unitData.bathrooms = null;
+                }
+
+                const maxOccupantsRaw = String(unitData.max_occupants ?? '').trim();
+                if (maxOccupantsRaw !== '') {
+                    const parsedMaxOccupants = parseInt(maxOccupantsRaw, 10);
+                    unitData.max_occupants = Number.isFinite(parsedMaxOccupants)
+                        ? parsedMaxOccupants
+                        : null;
+                } else {
+                    unitData.max_occupants = null;
+                }
+
+                const furnishedRaw = unitData.is_furnished;
+                if (furnishedRaw == null || String(furnishedRaw).trim() === '') {
+                    unitData.is_furnished = null;
+                } else {
+                    unitData.is_furnished =
+                        furnishedRaw === 'true' ||
+                        furnishedRaw === true ||
+                        furnishedRaw === '1';
+                }
 
                 units.push(unitData);
             }
@@ -554,8 +609,6 @@ export function mountBulkEditPage(rawConfig) {
                         );
                         break;
                     }
-                    existingUnits.push(unitNumber);
-
                     const success = addUnitToFloor(floor, {
                         unit_number: unitNumber,
                         unit_type: defaultUnitType,

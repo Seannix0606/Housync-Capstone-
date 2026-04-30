@@ -483,7 +483,7 @@
         font-size: 1.25rem;
         font-weight: 600;
         background: none;
-        -webkit-text-fill-color: currentColor;
+        -webkit-text-fill-color: currentcolor;
         color: #1e293b;
     }
 

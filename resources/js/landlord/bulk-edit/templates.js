@@ -148,8 +148,10 @@ export function buildUnitRowCellsFragment(unitId, _floor, d) {
         b.type = 'button';
         b.className = `btn btn-sm ${className}`;
         b.title = title;
+        b.setAttribute('aria-label', title);
         const i = document.createElement('i');
         i.className = iconClass;
+        i.setAttribute('aria-hidden', 'true');
         b.appendChild(i);
         b.addEventListener('click', handler);
         return b;
