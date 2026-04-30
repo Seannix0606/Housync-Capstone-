@@ -43,7 +43,8 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login');
     Route::post('/login', 'login')->name('login.post')->middleware('throttle:5,1');
-    Route::get('/register', fn () => view('register'))->name('register');
+    Route::get('/register', fn () => view('register-choice'))->name('register');
+    Route::get('/register/tenant', fn () => view('register'))->name('register.tenant');
     Route::post('/register', 'register')->name('register.post');
     Route::post('/logout', 'logout')->name('logout');
 });
