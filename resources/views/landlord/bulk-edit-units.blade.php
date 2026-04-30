@@ -180,14 +180,14 @@
 
 @push('scripts')
 <script type="application/json" id="bulk-edit-config">
-@json([
+{!! json_encode([
     'totalFloors' => $apartment->floors ?? 1,
     'propertyType' => $apartment->property_type,
     'bulkParams' => $bulkParams ?? [],
     'apartmentBedrooms' => $apartment->bedrooms ?? 1,
     'existingUnitNumbers' => ($apartment->units ? $apartment->units->pluck('unit_number')->toArray() : []),
     'existingUnitsCount' => $existingUnitsCount ?? 0,
-])
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
 </script>
 @vite(['resources/js/landlord/bulk-edit-units.js'])
 @endpush
