@@ -48,6 +48,85 @@ export function mountBulkEditPage(rawConfig) {
         }
     }
 
+    function showFinalizeConfirmationModal(totalUnits, existingCount) {
+        return new Promise((resolve) => {
+            let modal = document.getElementById('finalizeConfirmModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'finalizeConfirmModal';
+                modal.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(15, 23, 42, 0.5);
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    padding: 1rem;
+                `;
+                modal.innerHTML = `
+                    <div style="width: min(560px, 96vw); background: #fff; border-radius: 14px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25); overflow: hidden;">
+                        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0;">
+                            <h3 style="margin: 0; color: #0f172a; font-size: 1.05rem;">Finalize Units</h3>
+                        </div>
+                        <div style="padding: 1rem 1.25rem;">
+                            <p id="finalizeConfirmMessage" style="margin: 0 0 0.5rem; color: #334155; line-height: 1.5;"></p>
+                            <p id="finalizeConfirmWarning" style="margin: 0; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 0.625rem; display: none;"></p>
+                        </div>
+                        <div style="padding: 0.875rem 1.25rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.625rem;">
+                            <button type="button" id="finalizeConfirmCancel" style="padding: 0.55rem 0.95rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer;">Cancel</button>
+                            <button type="button" id="finalizeConfirmOk" style="padding: 0.55rem 0.95rem; border-radius: 8px; border: 1px solid #2563eb; background: #3b82f6; color: #fff; cursor: pointer;">Yes, Finalize</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            const messageEl = document.getElementById('finalizeConfirmMessage');
+            const warningEl = document.getElementById('finalizeConfirmWarning');
+            const okBtn = document.getElementById('finalizeConfirmOk');
+            const cancelBtn = document.getElementById('finalizeConfirmCancel');
+
+            if (!messageEl || !warningEl || !okBtn || !cancelBtn) {
+                resolve(confirm(`Are you sure you want to create ${totalUnits} units?`));
+                return;
+            }
+
+            messageEl.textContent = `Are you sure you want to create ${totalUnits} units?`;
+            if (existingCount > 0) {
+                warningEl.style.display = 'block';
+                warningEl.textContent = `This property already has ${existingCount} units. Any duplicate unit numbers will be skipped.`;
+            } else {
+                warningEl.style.display = 'none';
+                warningEl.textContent = '';
+            }
+
+            const close = (result) => {
+                modal.style.display = 'none';
+                modal.removeEventListener('click', backdropHandler);
+                document.removeEventListener('keydown', escapeHandler);
+                okBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+                resolve(result);
+            };
+
+            const confirmHandler = () => close(true);
+            const cancelHandler = () => close(false);
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') close(false);
+            };
+            const backdropHandler = (e) => {
+                if (e.target === modal) close(false);
+            };
+
+            okBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+            document.addEventListener('keydown', escapeHandler);
+            modal.addEventListener('click', backdropHandler);
+            modal.style.display = 'flex';
+        });
+    }
+
     function syncExpandAllMode(enabled) {
         const stack = document.getElementById('floorsContainer');
         if (!stack) return;
@@ -424,7 +503,7 @@ export function mountBulkEditPage(rawConfig) {
         updateStats();
     }
 
-    function finalizeUnits() {
+    async function finalizeUnits() {
         const form = document.getElementById('bulkEditForm');
         if (!form) return;
 
@@ -528,13 +607,11 @@ export function mountBulkEditPage(rawConfig) {
         }
 
         const existingCount = config.existingUnitsCount;
-        let confirmMessage = `Are you sure you want to create ${units.length} units?`;
-        if (existingCount > 0) {
-            confirmMessage += `\n\n⚠️ Note: This property already has ${existingCount} units. Units with duplicate numbers will be skipped.`;
-        }
-        confirmMessage += `\n\nUnits: ${units.map((u) => u.unit_number).join(', ')}`;
-
-        if (!confirm(confirmMessage)) {
+        const approved = await showFinalizeConfirmationModal(
+            units.length,
+            existingCount,
+        );
+        if (!approved) {
             return;
         }
 
