@@ -7,7 +7,9 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\Property;
 use App\Models\TenantAssignment;
+use App\Models\Unit;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,6 +83,50 @@ class ChatController extends Controller
         if ($request->filled('message')) {
             $this->createMessage($conversation, $tenant->id, $request->message);
         }
+
+        return redirect()->route('tenant.chat.show', $conversation->id);
+    }
+
+    /**
+     * Start a direct conversation with the landlord of a browsed listing (no lease required).
+     */
+    public function startFromListing(Request $request)
+    {
+        $request->validate([
+            'unit_id' => 'nullable|exists:units,id',
+            'property_id' => 'nullable|exists:properties,id',
+        ]);
+
+        if (! $request->filled('unit_id') && ! $request->filled('property_id')) {
+            return back()->with('error', 'Please open this action from a property listing.');
+        }
+
+        $tenant = Auth::user();
+
+        if ($request->filled('unit_id')) {
+            $unit = Unit::with('property.landlord')->findOrFail($request->unit_id);
+            $property = $unit->property;
+        } else {
+            $property = Property::with('landlord')->findOrFail($request->property_id);
+        }
+
+        if (! $property || $property->status !== 'active' || ! $property->is_active) {
+            return back()->with('error', 'This listing is not available.');
+        }
+
+        if (! $property->landlord_id) {
+            return back()->with('error', 'This listing has no landlord contact.');
+        }
+
+        if ((int) $property->landlord_id === (int) $tenant->id) {
+            return back()->with('error', 'You cannot message yourself.');
+        }
+
+        $conversation = Conversation::getOrCreateDirect(
+            $tenant->id,
+            $property->landlord_id,
+            $property->id
+        );
 
         return redirect()->route('tenant.chat.show', $conversation->id);
     }

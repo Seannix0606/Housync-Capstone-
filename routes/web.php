@@ -323,6 +323,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::get('/messages', 'index')->name('chat');
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-landlord', 'startWithLandlord')->name('chat.start-with-landlord');
+        Route::post('/messages/start-from-listing', 'startFromListing')->name('chat.start-from-listing');
         Route::post('/messages/create-ticket', 'createTicket')->name('chat.create-ticket');
         Route::post('/messages/{id}/send', 'sendMessage')->name('chat.send');
         Route::get('/messages/{id}/fetch', 'getMessages')->name('chat.fetch');
