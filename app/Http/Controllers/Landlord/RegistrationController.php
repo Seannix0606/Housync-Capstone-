@@ -76,7 +76,6 @@ class RegistrationController extends Controller
         try {
             $landlord = DB::transaction(function () use ($request, $supabase, $documentSlots) {
                 $landlord = User::create([
-                    'name' => $request->name,
                     'email' => $request->email,
                     'password' => $request->password,
                     'role' => 'landlord',
