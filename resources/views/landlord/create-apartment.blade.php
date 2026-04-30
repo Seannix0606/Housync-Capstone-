@@ -497,14 +497,14 @@
                 </h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Cover Image</label>
-                        <input type="file" name="cover_image" accept="image/*" class="form-control">
-                        <p class="form-help">JPEG/PNG up to 3MB</p>
+                        <label class="form-label">Property Cover Image</label>
+                        <input type="file" name="property_cover_image" accept="image/*" class="form-control">
+                        <p class="form-help">Shown in property hero and explore property card (JPEG/PNG up to 3MB)</p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Gallery (up to 8)</label>
-                        <input type="file" name="gallery[]" accept="image/*" multiple class="form-control">
-                        <p class="form-help">Add more photos to attract tenants</p>
+                        <label class="form-label">Property Gallery (up to 8)</label>
+                        <input type="file" name="property_gallery[]" accept="image/*" multiple class="form-control">
+                        <p class="form-help">Additional building/common-area photos for property listings</p>
                     </div>
                 </div>
             </div>
