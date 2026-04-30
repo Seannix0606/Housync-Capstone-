@@ -2,7 +2,7 @@
     <div class="properties-grid">
         @foreach($properties as $property)
             <div class="property-card">
-                <a href="{{ route('property.show', $property->slug) }}" class="property-image-link">
+                <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="property-image-link">
                     @php
                         $coverImage = $property->cover_image_url;
                         $gallerySource = $property->gallery_urls ?? [];
@@ -22,7 +22,7 @@
                             <div class="carousel-container">
                                 @foreach($galleryImages as $index => $img)
                                     <div class="carousel-slide {{ $index === 0 ? 'active' : '' }}">
-                                        <img src="{{ $img }}" alt="{{ $property->title }} - Image {{ $index + 1 }}" class="property-image" loading="lazy">
+                                        <img src="{{ $img }}" alt="{{ $property->name ?? 'Property' }} - Image {{ $index + 1 }}" class="property-image" loading="lazy">
                                     </div>
                                 @endforeach
                             </div>
@@ -53,65 +53,44 @@
                 </a>
 
                 <div class="property-content">
-                    <span class="property-type">{{ ucfirst($property->type) }}</span>
+                    <span class="property-type">{{ ucfirst($property->property_type ?? 'property') }}</span>
                     
                     <h3 class="property-title">
-                        <a href="{{ route('property.show', $property->slug) }}" class="property-title-link">{{ $property->title }}</a>
+                        <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="property-title-link">{{ $property->name ?? 'Untitled Property' }}</a>
                     </h3>
                     
                     @if($property->address)
                         <div class="property-address">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>{{ Str::limit($property->address, 40) }}</span>
+                            <span>{{ Str::limit(trim(($property->address ?? '').' '.($property->city ?? '')), 60) }}</span>
                         </div>
                     @endif
 
                     <div class="property-features">
                         <div class="property-feature">
-                            <i class="fas fa-bed"></i>
-                            <span>{{ $property->bedrooms }} Bed</span>
+                            <i class="fas fa-door-open"></i>
+                            <span>Available units: {{ $property->available_units_count ?? 0 }}</span>
                         </div>
-                        <div class="property-feature">
-                            <i class="fas fa-bath"></i>
-                            <span>{{ $property->bathrooms }} Bath</span>
-                        </div>
-                        @if($property->area)
-                            <div class="property-feature">
-                                <i class="fas fa-ruler-combined"></i>
-                                <span>{{ number_format($property->area) }} m²</span>
-                            </div>
-                        @endif
                     </div>
 
                     <div class="property-price">
-                        ₱{{ number_format($property->price, 2) }}
-                        <small style="font-size: 0.875rem; font-weight: 400; color: #64748b;">/month</small>
+                        @if(!is_null($property->min_available_rent))
+                            From ₱{{ number_format((float) $property->min_available_rent, 2) }}
+                            <small style="font-size: 0.875rem; font-weight: 400; color: #64748b;">/month</small>
+                        @else
+                            <span style="font-size: 1rem; color: #64748b;">Price on inquiry</span>
+                        @endif
                     </div>
 
-                    <span class="property-availability {{ $property->availability_status }}">
+                    <span class="property-availability {{ ($property->available_units_count ?? 0) > 0 ? 'available' : 'occupied' }}">
                         <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                        {{ ucfirst($property->availability_status) }}
+                        {{ ($property->available_units_count ?? 0) > 0 ? 'Available' : 'Unavailable' }}
                     </span>
-
-                    @if($property->amenities->count() > 0)
-                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            @foreach($property->amenities->take(3) as $amenity)
-                                <span style="padding: 0.25rem 0.5rem; background: #f8fafc; border-radius: 4px; font-size: 0.75rem; color: #64748b;">
-                                    <i class="{{ $amenity->icon }}"></i>
-                                </span>
-                            @endforeach
-                            @if($property->amenities->count() > 3)
-                                <span style="padding: 0.25rem 0.5rem; background: #f8fafc; border-radius: 4px; font-size: 0.75rem; color: #64748b;">
-                                    +{{ $property->amenities->count() - 3 }}
-                                </span>
-                            @endif
-                        </div>
-                    @endif
 
                     <!-- View Details Button -->
                     <div class="property-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                        <a href="{{ route('property.show', $property->slug) }}" class="btn btn-primary btn-sm w-100">
-                            <i class="fas fa-eye me-1"></i> View Details
+                        <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye me-1"></i> View Property
                         </a>
                     </div>
                 </div>
@@ -122,7 +101,7 @@
     <div class="empty-state">
         <i class="fas fa-search"></i>
         <h3>No Properties Found</h3>
-        <p>Try adjusting your filters to see more results.</p>
+        <p>Try adjusting your filters to see more listings.</p>
     </div>
 @endif
 
