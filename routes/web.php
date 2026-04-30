@@ -223,8 +223,8 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
         Route::post('/messages/{id}/ticket-status', 'updateTicketStatus')->name('chat.ticket-status');
         Route::get('/api/conversations', 'getConversations')->name('chat.conversations');
         Route::get('/api/unread-count', 'getUnreadCount')->name('chat.unread-count');
-        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list');
-        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search');
+        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list')->middleware('throttle:30,1');
+        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search')->middleware('throttle:30,1');
         Route::get('/api/tenants-list', 'getTenantsList')->name('chat.tenants-list');
     });
 
@@ -332,8 +332,8 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::post('/messages/{id}/read', 'markAsRead')->name('chat.mark-read');
         Route::get('/api/conversations', 'getConversations')->name('chat.conversations');
         Route::get('/api/unread-count', 'getUnreadCount')->name('chat.unread-count');
-        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list');
-        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search');
+        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list')->middleware('throttle:30,1');
+        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search')->middleware('throttle:30,1');
     });
 });
 

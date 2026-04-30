@@ -145,17 +145,19 @@ class ChatController extends Controller
         // Get tenant's active assignment
         $assignment = TenantAssignment::where('tenant_id', $tenant->id)
             ->where('status', 'active')
-            ->with('unit.apartment')
+            ->with(['unit.property', 'landlord'])
             ->first();
 
         if (! $assignment) {
             return back()->with('error', 'You need an active lease to contact your landlord.');
         }
 
+        $apartmentId = DirectMessagingAllowlist::resolvePropertyScopedApartmentId($tenant, $assignment->landlord);
+
         $conversation = Conversation::getOrCreateDirect(
             $tenant->id,
             $assignment->landlord_id,
-            $assignment->unit->apartment_id
+            $apartmentId
         );
 
         // Send initial message if provided

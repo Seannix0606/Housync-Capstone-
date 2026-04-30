@@ -69,7 +69,7 @@ class DirectMessagingAllowlist
                 'id' => $u->id,
                 'name' => $u->name,
                 'role' => $u->role,
-                'subtitle' => self::directorySubtitle($u),
+                'subtitle' => self::directorySubtitle($viewer, $u),
             ])
             ->values();
     }
@@ -205,7 +205,7 @@ class DirectMessagingAllowlist
         return self::sortContactRows(collect($byId)->values());
     }
 
-    private static function directorySubtitle(User $u): string
+    private static function directorySubtitle(User $viewer, User $u): string
     {
         $roleLabel = match ($u->role) {
             'landlord' => 'Landlord',
@@ -219,7 +219,29 @@ class DirectMessagingAllowlist
             $extra = ' · '.ucwords(str_replace('_', ' ', $u->staffProfile->staff_type));
         }
 
-        return $roleLabel.$extra.' · '.$u->email;
+        $subtitle = $roleLabel.$extra;
+        if (self::canRevealDirectoryEmail($viewer, $u)) {
+            return $subtitle.' · '.$u->email;
+        }
+
+        return $subtitle;
+    }
+
+    private static function canRevealDirectoryEmail(User $viewer, User $target): bool
+    {
+        if ($viewer->id === $target->id) {
+            return true;
+        }
+
+        // Keep this opt-in: only reveal emails when an explicit ability is granted.
+        if (method_exists($viewer, 'can')) {
+            return $viewer->can('users.view-email')
+                || $viewer->can('users.view_email')
+                || $viewer->can('view user email')
+                || $viewer->can('view-email');
+        }
+
+        return false;
     }
 
     /**
