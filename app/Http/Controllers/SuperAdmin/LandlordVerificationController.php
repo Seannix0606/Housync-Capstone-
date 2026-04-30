@@ -13,10 +13,11 @@ class LandlordVerificationController extends Controller
 {
     public function pendingLandlords()
     {
+        // Show ALL landlords (pending, approved, rejected) - with status tags
         $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
+            ->whereHas('landlordProfile')
             ->with([
-                'landlordProfile' => fn ($q) => $q->where('status', 'pending'),
+                'landlordProfile' => fn ($q) => $q->latestOfMany(),
                 'approvedBy',
                 'landlordDocuments',
             ])

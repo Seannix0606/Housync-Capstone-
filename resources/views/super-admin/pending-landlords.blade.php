@@ -191,6 +191,11 @@
             color: #dc2626;
         }
 
+        .status-processed {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
         .alert {
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
@@ -392,6 +397,11 @@
             color: #fca5a5 !important;
         }
 
+        body.dark-mode .status-processed {
+            background: #312e81 !important;
+            color: #a5b4fc !important;
+        }
+
         body.dark-mode .alert-success {
             background: #064e3b !important;
             border-color: #065f46 !important;
@@ -465,16 +475,20 @@
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\User::pendingLandlords()->count() }}</div>
-                    <div class="stat-label">Pending Approvals</div>
+                    <div class="stat-value">{{ \App\Models\User::where('role', 'landlord')->whereHas('landlordProfile', fn($q) => $q->where('status', 'pending'))->count() }}</div>
+                    <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\User::approvedLandlords()->count() }}</div>
-                    <div class="stat-label">Approved Landlords</div>
+                    <div class="stat-value">{{ \App\Models\User::where('role', 'landlord')->whereHas('landlordProfile', fn($q) => $q->where('status', 'approved'))->count() }}</div>
+                    <div class="stat-label">Approved</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\User::rejectedLandlords()->count() }}</div>
-                    <div class="stat-label">Rejected Applications</div>
+                    <div class="stat-value">{{ \App\Models\User::where('role', 'landlord')->whereHas('landlordProfile', fn($q) => $q->where('status', 'rejected'))->count() }}</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ \App\Models\User::where('role', 'landlord')->whereHas('landlordProfile')->count() }}</div>
+                    <div class="stat-label">Total</div>
                 </div>
             </div>
 
@@ -488,9 +502,8 @@
                 </div>
 
                 @php
-                    $visiblePendingLandlords = $pendingLandlords->filter(function ($landlord) {
-                        return optional($landlord->landlordProfile)->status === 'pending';
-                    });
+                    // Show ALL landlords - no filter needed (controller already returns all)
+                    $visiblePendingLandlords = $pendingLandlords;
                 @endphp
                 @if($visiblePendingLandlords->count() > 0)
                     <div class="table-container">
@@ -527,16 +540,21 @@
                                             <div style="font-size: 0.75rem; color: #64748b;">{{ $landlord->created_at->diffForHumans() }}</div>
                                         </td>
                                         <td>
-                                            <span class="status-badge status-{{ $landlord->status }}">
-                                                {{ ucfirst($landlord->status) }}
-                                            </span>
+                                            @php
+                                                $profileStatus = optional($landlord->landlordProfile)->status;
+                                            @endphp
+                                            @if($profileStatus === 'pending')
+                                                <span class="status-badge status-pending">Pending</span>
+                                            @else
+                                                <span class="status-badge status-processed">Processed</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="btn-group">
                                                 <button class="btn btn-primary btn-sm" onclick="showDocumentsModal({{ $landlord->id }}, '{{ $landlord->name }}')">
                                                     <i class="fas fa-file-alt"></i> View Docs
                                                 </button>
-                                                @if($landlord->landlordProfile && $landlord->landlordProfile->status === 'pending')
+                                                @if($profileStatus === 'pending')
                                                     <form method="POST" action="{{ route('super-admin.approve-landlord', $landlord->id) }}" style="display: inline;">
                                                         @csrf
                                                         <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve this landlord?')">
