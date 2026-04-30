@@ -554,7 +554,7 @@ export function mountBulkEditPage(rawConfig) {
         form.submit();
     }
 
-    async function initializeBulkEdit() {
+    function initializeBulkEdit() {
         const totalFloors = config.totalFloors;
         const propertyType = config.propertyType;
         const bulkParams = config.bulkParams;
@@ -657,7 +657,7 @@ export function mountBulkEditPage(rawConfig) {
     window.finalizeUnits = finalizeUnits;
 
     function boot() {
-        void initializeBulkEdit();
+        initializeBulkEdit();
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
