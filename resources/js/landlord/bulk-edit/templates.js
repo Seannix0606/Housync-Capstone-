@@ -1,67 +1,194 @@
 /**
- * HTML fragments for dynamically inserted rows / floors — presentation only.
+ * DOM builders for dynamically inserted rows / floors — avoids unsafe innerHTML.
  */
 
-export function buildUnitRowMarkup(unitId, floor, d) {
-    return `
-        <td>
-            <input type="text" name="units[${unitId}][unit_number]" class="form-control form-control-sm" value="${d.unit_number}" required>
-        </td>
-        <td>
-            <select name="units[${unitId}][unit_type]" class="form-control form-control-sm" required>
-                <option value="studio" ${d.unit_type === 'studio' ? 'selected' : ''}>Studio</option>
-                <option value="one_bedroom" ${d.unit_type === 'one_bedroom' ? 'selected' : ''}>One Bedroom</option>
-                <option value="two_bedroom" ${d.unit_type === 'two_bedroom' ? 'selected' : ''}>Two Bedroom</option>
-                <option value="three_bedroom" ${d.unit_type === 'three_bedroom' ? 'selected' : ''}>Three Bedroom</option>
-                <option value="penthouse" ${d.unit_type === 'penthouse' ? 'selected' : ''}>Penthouse</option>
-            </select>
-        </td>
-        <td class="text-center">
-            <div class="d-flex justify-content-center align-items-center gap-2">
-                <input type="number" name="units[${unitId}][bedrooms]" class="form-control form-control-sm" value="${d.bedrooms}" min="0" max="10" required style="width: 60px;">
-                <span class="text-muted">/</span>
-                <input type="number" name="units[${unitId}][bathrooms]" class="form-control form-control-sm" value="${d.bathrooms}" min="1" max="10" required style="width: 60px;">
-            </div>
-        </td>
-        <td class="text-end">
-            <input type="number" name="units[${unitId}][rent_amount]" class="form-control form-control-sm" value="${d.rent_amount}" min="0" step="100" required>
-        </td>
-        <td class="text-center">
-            <select name="units[${unitId}][status]" class="form-control form-control-sm" required>
-                <option value="available" ${d.status === 'available' ? 'selected' : ''}>Available</option>
-                <option value="maintenance" ${d.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
-            </select>
-        </td>
-        <td class="text-center">
-            <input type="number" name="units[${unitId}][max_occupants]" class="form-control form-control-sm" value="${d.max_occupants}" min="1" max="20" required>
-        </td>
-        <td class="text-center">
-            <select name="units[${unitId}][leasing_type]" class="form-control form-control-sm" required>
-                <option value="separate" ${d.leasing_type === 'separate' ? 'selected' : ''}>Separate</option>
-                <option value="inclusive" ${d.leasing_type === 'inclusive' ? 'selected' : ''}>Inclusive</option>
-            </select>
-        </td>
-        <td class="text-center">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editUnit('${unitId}')" title="Edit Unit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-success" onclick="duplicateUnit('${unitId}')" title="Duplicate Unit">
-                    <i class="fas fa-copy"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeUnit('${unitId}')" title="Remove Unit">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </td>
-    `;
+const UNIT_TYPES = [
+    ['studio', 'Studio'],
+    ['one_bedroom', 'One Bedroom'],
+    ['two_bedroom', 'Two Bedroom'],
+    ['three_bedroom', 'Three Bedroom'],
+    ['penthouse', 'Penthouse'],
+];
+
+const STATUS_OPTS = [
+    ['available', 'Available'],
+    ['maintenance', 'Maintenance'],
+];
+
+const LEASING_OPTS = [
+    ['separate', 'Separate'],
+    ['inclusive', 'Inclusive'],
+];
+
+export function buildUnitRowCellsFragment(unitId, _floor, d) {
+    const frag = document.createDocumentFragment();
+
+    const tdNum = document.createElement('td');
+    const inpNum = document.createElement('input');
+    inpNum.type = 'text';
+    inpNum.setAttribute('name', `units[${unitId}][unit_number]`);
+    inpNum.className = 'form-control form-control-sm';
+    inpNum.value = d.unit_number != null ? String(d.unit_number) : '';
+    inpNum.required = true;
+    tdNum.appendChild(inpNum);
+    frag.appendChild(tdNum);
+
+    const tdType = document.createElement('td');
+    const selType = document.createElement('select');
+    selType.setAttribute('name', `units[${unitId}][unit_type]`);
+    selType.className = 'form-control form-control-sm';
+    selType.required = true;
+    for (const [val, label] of UNIT_TYPES) {
+        const o = document.createElement('option');
+        o.value = val;
+        o.textContent = label;
+        if (d.unit_type === val) o.selected = true;
+        selType.appendChild(o);
+    }
+    tdType.appendChild(selType);
+    frag.appendChild(tdType);
+
+    const tdBeds = document.createElement('td');
+    tdBeds.className = 'text-center';
+    const wrapBeds = document.createElement('div');
+    wrapBeds.className = 'd-flex justify-content-center align-items-center gap-2';
+    const inpBed = document.createElement('input');
+    inpBed.type = 'number';
+    inpBed.setAttribute('name', `units[${unitId}][bedrooms]`);
+    inpBed.className = 'form-control form-control-sm';
+    inpBed.value = String(d.bedrooms ?? '');
+    inpBed.min = '0';
+    inpBed.max = '10';
+    inpBed.required = true;
+    inpBed.style.width = '60px';
+    const sep = document.createElement('span');
+    sep.className = 'text-muted';
+    sep.textContent = '/';
+    const inpBath = document.createElement('input');
+    inpBath.type = 'number';
+    inpBath.setAttribute('name', `units[${unitId}][bathrooms]`);
+    inpBath.className = 'form-control form-control-sm';
+    inpBath.value = String(d.bathrooms ?? '');
+    inpBath.min = '1';
+    inpBath.max = '10';
+    inpBath.required = true;
+    inpBath.style.width = '60px';
+    wrapBeds.appendChild(inpBed);
+    wrapBeds.appendChild(sep);
+    wrapBeds.appendChild(inpBath);
+    tdBeds.appendChild(wrapBeds);
+    frag.appendChild(tdBeds);
+
+    const tdRent = document.createElement('td');
+    tdRent.className = 'text-end';
+    const inpRent = document.createElement('input');
+    inpRent.type = 'number';
+    inpRent.setAttribute('name', `units[${unitId}][rent_amount]`);
+    inpRent.className = 'form-control form-control-sm';
+    inpRent.value = String(d.rent_amount ?? '');
+    inpRent.min = '0';
+    inpRent.step = '100';
+    inpRent.required = true;
+    tdRent.appendChild(inpRent);
+    frag.appendChild(tdRent);
+
+    const tdStat = document.createElement('td');
+    tdStat.className = 'text-center';
+    const selStat = document.createElement('select');
+    selStat.setAttribute('name', `units[${unitId}][status]`);
+    selStat.className = 'form-control form-control-sm';
+    selStat.required = true;
+    for (const [val, label] of STATUS_OPTS) {
+        const o = document.createElement('option');
+        o.value = val;
+        o.textContent = label;
+        if (d.status === val) o.selected = true;
+        selStat.appendChild(o);
+    }
+    tdStat.appendChild(selStat);
+    frag.appendChild(tdStat);
+
+    const tdOcc = document.createElement('td');
+    tdOcc.className = 'text-center';
+    const inpOcc = document.createElement('input');
+    inpOcc.type = 'number';
+    inpOcc.setAttribute('name', `units[${unitId}][max_occupants]`);
+    inpOcc.className = 'form-control form-control-sm';
+    inpOcc.value = String(d.max_occupants ?? '');
+    inpOcc.min = '1';
+    inpOcc.max = '20';
+    inpOcc.required = true;
+    tdOcc.appendChild(inpOcc);
+    frag.appendChild(tdOcc);
+
+    const tdLease = document.createElement('td');
+    tdLease.className = 'text-center';
+    const selLease = document.createElement('select');
+    selLease.setAttribute('name', `units[${unitId}][leasing_type]`);
+    selLease.className = 'form-control form-control-sm';
+    selLease.required = true;
+    for (const [val, label] of LEASING_OPTS) {
+        const o = document.createElement('option');
+        o.value = val;
+        o.textContent = label;
+        if (d.leasing_type === val) o.selected = true;
+        selLease.appendChild(o);
+    }
+    tdLease.appendChild(selLease);
+    frag.appendChild(tdLease);
+
+    const tdAct = document.createElement('td');
+    tdAct.className = 'text-center';
+    const group = document.createElement('div');
+    group.className = 'btn-group';
+    group.setAttribute('role', 'group');
+
+    const mkBtn = (className, iconClass, title, handler) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `btn btn-sm ${className}`;
+        b.title = title;
+        const i = document.createElement('i');
+        i.className = iconClass;
+        b.appendChild(i);
+        b.addEventListener('click', handler);
+        return b;
+    };
+
+    group.appendChild(
+        mkBtn('btn-outline-primary', 'fas fa-edit', 'Edit Unit', () =>
+            window.editUnit(unitId),
+        ),
+    );
+    group.appendChild(
+        mkBtn('btn-outline-success', 'fas fa-copy', 'Duplicate Unit', () =>
+            window.duplicateUnit(unitId),
+        ),
+    );
+    group.appendChild(
+        mkBtn('btn-outline-danger', 'fas fa-trash', 'Remove Unit', () =>
+            window.removeUnit(unitId),
+        ),
+    );
+    tdAct.appendChild(group);
+    frag.appendChild(tdAct);
+
+    return frag;
 }
 
-export function buildHiddenInputsMarkup(unitId, floor, defaultData) {
-    return `
-        <input type="hidden" name="units[${unitId}][floor_number]" value="${floor}">
-        <input type="hidden" name="units[${unitId}][is_furnished]" value="${defaultData.is_furnished ? 1 : 0}">
-    `;
+export function appendHiddenInputs(container, unitId, floor, defaultData) {
+    const hFloor = document.createElement('input');
+    hFloor.type = 'hidden';
+    hFloor.setAttribute('name', `units[${unitId}][floor_number]`);
+    hFloor.value = String(floor);
+
+    const hFurn = document.createElement('input');
+    hFurn.type = 'hidden';
+    hFurn.setAttribute('name', `units[${unitId}][is_furnished]`);
+    hFurn.value = defaultData.is_furnished ? '1' : '0';
+
+    container.appendChild(hFloor);
+    container.appendChild(hFurn);
 }
 
 export function buildNewFloorSectionMarkup(newFloor) {

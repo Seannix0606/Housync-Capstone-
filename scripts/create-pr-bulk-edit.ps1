@@ -11,18 +11,38 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $RepoRoot
 
 function Invoke-Git {
-    param([string[]]$Args)
-    & git @Args
+    param([string[]]$GitArgs)
+    & git @GitArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "git $($Args -join ' ') failed with exit code $LASTEXITCODE"
+        throw "git $($GitArgs -join ' ') failed with exit code $LASTEXITCODE"
     }
 }
 
 Write-Host "Repo: $RepoRoot"
 
 if (Test-Path ".git\index.lock") {
-    Write-Host "Removing stale .git\index.lock ..."
-    Remove-Item -Force ".git\index.lock"
+    $lockPath = Join-Path $RepoRoot ".git\index.lock"
+    $lockItem = Get-Item -LiteralPath $lockPath
+    $age = (Get-Date) - $lockItem.LastWriteTime
+    $staleMinutes = 8
+    $gitRelated = @('git', 'git-remote-https', 'ssh')
+    $alive = $false
+    foreach ($name in $gitRelated) {
+        if (Get-Process -Name $name -ErrorAction SilentlyContinue) {
+            $alive = $true
+            break
+        }
+    }
+    if ($alive) {
+        Write-Warning "A git- or ssh-related process is running; skipping removal of .git\index.lock to avoid corrupting an active operation."
+    }
+    elseif ($age.TotalMinutes -lt $staleMinutes) {
+        Write-Warning "index.lock exists and was modified within the last $staleMinutes minutes; not removing it. If no git command is running, wait or remove the lock manually."
+    }
+    else {
+        Write-Host "Removing stale .git\index.lock (no git/ssh process, older than $staleMinutes minutes) ..."
+        Remove-Item -LiteralPath $lockPath -Force
+    }
 }
 
 $branch = "refactor/bulk-edit-units-modules"
@@ -34,8 +54,11 @@ Invoke-Git @(
     'resources/views/landlord/bulk-edit-units.blade.php',
     'resources/views/layouts/landlord-app.blade.php',
     'vite.config.js',
-    'resources/css/landlord/',
-    'resources/js/landlord/',
+    'resources/css/landlord/bulk-edit-units.css',
+    'resources/js/landlord/bulk-edit-units.js',
+    'resources/js/landlord/bulk-edit/app.js',
+    'resources/js/landlord/bulk-edit/numeric.js',
+    'resources/js/landlord/bulk-edit/templates.js',
     'scripts/create-pr-bulk-edit.ps1'
 )
 

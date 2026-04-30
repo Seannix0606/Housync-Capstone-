@@ -1,7 +1,7 @@
 import { getNextAvailableUnitNumber, incrementUnitNumber } from './numeric.js';
 import {
-    buildUnitRowMarkup,
-    buildHiddenInputsMarkup,
+    buildUnitRowCellsFragment,
+    appendHiddenInputs,
     buildNewFloorSectionMarkup,
 } from './templates.js';
 
@@ -136,6 +136,51 @@ export function mountBulkEditPage(rawConfig) {
         updateFloorBadgeCounts();
     }
 
+    function getMaxFloorNumber() {
+        let max = 0;
+        document.querySelectorAll('.floor-section').forEach((s) => {
+            const n = parseInt(s.dataset.floor, 10);
+            if (!Number.isNaN(n) && n > max) max = n;
+        });
+        return max;
+    }
+
+    function getReferenceFloorSection() {
+        const expanded = document.querySelector(
+            '.floor-section:not(.floor-section--collapsed)',
+        );
+        if (expanded) return expanded;
+        const activeTile = document.querySelector('.floor-picker-tile--active');
+        if (activeTile && activeTile.dataset.floor) {
+            return document.querySelector(
+                `.floor-section[data-floor="${activeTile.dataset.floor}"]`,
+            );
+        }
+        return document.querySelector('.floor-section');
+    }
+
+    function readUnitRowSnapshot(unitRow) {
+        const data = {};
+        unitRow.querySelectorAll('input, select').forEach((el) => {
+            const m = el.name && el.name.match(/units\[([^\]]+)\]\[([^\]]+)\]/);
+            if (!m) return;
+            const field = m[2];
+            if (field === 'unit_number' || field === 'floor_number') return;
+            if (el.type === 'hidden' && field !== 'is_furnished') return;
+            if (field === 'is_furnished') {
+                data.is_furnished =
+                    el.value === '1' || el.value === 'true' || el.checked === true;
+                return;
+            }
+            if (el.type === 'checkbox') {
+                data[field] = el.checked;
+            } else {
+                data[field] = el.value;
+            }
+        });
+        return data;
+    }
+
     function createFloorPickerTile(floorNum) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -173,13 +218,13 @@ export function mountBulkEditPage(rawConfig) {
         const formExistingUnits = Array.from(
             document.querySelectorAll('input[name*="unit_number"]'),
         )
-            .map((input) => input.value)
-            .filter((value) => value.trim() !== '');
+            .map((input) => input.value.trim())
+            .filter((value) => value !== '');
 
         const allExistingUnits = [...existingUnits, ...formExistingUnits];
 
-        const defaultData = unitData || {
-            unit_number: getNextAvailableUnitNumber(String(floor), allExistingUnits),
+        const baseDefaults = {
+            unit_number: null,
             unit_type: 'two_bedroom',
             rent_amount: 15000,
             bedrooms: 2,
@@ -190,13 +235,32 @@ export function mountBulkEditPage(rawConfig) {
             is_furnished: false,
         };
 
+        const merged = { ...baseDefaults, ...(unitData || {}) };
+
+        let unitNum = merged.unit_number;
+        if (unitNum != null && String(unitNum).trim() !== '') {
+            unitNum = String(unitNum).trim();
+        } else {
+            unitNum = getNextAvailableUnitNumber(String(floor), allExistingUnits);
+        }
+
+        if (unitNum == null) {
+            alert(
+                'No available unit number on this floor (slots 01–99 are full). Remove a unit or pick another floor.',
+            );
+            return false;
+        }
+
+        merged.unit_number = unitNum;
+        merged.is_furnished = !!merged.is_furnished;
+
         const unitRow = document.createElement('tr');
         unitRow.className = 'unit-row';
         unitRow.id = unitId;
-        unitRow.innerHTML = buildUnitRowMarkup(unitId, floor, defaultData);
+        unitRow.appendChild(buildUnitRowCellsFragment(unitId, floor, merged));
 
         const hiddenInputs = document.createElement('div');
-        hiddenInputs.innerHTML = buildHiddenInputsMarkup(unitId, floor, defaultData);
+        appendHiddenInputs(hiddenInputs, unitId, floor, merged);
         unitRow.appendChild(hiddenInputs);
 
         floorContainer.appendChild(unitRow);
@@ -220,8 +284,15 @@ export function mountBulkEditPage(rawConfig) {
             formData.append(input.name, input.value);
         });
 
-        const currentNumber = unitRow.querySelector('input[name*="unit_number"]').value;
+        const numInput = unitRow.querySelector('input[name*="unit_number"]');
+        const currentNumber = numInput ? numInput.value : '';
         const newNumber = incrementUnitNumber(currentNumber);
+        if (newNumber == null) {
+            alert(
+                'Cannot duplicate this unit number. Use a floor + two-digit pattern (e.g. 101) with unit part 01–98.',
+            );
+            return;
+        }
 
         addUnitToFloor(parseInt(floor, 10), {
             unit_number: newNumber,
@@ -249,8 +320,7 @@ export function mountBulkEditPage(rawConfig) {
     function addNewFloor() {
         const floorsContainer = document.getElementById('floorsContainer');
         const pickerGrid = document.getElementById('floorPickerGrid');
-        const currentFloors = floorsContainer.querySelectorAll('.floor-section').length;
-        const newFloor = currentFloors + 1;
+        const newFloor = getMaxFloorNumber() + 1;
 
         if (pickerGrid) {
             pickerGrid.appendChild(createFloorPickerTile(newFloor));
@@ -282,11 +352,62 @@ export function mountBulkEditPage(rawConfig) {
     }
 
     function applyToAllFloors() {
-        alert('Apply to all floors functionality will be implemented');
+        const sourceSection = getReferenceFloorSection();
+        if (!sourceSection) {
+            alert('No floor is available to copy from.');
+            return;
+        }
+        const sourceFloor = sourceSection.dataset.floor;
+        const sourceRows = Array.from(sourceSection.querySelectorAll('.unit-row'));
+        if (sourceRows.length === 0) {
+            alert('The current floor has no units to copy.');
+            return;
+        }
+        if (
+            !confirm(
+                "Replace all units on every other floor with copies of this floor's settings? Unit numbers will be reassigned per floor.",
+            )
+        ) {
+            return;
+        }
+        const templates = sourceRows.map((row) => readUnitRowSnapshot(row));
+        document.querySelectorAll('.floor-section').forEach((section) => {
+            const f = section.dataset.floor;
+            if (f === sourceFloor) return;
+            section.querySelectorAll('.unit-row').forEach((r) => r.remove());
+            templates.forEach((t) => {
+                addUnitToFloor(parseInt(f, 10), { ...t });
+            });
+        });
+        updateStats();
     }
 
     function duplicateFloor() {
-        alert('Duplicate floor functionality will be implemented');
+        const sourceSection = getReferenceFloorSection();
+        if (!sourceSection) {
+            alert('No floor is available to duplicate.');
+            return;
+        }
+        const pickerGrid = document.getElementById('floorPickerGrid');
+        const newFloor = getMaxFloorNumber() + 1;
+
+        if (pickerGrid) {
+            pickerGrid.appendChild(createFloorPickerTile(newFloor));
+        }
+
+        const floorSection = document.createElement('div');
+        floorSection.className = 'floor-section';
+        floorSection.dataset.floor = String(newFloor);
+        floorSection.innerHTML = buildNewFloorSectionMarkup(newFloor);
+        sourceSection.insertAdjacentElement('afterend', floorSection);
+
+        const templates = Array.from(sourceSection.querySelectorAll('.unit-row')).map(
+            readUnitRowSnapshot,
+        );
+        templates.forEach((t) => addUnitToFloor(newFloor, { ...t }));
+
+        openFloorAccordion(newFloor, true);
+        updateStats();
     }
 
     function finalizeUnits() {
@@ -351,6 +472,17 @@ export function mountBulkEditPage(rawConfig) {
             return;
         }
 
+        const existingCount = config.existingUnitsCount;
+        let confirmMessage = `Are you sure you want to create ${units.length} units?`;
+        if (existingCount > 0) {
+            confirmMessage += `\n\n⚠️ Note: This property already has ${existingCount} units. Units with duplicate numbers will be skipped.`;
+        }
+        confirmMessage += `\n\nUnits: ${units.map((u) => u.unit_number).join(', ')}`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
         allUnitInputs.forEach((input) => input.remove());
 
         units.forEach((unit, index) => {
@@ -364,16 +496,7 @@ export function mountBulkEditPage(rawConfig) {
             });
         });
 
-        const existingCount = config.existingUnitsCount;
-        let confirmMessage = `Are you sure you want to create ${units.length} units?`;
-        if (existingCount > 0) {
-            confirmMessage += `\n\n⚠️ Note: This property already has ${existingCount} units. Units with duplicate numbers will be skipped.`;
-        }
-        confirmMessage += `\n\nUnits: ${units.map((u) => u.unit_number).join(', ')}`;
-
-        if (confirm(confirmMessage)) {
-            form.submit();
-        }
+        form.submit();
     }
 
     async function initializeBulkEdit() {
@@ -425,6 +548,12 @@ export function mountBulkEditPage(rawConfig) {
 
                 for (let unit = 1; unit <= unitsPerFloor; unit++) {
                     const unitNumber = getNextAvailableUnitNumber(String(floor), existingUnits);
+                    if (!unitNumber) {
+                        console.error(
+                            `No free unit number slot on floor ${floor}; stopping auto-create for this floor.`,
+                        );
+                        break;
+                    }
                     existingUnits.push(unitNumber);
 
                     const success = addUnitToFloor(floor, {
