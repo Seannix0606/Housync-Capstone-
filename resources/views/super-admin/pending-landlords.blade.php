@@ -264,6 +264,50 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
+        .preview-modal-content {
+            max-width: 1000px !important;
+            width: 95% !important;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            margin: 3vh auto !important;
+            padding: 1rem 1rem 0.75rem 1rem !important;
+        }
+
+        .preview-container {
+            flex: 1;
+            min-height: 60vh;
+            max-height: 70vh;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-container img,
+        .preview-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .preview-scroll-area {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+
+        .preview-scroll-area img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform-origin: top center;
+            transition: transform 0.15s ease;
+        }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -592,6 +636,40 @@
         </div>
     </div>
 
+    <!-- Document Preview Modal -->
+    <div id="filePreviewModal" class="modal">
+        <div class="modal-content preview-modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="filePreviewTitle">Document Preview</h3>
+                <button type="button" class="close" onclick="closeFilePreviewModal()">&times;</button>
+            </div>
+            <div id="filePreviewContent" class="preview-container">
+                <div style="color: #64748b;">Loading preview...</div>
+            </div>
+            <div style="padding: 0.75rem 0.25rem 0.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="scrollPreviewContent(-320)">
+                    <i class="fas fa-arrow-up"></i> Scroll Up
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="scrollPreviewContent(320)">
+                    <i class="fas fa-arrow-down"></i> Scroll Down
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="zoomPreviewImage(0.1)">
+                    <i class="fas fa-search-plus"></i> Zoom In
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="zoomPreviewImage(-0.1)">
+                    <i class="fas fa-search-minus"></i> Zoom Out
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="resetPreviewZoom()">
+                    <i class="fas fa-compress"></i> Reset Zoom
+                </button>
+                <a id="filePreviewDownload" href="#" class="btn btn-primary btn-sm" download>
+                    <i class="fas fa-download"></i> Download File
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeFilePreviewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Reject Modal -->
     <div id="rejectModal" class="modal">
         <div class="modal-content">
@@ -620,6 +698,136 @@
     </div>
 
     <script>
+        let currentPreviewObjectUrl = null;
+        let currentImageZoom = 1;
+
+        function getFileExtension(fileName, fileUrl) {
+            const source = (fileName || fileUrl || '').split('?')[0].toLowerCase();
+            const parts = source.split('.');
+            return parts.length > 1 ? parts.pop() : '';
+        }
+
+        function openFilePreviewModal(fileUrl, fileName) {
+            const modal = document.getElementById('filePreviewModal');
+            const title = document.getElementById('filePreviewTitle');
+            const content = document.getElementById('filePreviewContent');
+            const downloadBtn = document.getElementById('filePreviewDownload');
+
+            if (!modal || !title || !content || !downloadBtn) return;
+
+            title.textContent = fileName || 'Document Preview';
+            downloadBtn.href = fileUrl;
+            downloadBtn.setAttribute('download', fileName || 'document');
+            currentImageZoom = 1;
+
+            modal.style.display = 'block';
+            content.innerHTML = '<div style="color: #64748b;">Loading preview...</div>';
+
+            const ext = getFileExtension(fileName, fileUrl);
+            fetch(fileUrl)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Unable to load file preview.');
+                    }
+                    return response.blob();
+                })
+                .then((blob) => {
+                    if (currentPreviewObjectUrl) {
+                        URL.revokeObjectURL(currentPreviewObjectUrl);
+                    }
+                    currentPreviewObjectUrl = URL.createObjectURL(blob);
+
+                    const blobType = (blob.type || '').toLowerCase();
+                    const isImageByExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'].includes(ext);
+                    const isPdfByExt = ext === 'pdf';
+                    const isImageByMime = blobType.startsWith('image/');
+                    const isPdfByMime = blobType === 'application/pdf';
+
+                    if (isImageByExt || isImageByMime) {
+                        content.innerHTML = `<div class="preview-scroll-area"><img src="${currentPreviewObjectUrl}" alt="${fileName || 'Preview'}"></div>`;
+                        resetPreviewZoom();
+                    } else if (isPdfByExt || isPdfByMime) {
+                        content.innerHTML = `<iframe src="${currentPreviewObjectUrl}" title="${fileName || 'PDF Preview'}"></iframe>`;
+                    } else {
+                        content.innerHTML = `
+                            <div style="text-align:center; padding: 2rem;">
+                                <i class="fas fa-file" style="font-size:2rem; color:#64748b; margin-bottom: 0.75rem;"></i>
+                                <p style="margin:0; color:#64748b;">This file type cannot be previewed inline.</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    content.innerHTML = `
+                        <div style="text-align:center; padding: 2rem;">
+                            <i class="fas fa-exclamation-circle" style="font-size:2rem; color:#ef4444; margin-bottom: 0.75rem;"></i>
+                            <p style="margin:0; color:#64748b;">Could not load preview. Use "Download File".</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function closeFilePreviewModal() {
+            const modal = document.getElementById('filePreviewModal');
+            const content = document.getElementById('filePreviewContent');
+            if (modal) modal.style.display = 'none';
+            if (content) content.innerHTML = '<div style="color: #64748b;">Loading preview...</div>';
+            if (currentPreviewObjectUrl) {
+                URL.revokeObjectURL(currentPreviewObjectUrl);
+                currentPreviewObjectUrl = null;
+            }
+            currentImageZoom = 1;
+        }
+
+        function scrollPreviewContent(delta) {
+            const content = document.getElementById('filePreviewContent');
+            if (!content) return;
+
+            const scrollArea = content.querySelector('.preview-scroll-area');
+            if (scrollArea) {
+                scrollArea.scrollBy({ top: delta, behavior: 'smooth' });
+                return;
+            }
+
+            const frame = content.querySelector('iframe');
+            if (frame) {
+                try {
+                    frame.contentWindow.scrollBy({ top: delta, behavior: 'smooth' });
+                } catch (_) {
+                    content.scrollBy({ top: delta, behavior: 'smooth' });
+                }
+                return;
+            }
+
+            content.scrollBy({ top: delta, behavior: 'smooth' });
+        }
+
+        function getPreviewImageElement() {
+            const content = document.getElementById('filePreviewContent');
+            if (!content) return null;
+            return content.querySelector('.preview-scroll-area img');
+        }
+
+        function applyPreviewImageZoom() {
+            const img = getPreviewImageElement();
+            if (!img) return;
+            img.style.transform = `scale(${currentImageZoom})`;
+        }
+
+        function zoomPreviewImage(step) {
+            const img = getPreviewImageElement();
+            if (!img) return;
+            currentImageZoom = Math.max(0.5, Math.min(3, currentImageZoom + step));
+            applyPreviewImageZoom();
+        }
+
+        function resetPreviewZoom() {
+            const img = getPreviewImageElement();
+            if (!img) return;
+            currentImageZoom = 1;
+            applyPreviewImageZoom();
+        }
+
         function showDocumentsModal(landlordId, landlordName) {
             document.getElementById('documentsModal').style.display = 'block';
             
@@ -677,16 +885,35 @@
             document.getElementById('rejectForm').reset();
         }
 
+        document.addEventListener('click', function(event) {
+            const clickedNode = event.target;
+            const clickedElement =
+                clickedNode instanceof Element ? clickedNode : clickedNode?.parentElement;
+            const previewLink = clickedElement
+                ? clickedElement.closest('.js-preview-landlord-doc')
+                : null;
+            if (!previewLink) return;
+
+            event.preventDefault();
+            const fileUrl = previewLink.getAttribute('data-file-url') || previewLink.getAttribute('href');
+            const fileName = previewLink.getAttribute('data-file-name') || previewLink.textContent.trim();
+            openFilePreviewModal(fileUrl, fileName);
+        });
+
         // Close modal when clicking outside
         window.onclick = function(event) {
             const documentsModal = document.getElementById('documentsModal');
             const rejectModal = document.getElementById('rejectModal');
+            const filePreviewModal = document.getElementById('filePreviewModal');
             
             if (event.target == documentsModal) {
                 closeDocumentsModal();
             }
             if (event.target == rejectModal) {
                 closeRejectModal();
+            }
+            if (event.target == filePreviewModal) {
+                closeFilePreviewModal();
             }
         }
     </script>
