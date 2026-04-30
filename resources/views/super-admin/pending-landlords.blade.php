@@ -219,6 +219,12 @@
             color: #d97706;
         }
 
+        .alert-info {
+            background: #eff6ff;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -410,6 +416,12 @@
             color: #fbbf24 !important;
         }
 
+        body.dark-mode .alert-info {
+            background: #172554 !important;
+            border-color: #2563eb !important;
+            color: #bfdbfe !important;
+        }
+
         body.dark-mode .empty-icon {
             color: #475569 !important;
         }
@@ -463,7 +475,7 @@
             @endif
 
             @if(session('info'))
-                <div class="alert alert-info" style="background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; padding: 0.875rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> {{ session('info') }}
                 </div>
             @endif

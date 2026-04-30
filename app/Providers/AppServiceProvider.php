@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\StorageServiceInterface;
+use App\Models\User;
 use App\Services\SupabaseService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,5 +39,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\MaintenanceRequest::class, \App\Policies\MaintenanceRequestPolicy::class);
         Gate::policy(\App\Models\Bill::class, \App\Policies\BillPolicy::class);
         Gate::policy(\App\Models\Announcement::class, \App\Policies\AnnouncementPolicy::class);
+
+        View::composer('layouts.super-admin-app', function ($view): void {
+            $view->with('pendingLandlordCount', User::pendingLandlords()->count());
+        });
     }
 }

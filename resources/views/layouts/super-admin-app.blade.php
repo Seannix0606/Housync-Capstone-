@@ -457,9 +457,6 @@
             <span class="saas-logo-mark" aria-hidden="true"><i class="fas fa-shield-alt"></i></span>
             <span class="portal-title-label">Super Admin Portal</span>
         </div>
-        @php
-            $pendingLandlordCount = \App\Models\User::pendingLandlords()->count();
-        @endphp
         <nav class="sidebar-nav">
             <a class="nav-link{{ request()->routeIs('super-admin.dashboard') ? ' active' : '' }}" href="{{ route('super-admin.dashboard') }}"><span class="nav-icon"><i class="fas fa-home"></i></span> <span class="nav-label">Dashboard</span></a>
             <a class="nav-link{{ request()->routeIs('super-admin.pending-landlords') ? ' active' : '' }}" href="{{ route('super-admin.pending-landlords') }}"><span class="nav-icon"><i class="fas fa-user-clock"></i></span> <span class="nav-label">Pending Approvals</span>@if($pendingLandlordCount > 0)<span class="nav-badge" aria-label="{{ $pendingLandlordCount }} pending approvals">{{ $pendingLandlordCount > 99 ? '99+' : $pendingLandlordCount }}</span>@endif</a>

@@ -28,11 +28,12 @@ class User extends Authenticatable
 
     /**
      * The attributes that are mass assignable.
-     * Note: name is stored in profiles only, not in users table
+     * Note: name is persisted on users and may also be mirrored to role profiles.
      *
      * @var list<string>
      */
     protected $fillable = [
+        'name',
         'email',
         'password',
         'role',

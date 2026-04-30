@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\LandlordVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class LandlordVerificationController extends Controller
@@ -43,8 +42,6 @@ class LandlordVerificationController extends Controller
                 ->route('super-admin.pending-landlords')
                 ->with('error', $e->getMessage());
         }
-
-        Cache::forget('super_admin.pending_landlords_count');
 
         if ($result === 'already_approved') {
             return redirect()
@@ -82,8 +79,6 @@ class LandlordVerificationController extends Controller
                 ->route('super-admin.pending-landlords')
                 ->with('error', $e->getMessage());
         }
-
-        Cache::forget('super_admin.pending_landlords_count');
 
         if ($result === 'already_rejected') {
             return redirect()

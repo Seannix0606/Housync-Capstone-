@@ -784,21 +784,36 @@ function collectBulkUnitsFromForm() {
 
     const units = [];
 
+    const parseOptionalNumber = (value, parser) => {
+        if (value === null || value === undefined) {
+            return null;
+        }
+
+        const raw = String(value).trim();
+        if (raw === '') {
+            return null;
+        }
+
+        const parsed = parser(raw);
+        return Number.isNaN(parsed) ? null : parsed;
+    };
+
     unitsMap.forEach((unitData) => {
         if (unitData.unit_number && unitData.unit_number.trim() !== '') {
             if (!unitData.floor_number) {
-                const unitNum = unitData.unit_number.toString();
-                if (unitNum.length >= 3) {
-                    unitData.floor_number = parseInt(unitNum.substring(0, unitNum.length - 2), 10);
+                const unitNum = String(unitData.unit_number).trim();
+                if (/^\d{3,}$/.test(unitNum)) {
+                    const inferredFloor = parseInt(unitNum.substring(0, unitNum.length - 2), 10);
+                    unitData.floor_number = Number.isNaN(inferredFloor) ? null : inferredFloor;
                 } else {
-                    unitData.floor_number = 1;
+                    unitData.floor_number = null;
                 }
             }
 
-            unitData.rent_amount = parseFloat(unitData.rent_amount) || 0;
-            unitData.bedrooms = parseInt(unitData.bedrooms, 10) || 0;
-            unitData.bathrooms = parseInt(unitData.bathrooms, 10) || 1;
-            unitData.max_occupants = parseInt(unitData.max_occupants, 10) || 4;
+            unitData.rent_amount = parseOptionalNumber(unitData.rent_amount, parseFloat);
+            unitData.bedrooms = parseOptionalNumber(unitData.bedrooms, (v) => parseInt(v, 10));
+            unitData.bathrooms = parseOptionalNumber(unitData.bathrooms, (v) => parseInt(v, 10));
+            unitData.max_occupants = parseOptionalNumber(unitData.max_occupants, (v) => parseInt(v, 10));
             unitData.is_furnished = unitData.is_furnished === 'true' || unitData.is_furnished === true || unitData.is_furnished === '1';
 
             units.push(unitData);

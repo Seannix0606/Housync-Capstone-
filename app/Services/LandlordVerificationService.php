@@ -19,7 +19,7 @@ class LandlordVerificationService
     public function pendingLandlordsPaginated(int $perPage = 15)
     {
         return $this->pendingLandlordsQuery()
-            ->with(['landlordProfile', 'approvedBy', 'landlordDocuments'])
+            ->with(['landlordProfile'])
             ->latest('users.created_at')
             ->paginate($perPage);
     }
@@ -45,29 +45,35 @@ class LandlordVerificationService
      */
     public function approvePendingLandlord(User $landlord, int $actingAdminUserId): string
     {
-        $landlord->load('landlordProfile');
-        $profile = $landlord->landlordProfile;
+        $result = DB::transaction(function () use ($landlord, $actingAdminUserId) {
+            $profile = $landlord->landlordProfile()->lockForUpdate()->first();
 
-        if (! $profile) {
-            throw new \RuntimeException('Landlord profile not found.');
-        }
+            if (! $profile) {
+                throw new \RuntimeException('Landlord profile not found.');
+            }
 
-        if ($profile->status === 'approved') {
-            return 'already_approved';
-        }
+            if ($profile->status === 'approved') {
+                return 'already_approved';
+            }
 
-        if ($profile->status !== 'pending') {
-            throw new \RuntimeException('This landlord application is not pending approval.');
-        }
+            if ($profile->status !== 'pending') {
+                throw new \RuntimeException('This landlord application is not pending approval.');
+            }
 
-        DB::transaction(function () use ($landlord, $actingAdminUserId) {
-            $landlord->approve($actingAdminUserId);
+            $profile->update([
+                'status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => $actingAdminUserId,
+                'rejection_reason' => null,
+            ]);
+
+            return 'approved';
         });
 
         $landlord->unsetRelation('landlordProfile');
         $landlord->load('landlordProfile');
 
-        return 'approved';
+        return $result;
     }
 
     /**
@@ -77,28 +83,34 @@ class LandlordVerificationService
      */
     public function rejectPendingLandlord(User $landlord, int $actingAdminUserId, string $reason): string
     {
-        $landlord->load('landlordProfile');
-        $profile = $landlord->landlordProfile;
+        $result = DB::transaction(function () use ($landlord, $actingAdminUserId, $reason) {
+            $profile = $landlord->landlordProfile()->lockForUpdate()->first();
 
-        if (! $profile) {
-            throw new \RuntimeException('Landlord profile not found.');
-        }
+            if (! $profile) {
+                throw new \RuntimeException('Landlord profile not found.');
+            }
 
-        if ($profile->status === 'rejected') {
-            return 'already_rejected';
-        }
+            if ($profile->status === 'rejected') {
+                return 'already_rejected';
+            }
 
-        if ($profile->status !== 'pending') {
-            throw new \RuntimeException('This landlord application is not pending approval.');
-        }
+            if ($profile->status !== 'pending') {
+                throw new \RuntimeException('This landlord application is not pending approval.');
+            }
 
-        DB::transaction(function () use ($landlord, $actingAdminUserId, $reason) {
-            $landlord->reject($actingAdminUserId, $reason);
+            $profile->update([
+                'status' => 'rejected',
+                'approved_at' => null,
+                'approved_by' => $actingAdminUserId,
+                'rejection_reason' => $reason,
+            ]);
+
+            return 'rejected';
         });
 
         $landlord->unsetRelation('landlordProfile');
         $landlord->load('landlordProfile');
 
-        return 'rejected';
+        return $result;
     }
 }
