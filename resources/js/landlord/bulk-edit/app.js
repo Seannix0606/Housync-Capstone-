@@ -23,6 +23,7 @@ export function mountBulkEditPage(rawConfig) {
 
     let existingUnits = [...config.existingUnitNumbers];
     let unitIdCounter = 0;
+    let finalizeInFlight = false;
 
     function showLoadingMessage(message, progress = '') {
         const modal = document.getElementById('loadingModal');
@@ -506,6 +507,10 @@ export function mountBulkEditPage(rawConfig) {
     async function finalizeUnits() {
         const form = document.getElementById('bulkEditForm');
         if (!form) return;
+        if (finalizeInFlight) return;
+
+        finalizeInFlight = true;
+        try {
 
         const allUnitInputs = form.querySelectorAll(
             'input[name*="units["], select[name*="units["]',
@@ -617,18 +622,23 @@ export function mountBulkEditPage(rawConfig) {
 
         allUnitInputs.forEach((input) => input.remove());
 
-        units.forEach((unit, index) => {
-            Object.keys(unit).forEach((key) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = `units[${index}][${key}]`;
-                const v = unit[key];
-                input.value = v != null && v !== '' ? String(v) : '';
-                form.appendChild(input);
-            });
-        });
+        // Use a single JSON payload so large batches do not get truncated by PHP max_input_vars.
+        const payloadInput = document.createElement('input');
+        payloadInput.type = 'hidden';
+        payloadInput.name = 'units_payload';
+        payloadInput.value = JSON.stringify(units);
+        form.appendChild(payloadInput);
+
+        const expectedCountInput = document.createElement('input');
+        expectedCountInput.type = 'hidden';
+        expectedCountInput.name = 'units_expected_count';
+        expectedCountInput.value = String(units.length);
+        form.appendChild(expectedCountInput);
 
         form.submit();
+        } finally {
+            finalizeInFlight = false;
+        }
     }
 
     function initializeBulkEdit() {

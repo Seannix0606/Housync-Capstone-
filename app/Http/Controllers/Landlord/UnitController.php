@@ -11,6 +11,7 @@ use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class UnitController extends Controller
 {
@@ -230,19 +231,50 @@ class UnitController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
+        $units = [];
+        $expectedCount = (int) $request->input('units_expected_count', 0);
+
+        // Prefer compact JSON payload to avoid PHP max_input_vars truncation on large batches.
+        $payload = $request->input('units_payload');
+        if (is_string($payload) && $payload !== '') {
+            try {
+                $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
+                if (is_array($decoded)) {
+                    $units = $decoded;
+                }
+            } catch (\JsonException $jsonException) {
+                Log::warning('Invalid bulk units payload JSON', [
+                    'property_id' => $propertyId,
+                    'error' => $jsonException->getMessage(),
+                ]);
+
+                return back()->withInput()->with('error', 'Invalid units payload received. Please try again.');
+            }
+        }
+
+        // Backward compatibility with old frontend that posts units[x][field] keys.
+        if (empty($units) && is_array($request->input('units'))) {
+            $units = $request->input('units');
+        }
+
         // Debug: Log the number of units received
-        $unitsReceived = $request->input('units', []);
+        $unitsReceived = $units;
         Log::info('Bulk units received', [
             'property_id' => $propertyId,
             'units_count' => is_array($unitsReceived) ? count($unitsReceived) : 0,
+            'expected_units_count' => $expectedCount,
             'post_data_size' => strlen(serialize($request->all())),
         ]);
 
-        if (! $request->has('units') || empty($request->input('units'))) {
+        if (empty($units)) {
             return back()->with('error', 'No units data received. Please try again.');
         }
 
-        $request->validate([
+        if ($expectedCount > 0 && count($units) < $expectedCount) {
+            return back()->withInput()->with('error', "Only ".count($units)." of {$expectedCount} units were received. Please retry; this usually means form data was truncated.");
+        }
+
+        Validator::make(['units' => $units], [
             'units' => 'required|array',
             'units.*.unit_number' => 'required|string|max:50',
             'units.*.unit_type' => 'required|string|max:100',
@@ -253,7 +285,7 @@ class UnitController extends Controller
             'units.*.leasing_type' => 'required|in:separate,inclusive',
             'units.*.max_occupants' => 'required|integer|min:1',
             'units.*.floor_number' => 'required|integer|min:1',
-        ]);
+        ])->validate();
 
         try {
             $unitsCreated = 0;
@@ -263,7 +295,7 @@ class UnitController extends Controller
             $unitsToInsert = [];
             $now = now();
 
-            $dedupedUnits = collect($request->units)->unique('unit_number')->values()->all();
+            $dedupedUnits = collect($units)->unique('unit_number')->values()->all();
 
             foreach ($dedupedUnits as $unitData) {
                 if (in_array($unitData['unit_number'], $existingUnitNumbers)) {
