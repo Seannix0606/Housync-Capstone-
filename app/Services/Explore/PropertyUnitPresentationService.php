@@ -47,12 +47,16 @@ class PropertyUnitPresentationService
                     'available_count' => $floorUnits->filter(fn (Unit $unit) => $unit->is_available)->count(),
                     'units' => $floorUnits->map(function (Unit $unit) use ($property, $displayTerm) {
                         $unitLabel = trim(($displayTerm.' '.($unit->unit_number ?? $unit->id)));
+                        $propertySlugOrId = ! empty($property->slug) ? $property->slug : $property->id;
+                        $rentDisplay = is_null($unit->rent_amount)
+                            ? 'Inquire'
+                            : '₱'.number_format((float) $unit->rent_amount, 2).'/month';
 
                         return [
                             'id' => $unit->id,
                             'label' => $unitLabel,
-                            'details_url' => route('property.show', ($property->slug ?? $property->id).'-unit-'.$unit->id),
-                            'rent_display' => '₱'.number_format((float) ($unit->rent_amount ?? 0), 2).'/month',
+                            'details_url' => route('property.show', $propertySlugOrId.'-unit-'.$unit->id),
+                            'rent_display' => $rentDisplay,
                             'status' => ucfirst((string) ($unit->status ?? 'available')),
                             'unit_type' => ucfirst((string) ($unit->unit_type ?? $property->property_type ?? 'Unit')),
                             'bedrooms' => $unit->bedrooms,

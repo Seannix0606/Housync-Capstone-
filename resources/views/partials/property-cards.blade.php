@@ -2,7 +2,7 @@
     <div class="properties-grid">
         @foreach($properties as $property)
             <div class="property-card">
-                <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="property-image-link">
+                <a href="{{ route('property.show', !empty($property->slug) ? $property->slug : $property->id) }}" class="property-image-link">
                     @php
                         $coverImage = $property->cover_image_url;
                         $gallerySource = $property->gallery_urls ?? [];
@@ -56,7 +56,7 @@
                     <span class="property-type">{{ ucfirst($property->property_type ?? 'property') }}</span>
                     
                     <h3 class="property-title">
-                        <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="property-title-link">{{ $property->name ?? 'Untitled Property' }}</a>
+                        <a href="{{ route('property.show', !empty($property->slug) ? $property->slug : $property->id) }}" class="property-title-link">{{ $property->name ?? 'Untitled Property' }}</a>
                     </h3>
                     
                     @if(!empty($property->address) || !empty($property->city))
@@ -89,7 +89,7 @@
 
                     <!-- View Details Button -->
                     <div class="property-actions" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                        <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="btn btn-primary btn-sm w-100">
+                        <a href="{{ route('property.show', !empty($property->slug) ? $property->slug : $property->id) }}" class="btn btn-primary btn-sm w-100">
                             <i class="fas fa-eye me-1"></i> View Property
                         </a>
                     </div>
