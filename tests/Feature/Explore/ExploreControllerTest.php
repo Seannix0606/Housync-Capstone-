@@ -5,7 +5,9 @@ namespace Tests\Feature\Explore;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Amenity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ExploreControllerTest extends TestCase
@@ -291,6 +293,95 @@ class ExploreControllerTest extends TestCase
         $data = $response->json();
         $this->assertStringContainsString('Has Available', $data['html']);
         $this->assertStringNotContainsString('Fully Occupied', $data['html']);
+    }
+
+    public function test_index_filters_by_amenities_from_modal_input(): void
+    {
+        if (! Schema::hasColumn('properties', 'amenities')) {
+            $this->markTestSkipped('properties.amenities column is unavailable in current schema.');
+        }
+
+        $wifiAmenity = Amenity::create([
+            'name' => 'wifi',
+            'icon' => 'fas fa-wifi',
+            'slug' => 'wifi',
+        ]);
+
+        $parkingAmenity = Amenity::create([
+            'name' => 'parking',
+            'icon' => 'fas fa-parking',
+            'slug' => 'parking',
+        ]);
+
+        $landlord = $this->createLandlord();
+
+        $wifiProperty = $this->createActiveProperty($landlord, [
+            'name' => 'Wifi Home',
+            'amenities' => ['wifi'],
+        ]);
+        $this->addAvailableUnit($wifiProperty);
+
+        $parkingProperty = $this->createActiveProperty($landlord, [
+            'name' => 'Parking Home',
+            'amenities' => ['parking'],
+        ]);
+        $this->addAvailableUnit($parkingProperty);
+
+        $response = $this->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->get(route('explore', ['amenities' => [$wifiAmenity->id]]));
+
+        $response->assertOk();
+        $data = $response->json();
+        $this->assertSame(1, $data['count']);
+        $this->assertStringContainsString('Wifi Home', $data['html']);
+        $this->assertStringNotContainsString('Parking Home', $data['html']);
+    }
+
+    public function test_index_available_date_filters_do_not_error_when_columns_are_absent(): void
+    {
+        $landlord = $this->createLandlord();
+        $property = $this->createActiveProperty($landlord, ['name' => 'Date Filter Safe Property']);
+        $this->addAvailableUnit($property);
+
+        $response = $this->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->get(route('explore', [
+                'available_from' => now()->toDateString(),
+                'available_to' => now()->addMonth()->toDateString(),
+            ]));
+
+        $response->assertOk();
+        $response->assertJsonStructure(['success', 'html', 'pagination', 'count']);
+        $this->assertSame(1, $response->json('count'));
+    }
+
+    public function test_index_featured_sort_orders_featured_first_when_column_exists(): void
+    {
+        if (! Schema::hasColumn('properties', 'is_featured')) {
+            $this->markTestSkipped('properties.is_featured column is unavailable in current schema.');
+        }
+
+        $landlord = $this->createLandlord();
+
+        $regular = $this->createActiveProperty($landlord, [
+            'name' => 'Regular Listing',
+            'is_featured' => false,
+        ]);
+        $this->addAvailableUnit($regular);
+
+        $featured = $this->createActiveProperty($landlord, [
+            'name' => 'Featured Listing',
+            'is_featured' => true,
+        ]);
+        $this->addAvailableUnit($featured);
+
+        $response = $this->get(route('explore', ['sort_by' => 'featured']));
+        $response->assertOk();
+
+        $properties = $response->viewData('properties');
+        $first = $properties->first();
+
+        $this->assertNotNull($first);
+        $this->assertSame('Featured Listing', $first->name);
     }
 
     // ── show() – unit slug ────────────────────────────────────────────────────

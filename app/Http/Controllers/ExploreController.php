@@ -8,6 +8,7 @@ use App\Models\Unit;
 use App\Services\Explore\PropertyHeroPresentationService;
 use App\Services\Explore\PropertyUnitPresentationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class ExploreController extends Controller
 {
@@ -60,6 +61,11 @@ class ExploreController extends Controller
      */
     private function buildPropertyQuery(Request $request)
     {
+        $propertyTableHasAvailableFrom = Schema::hasColumn('properties', 'available_from');
+        $propertyTableHasAvailableTo = Schema::hasColumn('properties', 'available_to');
+        $propertyTableHasIsFeatured = Schema::hasColumn('properties', 'is_featured');
+        $propertyTableHasAmenities = Schema::hasColumn('properties', 'amenities');
+
         $query = Property::query()
             ->with(['landlord', 'units' => function ($unitQuery) {
                 $unitQuery->where('status', 'available')->orderBy('rent_amount');
@@ -116,6 +122,41 @@ class ExploreController extends Controller
             });
         }
 
+        // Amenity filter from Explore modal.
+        // Supports both legacy amenity IDs and string labels stored in the JSON column.
+        $selectedAmenities = array_values(array_filter((array) $request->input('amenities', []), static function ($value) {
+            return $value !== null && $value !== '';
+        }));
+        if ($propertyTableHasAmenities && count($selectedAmenities) > 0) {
+            $amenityNamesById = Amenity::whereIn('id', $selectedAmenities)
+                ->pluck('name', 'id')
+                ->map(fn ($name) => mb_strtolower((string) $name))
+                ->all();
+
+            foreach ($selectedAmenities as $amenityId) {
+                $amenityName = $amenityNamesById[(int) $amenityId] ?? $amenityNamesById[(string) $amenityId] ?? null;
+
+                $query->where(function ($amenityQuery) use ($amenityId, $amenityName) {
+                    $amenityQuery->whereJsonContains('amenities', (string) $amenityId)
+                        ->orWhereJsonContains('amenities', (int) $amenityId);
+
+                    if ($amenityName !== null && $amenityName !== '') {
+                        $amenityQuery->orWhereJsonContains('amenities', $amenityName)
+                            ->orWhereJsonContains('amenities', ucfirst($amenityName));
+                    }
+                });
+            }
+        }
+
+        // Optional date filters (legacy property listing fields).
+        if ($propertyTableHasAvailableFrom && $request->filled('available_from')) {
+            $query->whereDate('available_from', '>=', $request->date('available_from')->toDateString());
+        }
+
+        if ($propertyTableHasAvailableTo && $request->filled('available_to')) {
+            $query->whereDate('available_to', '<=', $request->date('available_to')->toDateString());
+        }
+
         $sortBy = $request->get('sort_by', 'latest');
         switch ($sortBy) {
             case 'price_low':
@@ -123,6 +164,13 @@ class ExploreController extends Controller
                 break;
             case 'price_high':
                 $query->orderByRaw('min_available_rent IS NULL, min_available_rent DESC');
+                break;
+            case 'featured':
+                if ($propertyTableHasIsFeatured) {
+                    $query->orderByDesc('is_featured')->orderByDesc('created_at');
+                } else {
+                    $query->orderByDesc('created_at');
+                }
                 break;
             default:
                 $query->orderByDesc('created_at');
