@@ -495,8 +495,7 @@
                         <button type="submit" class="submit-btn">Login</button>
                     </form>
                     
-                    <p class="auth-switch" style="margin-bottom:8px;">Are you a property owner? <a href="{{ route('landlord.register') }}">Register as Landlord</a></p>
-                    <p class="auth-switch">Looking to rent? <a href="{{ route('register') }}">Register as Tenant</a></p>
+                    <p class="auth-switch">No account yet? <a href="{{ route('register') }}">Register here</a></p>
                 </div>
             </div>
             

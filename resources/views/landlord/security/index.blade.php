@@ -203,49 +203,53 @@
     </div>
 
     <!-- Recent Access Logs -->
-    @if($recentLogs->count() > 0)
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Recent Access Attempts</h5>
-                <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
-                   class="btn btn-sm btn-outline-primary">
-                    View All
-                </a>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive" id="recent-logs-container">
-                    <table class="table table-sm" id="recent-logs-table">
-                        <thead>
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Recent Access Attempts</h5>
+            <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
+               class="btn btn-sm btn-outline-primary">
+                View All
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive" id="recent-logs-container">
+                <table class="table table-sm" id="recent-logs-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Card UID</th>
+                            <th>Tenant</th>
+                            <th>Result</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-logs-body">
+                        @forelse($recentLogs as $log)
                             <tr>
-                                <th>Time</th>
-                                <th>Card UID</th>
-                                <th>Tenant</th>
-                                <th>Result</th>
-                                <th>Reason</th>
+                                <td><small>{{ $log->access_time->format('M j, g:i A') }}</small></td>
+                                <td><code class="small">{{ $log->card_uid }}</code></td>
+                                <td><small>{{ $log->tenant_name }}</small></td>
+                                <td><span class="badge bg-{{ $log->display_badge_class }}">{{ $log->display_result }}</span></td>
+                                <td>
+                                    @if($log->denial_reason)
+                                        <small class="text-muted">{{ $log->denial_reason_display }}</small>
+                                    @else
+                                        <small class="text-success">Access granted</small>
+                                    @endif
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody id="recent-logs-body">
-                            @foreach($recentLogs as $log)
-                                <tr>
-                                    <td><small>{{ $log->access_time->format('M j, g:i A') }}</small></td>
-                                    <td><code class="small">{{ $log->card_uid }}</code></td>
-                                    <td><small>{{ $log->tenant_name }}</small></td>
-                                    <td><span class="badge bg-{{ $log->display_badge_class }}">{{ $log->display_result }}</span></td>
-                                    <td>
-                                        @if($log->denial_reason)
-                                            <small class="text-muted">{{ $log->denial_reason_display }}</small>
-                                        @else
-                                            <small class="text-success">Access granted</small>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr id="recent-logs-empty-row">
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    No recent access attempts yet.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
-    @endif
+    </div>
 </div>
 @endsection
 
@@ -257,6 +261,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const propertyId = @json($propertyId);
 
     function renderRows(logs) {
+        if (!Array.isArray(logs) || logs.length === 0) {
+            bodyEl.innerHTML = `
+                <tr id="recent-logs-empty-row">
+                    <td colspan="5" class="text-center text-muted py-3">
+                        No recent access attempts yet.
+                    </td>
+                </tr>`;
+            return;
+        }
+
         const rows = logs.map(l => `
             <tr>
                 <td><small>${l.access_time_human || ''}</small></td>

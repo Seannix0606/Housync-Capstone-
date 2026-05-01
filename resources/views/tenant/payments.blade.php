@@ -77,6 +77,25 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please fix the following:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <div class="financial-summary">
             <div class="summary-card outstanding">
                 <div class="summary-icon">
@@ -182,7 +201,7 @@
                                     <div class="card card-body p-2" style="font-size: 0.85rem;">
                                         <table class="table table-sm mb-0">
                                             <thead>
-                                                <tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
+                                                <tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Status</th></tr>
                                             </thead>
                                             <tbody>
                                                 @foreach($bill->payments as $payment)
@@ -191,10 +210,85 @@
                                                     <td class="text-success">₱{{ number_format($payment->amount, 2) }}</td>
                                                     <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
                                                     <td>{{ $payment->reference_number ?? '—' }}</td>
+                                                    <td>
+                                                        @if($payment->status === 'verified')
+                                                            <span class="badge bg-success">Verified</span>
+                                                        @elseif($payment->status === 'rejected')
+                                                            <span class="badge bg-danger">Rejected</span>
+                                                        @else
+                                                            <span class="badge bg-warning text-dark">Pending review</span>
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($bill->balance > 0)
+                            <div class="mt-3 pt-3 border-top">
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#proofModal-{{ $bill->id }}">
+                                    <i class="fas fa-upload me-1"></i> Upload proof of payment
+                                </button>
+                                <span class="text-muted ms-2" style="font-size: 0.8rem;">Submit a screenshot or photo after paying so your landlord can verify.</span>
+                            </div>
+
+                            <div class="modal fade" id="proofModal-{{ $bill->id }}" tabindex="-1" aria-labelledby="proofModalLabel-{{ $bill->id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="proofModalLabel-{{ $bill->id }}">
+                                                <i class="fas fa-receipt me-2"></i>Proof of payment — {{ $bill->invoice_number }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="{{ route('tenant.payments.submit-proof', $bill->id) }}" method="POST" enctype="multipart/form-data">
+                                            @csrf
+                                            <input type="hidden" name="proof_bill_id" value="{{ $bill->id }}">
+                                            <div class="modal-body">
+                                                <p class="text-muted small mb-3">Outstanding balance for this bill: <strong>₱{{ number_format($bill->balance, 2) }}</strong></p>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Amount paid (₱) <span class="text-danger">*</span></label>
+                                                        <input type="number" name="amount" class="form-control" min="1" step="0.01" max="{{ $bill->balance }}" required
+                                                            value="{{ old('proof_bill_id') == $bill->id ? old('amount') : number_format($bill->balance, 2, '.', '') }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Payment method <span class="text-danger">*</span></label>
+                                                        <select name="method" class="form-select" required>
+                                                            @php $m = old('proof_bill_id') == $bill->id ? old('method') : null; @endphp
+                                                            <option value="cash" {{ $m === 'cash' ? 'selected' : '' }}>Cash</option>
+                                                            <option value="bank_transfer" {{ $m === 'bank_transfer' ? 'selected' : '' }}>Bank transfer</option>
+                                                            <option value="gcash" {{ ($m === 'gcash' || $m === null) ? 'selected' : '' }}>GCash</option>
+                                                            <option value="other" {{ $m === 'other' ? 'selected' : '' }}>Other</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Reference / transaction number</label>
+                                                        <input type="text" name="reference_number" class="form-control" maxlength="100" placeholder="Optional"
+                                                            value="{{ old('proof_bill_id') == $bill->id ? old('reference_number') : '' }}">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Proof image <span class="text-danger">*</span></label>
+                                                        <input type="file" name="proof_image" class="form-control" accept="image/jpeg,image/png,image/jpg" required>
+                                                        <div class="form-text">JPEG or PNG, up to 5 MB.</div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Notes</label>
+                                                        <textarea name="notes" class="form-control" rows="2" maxlength="500" placeholder="Optional">{{ old('proof_bill_id') == $bill->id ? old('notes') : '' }}</textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-paper-plane me-1"></i>Submit proof
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -214,7 +308,7 @@
                     <h4>Payment Information</h4>
                     <div class="action-buttons">
                         <p style="font-size: 0.9rem; color: #64748b; margin: 0;">
-                            This page displays your bills from your landlord. Please coordinate payment through the agreed channels with your landlord.
+                            Pay through your agreed channel, then use <strong>Upload proof of payment</strong> on any bill with a balance so your landlord can verify and record it.
                         </p>
                     </div>
                 </div>
@@ -232,4 +326,18 @@
             </aside>
         </div>
     </div>
+
+    @if(old('proof_bill_id'))
+        @push('scripts')
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var id = {{ (int) old('proof_bill_id') }};
+                    var el = document.getElementById('proofModal-' + id);
+                    if (el && typeof bootstrap !== 'undefined') {
+                        new bootstrap.Modal(el).show();
+                    }
+                });
+            </script>
+        @endpush
+    @endif
 @endsection

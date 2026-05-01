@@ -43,7 +43,8 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login');
     Route::post('/login', 'login')->name('login.post')->middleware('throttle:5,1');
-    Route::get('/register', fn () => view('register'))->name('register');
+    Route::get('/register', fn () => view('register-choice'))->name('register');
+    Route::get('/register/tenant', fn () => view('register'))->name('register.tenant');
     Route::post('/register', 'register')->name('register.post');
     Route::post('/logout', 'logout')->name('logout');
 });
@@ -326,6 +327,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-landlord', 'startWithLandlord')->name('chat.start-with-landlord');
         Route::post('/messages/start-with-user', 'startWithUser')->name('chat.start-with-user');
+        Route::post('/messages/start-from-listing', 'startFromListing')->name('chat.start-from-listing');
         Route::post('/messages/create-ticket', 'createTicket')->name('chat.create-ticket');
         Route::post('/messages/{id}/send', 'sendMessage')->name('chat.send');
         Route::get('/messages/{id}/fetch', 'getMessages')->name('chat.fetch');

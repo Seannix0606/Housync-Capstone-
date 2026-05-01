@@ -726,7 +726,7 @@ if (php_sapi_name() === 'cli') {
         echo "Enhanced ESP32 RFID Reader for Laravel (Serial Bridge)\n";
         echo "Usage: php ESP32Reader.php [options]\n\n";
         echo "Options:\n";
-        echo "  --port=COMx    Serial port (default: COM3)\n";
+        echo "  --port=COMx    Serial port (default: COM8)\n";
         echo "  --url=URL      Laravel base URL (default: https://housync.up.railway.app)\n";
         echo "  --key=SECRET   ESP32 API key (default: reads ESP32_API_KEY env var)\n";
         echo "  --help, -h     Show this help message\n\n";

@@ -39,8 +39,15 @@ class StoreUnitRequest extends FormRequest
             'is_furnished' => 'boolean',
             'amenities' => 'nullable|array',
             'notes' => 'nullable|string|max:500',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'unit_cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'unit_gallery' => 'nullable|array|max:12',
+            'unit_gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'property_cover_image' => 'prohibited',
+            'property_gallery' => 'prohibited',
+            'property_gallery.*' => 'prohibited',
+            'cover_image' => 'prohibited',
+            'gallery' => 'prohibited',
+            'gallery.*' => 'prohibited',
         ];
     }
 }

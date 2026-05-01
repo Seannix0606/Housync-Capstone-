@@ -186,14 +186,18 @@
                 {{ $maintenanceRequests->links() }}
             </div>
         @else
-            <div class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>No Maintenance Requests</h3>
-                <p>You haven't submitted any maintenance requests yet.</p>
-                <a href="{{ route('tenant.maintenance.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create Your First Request
-                </a>
-            </div>
+            <x-empty-state-card
+                class="empty-state-card--wide"
+                icon="fas fa-clipboard-list"
+                title="No maintenance requests yet"
+                description="When something needs fixing, open a request and your landlord will see it here."
+            >
+                <x-slot:action>
+                    <a href="{{ route('tenant.maintenance.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New request
+                    </a>
+                </x-slot:action>
+            </x-empty-state-card>
         @endif
     </div>
 </div>
