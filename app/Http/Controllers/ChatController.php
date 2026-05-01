@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\TenantAssignment;
 use App\Models\User;
+use App\Services\DirectMessagingAllowlist;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,40 +100,35 @@ class ChatController extends Controller
     }
 
     /**
-     * Start a new conversation with a tenant (for landlords)
+     * Start a new conversation with a tenant (for landlords); any messageable user may be targeted.
      */
     public function startWithTenant(Request $request)
     {
         $request->validate([
             'tenant_id' => 'required|exists:users,id',
-            'apartment_id' => 'nullable|exists:apartments,id',
             'message' => 'nullable|string|max:5000',
         ]);
 
         $landlord = Auth::user();
-        $tenantId = $request->tenant_id;
+        $other = User::findOrFail((int) $request->tenant_id);
 
-        // Verify tenant belongs to landlord
-        $validTenant = TenantAssignment::where('landlord_id', $landlord->id)
-            ->where('tenant_id', $tenantId)
-            ->exists();
+        return $this->redirectNewDirectConversation($landlord, $other, $request->message, 'landlord.chat.show');
+    }
 
-        if (! $validTenant) {
-            return back()->with('error', 'You can only message your own tenants.');
-        }
+    /**
+     * Start a direct conversation from the landlord inbox (directory or suggested list).
+     */
+    public function startWithUser(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'message' => 'nullable|string|max:5000',
+        ]);
 
-        $conversation = Conversation::getOrCreateDirect(
-            $landlord->id,
-            $tenantId,
-            $request->apartment_id
-        );
+        $landlord = Auth::user();
+        $other = User::findOrFail((int) $request->user_id);
 
-        // Send initial message if provided
-        if ($request->filled('message')) {
-            $this->createMessage($conversation, $landlord->id, $request->message);
-        }
-
-        return redirect()->route('landlord.chat.show', $conversation->id);
+        return $this->redirectNewDirectConversation($landlord, $other, $request->message, 'landlord.chat.show');
     }
 
     /**
@@ -149,17 +145,19 @@ class ChatController extends Controller
         // Get tenant's active assignment
         $assignment = TenantAssignment::where('tenant_id', $tenant->id)
             ->where('status', 'active')
-            ->with('unit.apartment')
+            ->with(['unit.property', 'landlord'])
             ->first();
 
         if (! $assignment) {
             return back()->with('error', 'You need an active lease to contact your landlord.');
         }
 
+        $apartmentId = DirectMessagingAllowlist::resolvePropertyScopedApartmentId($tenant, $assignment->landlord);
+
         $conversation = Conversation::getOrCreateDirect(
             $tenant->id,
             $assignment->landlord_id,
-            $assignment->unit->apartment_id
+            $apartmentId
         );
 
         // Send initial message if provided
@@ -459,7 +457,37 @@ class ChatController extends Controller
     }
 
     /**
-     * Get list of tenants for landlord to start conversation
+     * Suggested contacts: current and former tenants, applicants, and assigned staff.
+     */
+    public function getContactsList()
+    {
+        $user = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => DirectMessagingAllowlist::suggestedContactsForLandlord($user),
+        ]);
+    }
+
+    /**
+     * Search tenants, landlords, and staff platform-wide.
+     */
+    public function getDirectorySearch(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:100',
+        ]);
+
+        $user = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => DirectMessagingAllowlist::searchDirectoryUsers($user, $request->input('q')),
+        ]);
+    }
+
+    /**
+     * @deprecated Use getContactsList JSON shape; kept for older clients.
      */
     public function getTenantsList()
     {
@@ -481,6 +509,30 @@ class ChatController extends Controller
             'success' => true,
             'tenants' => $tenants,
         ]);
+    }
+
+    /**
+     * Open or continue a direct thread; property-scoped when assignments link both users.
+     */
+    private function redirectNewDirectConversation(User $from, User $to, ?string $message, string $showRoute): \Illuminate\Http\RedirectResponse
+    {
+        if (! DirectMessagingAllowlist::canStartDirectMessage($from, $to)) {
+            return back()->with('error', 'You cannot message this user.');
+        }
+
+        $apartmentId = DirectMessagingAllowlist::resolvePropertyScopedApartmentId($from, $to);
+
+        $conversation = Conversation::getOrCreateDirect(
+            $from->id,
+            $to->id,
+            $apartmentId
+        );
+
+        if ($message !== null && $message !== '') {
+            $this->createMessage($conversation, $from->id, $message);
+        }
+
+        return redirect()->route($showRoute, $conversation->id);
     }
 
     /**

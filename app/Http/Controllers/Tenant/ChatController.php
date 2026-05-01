@@ -9,6 +9,8 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Property;
 use App\Models\TenantAssignment;
+use App\Models\User;
+use App\Services\DirectMessagingAllowlist;
 use App\Models\Unit;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
@@ -127,6 +129,68 @@ class ChatController extends Controller
             $property->landlord_id,
             $property->id
         );
+        return redirect()->route('tenant.chat.show', $conversation->id);
+    }
+
+    /**
+     * Suggested contacts (leases, applications, property peers) plus relationships for quick picks.
+     */
+    public function getContactsList()
+    {
+        $tenant = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => DirectMessagingAllowlist::suggestedContactsForTenant($tenant),
+        ]);
+    }
+
+    /**
+     * Search all tenants, landlords, and staff on Housync by name or email.
+     */
+    public function getDirectorySearch(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:100',
+        ]);
+
+        $tenant = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'contacts' => DirectMessagingAllowlist::searchDirectoryUsers($tenant, $request->q),
+        ]);
+    }
+
+    /**
+     * Start a direct conversation with any directory-eligible user; uses property scope when assignments link both parties.
+     */
+    public function startWithUser(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'message' => 'nullable|string|max:5000',
+        ]);
+
+        $tenant = Auth::user();
+        $otherId = (int) $request->user_id;
+        $other = User::find($otherId);
+
+        if (! DirectMessagingAllowlist::canStartDirectMessage($tenant, $other)) {
+            return back()->with('error', 'You cannot message this user.');
+        }
+
+        $apartmentId = DirectMessagingAllowlist::resolvePropertyScopedApartmentId($tenant, $other);
+
+        $conversation = Conversation::getOrCreateDirect(
+            $tenant->id,
+            $otherId,
+            $apartmentId
+        );
+
+        if ($request->filled('message')) {
+            $this->createMessage($conversation, $tenant->id, $request->message);
+        }
 
         return redirect()->route('tenant.chat.show', $conversation->id);
     }

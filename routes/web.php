@@ -4,6 +4,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\Landlord\RegistrationController as LandlordRegistrationController;
 use App\Http\Controllers\Landlord\SettingsController as LandlordSettingsController;
@@ -12,12 +13,11 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RfidController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Staff\ProfileController as StaffProfileController;
 use App\Http\Controllers\SuperAdmin\LandlordVerificationController as SuperAdminLandlordVerificationController;
 use App\Http\Controllers\SuperAdmin\PropertyController as SuperAdminPropertyController;
 use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsController;
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
-use App\Http\Controllers\Staff\ProfileController as StaffProfileController;
 use App\Http\Controllers\Tenant\AnnouncementController as TenantAnnouncementController;
 use App\Http\Controllers\Tenant\ApplicationController as TenantApplicationController;
 use App\Http\Controllers\Tenant\BillingController as TenantBillingController;
@@ -217,12 +217,15 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
         Route::get('/messages', 'landlordIndex')->name('chat');
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-tenant', 'startWithTenant')->name('chat.start-with-tenant');
+        Route::post('/messages/start-with-user', 'startWithUser')->name('chat.start-with-user');
         Route::post('/messages/{id}/send', 'sendMessage')->name('chat.send');
         Route::get('/messages/{id}/fetch', 'getMessages')->name('chat.fetch');
         Route::post('/messages/{id}/read', 'markAsRead')->name('chat.mark-read');
         Route::post('/messages/{id}/ticket-status', 'updateTicketStatus')->name('chat.ticket-status');
         Route::get('/api/conversations', 'getConversations')->name('chat.conversations');
         Route::get('/api/unread-count', 'getUnreadCount')->name('chat.unread-count');
+        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list')->middleware('throttle:30,1');
+        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search')->middleware('throttle:30,1');
         Route::get('/api/tenants-list', 'getTenantsList')->name('chat.tenants-list');
     });
 
@@ -323,6 +326,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::get('/messages', 'index')->name('chat');
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-landlord', 'startWithLandlord')->name('chat.start-with-landlord');
+        Route::post('/messages/start-with-user', 'startWithUser')->name('chat.start-with-user');
         Route::post('/messages/start-from-listing', 'startFromListing')->name('chat.start-from-listing');
         Route::post('/messages/create-ticket', 'createTicket')->name('chat.create-ticket');
         Route::post('/messages/{id}/send', 'sendMessage')->name('chat.send');
@@ -330,6 +334,8 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::post('/messages/{id}/read', 'markAsRead')->name('chat.mark-read');
         Route::get('/api/conversations', 'getConversations')->name('chat.conversations');
         Route::get('/api/unread-count', 'getUnreadCount')->name('chat.unread-count');
+        Route::get('/api/contacts-list', 'getContactsList')->name('chat.contacts-list')->middleware('throttle:30,1');
+        Route::get('/api/directory-search', 'getDirectorySearch')->name('chat.directory-search')->middleware('throttle:30,1');
     });
 });
 
