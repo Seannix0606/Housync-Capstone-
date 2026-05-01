@@ -33,6 +33,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'name',
         'email',
         'password',
         'role',
@@ -428,12 +429,15 @@ class User extends Authenticatable
             default => null,
         };
 
+        // Use raw DB attribute only — accessing $this->name runs getNameAttribute(), which falls back to "User"
+        // before any profile exists (e.g. landlord registration), and would incorrectly seed profiles.
+        $rawName = isset($this->attributes['name']) ? trim((string) $this->attributes['name']) : '';
+
         if ($profileClass && ! $this->profile()) {
-            // Only create profile if we have a proper name
-            if ($this->name && $this->name !== 'New User') {
+            if ($rawName !== '' && $rawName !== 'New User') {
                 $profileData = [
                     'user_id' => $this->id,
-                    'name' => $this->name,
+                    'name' => $rawName,
                 ];
 
                 // Add status based on role

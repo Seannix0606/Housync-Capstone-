@@ -505,23 +505,23 @@
                         <h3 class="section-title">Photos</h3>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Cover Image <span class="text-danger">*</span></label>
-                                <input type="file" name="cover_image" id="cover_image" accept="image/*" class="form-control" onchange="previewCoverImage(this)">
+                                <label class="form-label">Unit Cover Image <span class="text-danger">*</span></label>
+                                <input type="file" name="unit_cover_image" id="cover_image" accept="image/*" class="form-control" onchange="previewCoverImage(this)">
                                 <div id="cover_image_preview" class="mt-2" style="display: none;">
                                     <img id="cover_preview_img" src="" alt="Cover Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e2e8f0;">
                                 </div>
-                                <p class="form-help text-muted mt-1">Main image displayed for this unit (JPEG/PNG, max 5MB)</p>
+                                <p class="form-help text-muted mt-1">Shown in unit card and unit details (JPEG/PNG, max 5MB)</p>
                             </div>
                         </div>
                         
                         <div class="form-group mt-3">
-                            <label class="form-label">Gallery Images (up to 12)</label>
+                            <label class="form-label">Unit Gallery (up to 12)</label>
                             <div class="gallery-upload-container">
-                                <input type="file" name="gallery[]" id="gallery_input" accept="image/*" multiple class="form-control" onchange="handleGalleryUpload(this)" style="display: none;">
+                                <input type="file" name="unit_gallery[]" id="gallery_input" accept="image/*" multiple class="form-control" onchange="handleGalleryUpload(this)" style="display: none;">
                                 <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('gallery_input').click()">
                                     <i class="fas fa-plus-circle me-2"></i>Add Images to Gallery
                                 </button>
-                                <p class="form-help text-muted mt-2">Add multiple images to showcase the unit (JPEG/PNG, max 5MB each)</p>
+                                <p class="form-help text-muted mt-2">Additional room/unit photos for unit listing presentation</p>
                             </div>
                             
                             <div id="gallery_preview" class="gallery-preview mt-3" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">

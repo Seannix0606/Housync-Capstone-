@@ -29,10 +29,9 @@ Route::middleware(['throttle:60,1', 'esp32.auth'])->group(function () {
     Route::get('/rfid/scan/pending', [RfidController::class, 'getPendingScanRequest'])->name('api.rfid.scan.pending');
 });
 
-// Browser-facing RFID API routes (web-triggered scans + landlord dashboards)
-// These use the app's normal user auth and do NOT require the ESP32 shared secret.
-Route::middleware(['throttle:60,1', 'auth'])->group(function () {
-    // Web-triggered scanning (request + status polling)
+// Browser-facing RFID API routes (Blade dashboards use fetch(); needs `web` middleware
+// so session cookies + CSRF apply — plain `api` stack has no session, so `auth` returned login HTML).
+Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
     Route::post('/rfid/scan/request', [RfidController::class, 'getCardUIDFromESP32Reader'])->name('api.rfid.scan.request');
     Route::get('/rfid/scan/status/{scanId}', [RfidController::class, 'checkScanRequestStatus'])->name('api.rfid.scan.status');
 
@@ -41,34 +40,43 @@ Route::middleware(['throttle:60,1', 'auth'])->group(function () {
 
     // Recent logs JSON for dynamic UI (landlord-specific)
     Route::get('/rfid/recent-logs', [RfidController::class, 'recentLogsJson'])->name('api.rfid.recent-logs');
+    /** Same handler as GET /rfid/latest-uid but for logged-in browsers (ESP32 route stays API-key-only). */
+    Route::get('/rfid/web/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.web.latest-uid');
 });
 
 // Private storage serving route.
 //
-// Authorization is enforced per directory:
-//
-//   tenant-documents/  — authenticated; owner, their landlord, or super_admin only
-//   payment-proofs/    — authenticated; paying tenant, bill's landlord, or super_admin only
-//   chat-attachments/  — authenticated; conversation participants or super_admin only
-//   (anything else)    — 404: unlisted directories are never served
+// Files are resolved from:
+//   payment-proofs/     — storage/app/private (guarded via Payment ownership)
+//   tenant-documents/     — storage/app/public (guarded via TenantDocument)
+//   chat-attachments/     — storage/app/public (guarded via conversation membership)
+//   anything else         — 404 (unlisted directories are never served)
 //
 // Cache-Control is set to "private, no-store" to prevent shared caches (CDNs,
 // reverse proxies) from storing or serving one user's files to another.
 Route::get('/storage/{path}', function (Request $request, $path) {
 
     // ── 1. Path traversal guard ───────────────────────────────────────────
-    $basePath = realpath(storage_path('app/public'));
+    // Payment proofs use the non-public disk (storage/app/private); other guarded paths stay under app/public.
+    $relativeFromRoute = ltrim(str_replace('\\', '/', $path), '/');
+
+    $privateBase = realpath(storage_path('app/private'));
+    $publicBase = realpath(storage_path('app/public'));
+
+    $usePrivateDisk = str_starts_with($relativeFromRoute, 'payment-proofs/');
+    $basePath = $usePrivateDisk ? $privateBase : $publicBase;
 
     abort_if($basePath === false, 404);
 
-    $fullPath  = realpath($basePath . DIRECTORY_SEPARATOR . $path);
-    $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    $segmentPath = str_replace('/', DIRECTORY_SEPARATOR, $relativeFromRoute);
+    $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
+    $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
 
     if ($fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath)) {
         abort(404);
     }
 
-    // Derive the relative path (forward slashes) used in DB file_path columns.
+    // Relative path (forward slashes) used in DB columns and authorization lookups.
     $relativePath = ltrim(str_replace('\\', '/', substr($fullPath, strlen($basePath))), '/');
 
     // ── 2. Authorization ──────────────────────────────────────────────────

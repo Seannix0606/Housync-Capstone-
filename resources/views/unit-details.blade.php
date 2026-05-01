@@ -405,13 +405,30 @@
                         </div>
                     @endguest
 
-                    <button class="btn btn-outline-primary w-100 mb-2">
-                        <i class="fas fa-envelope me-1"></i> Contact Landlord
-                    </button>
+                    @auth
+                        @if(Auth::user()->role === 'tenant' && $property->landlord_id)
+                            <form action="{{ route('tenant.chat.start-from-listing') }}" method="post" class="mb-2">
+                                @csrf
+                                <input type="hidden" name="unit_id" value="{{ $unit->id }}">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-envelope me-1"></i> Contact Landlord
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" class="btn btn-outline-primary w-100 mb-2" disabled title="{{ Auth::user()->role === 'tenant' ? 'No landlord on file for this listing' : 'Only tenants can contact landlords from listings' }}">
+                                <i class="fas fa-envelope me-1"></i> Contact Landlord
+                            </button>
+                        @endif
+                    @endauth
+                    @guest
+                        <a href="{{ route('login') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-envelope me-1"></i> Contact Landlord
+                        </a>
+                    @endguest
                     
-                    <button class="btn btn-outline-secondary w-100">
+                    <!--<button class="btn btn-outline-secondary w-100">
                         <i class="fas fa-calendar me-1"></i> Schedule Viewing
-                    </button>
+                    </button>-->
 
                     @if($property->landlord)
                         <hr>
@@ -519,15 +536,6 @@
                                 <div class="mb-3">
                                     <label for="applicant_occupation" class="form-label">Occupation <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="applicant_occupation" name="occupation" placeholder="e.g., Software Engineer" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="applicant_monthly_income" class="form-label">Monthly Income <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="applicant_monthly_income" name="monthly_income" placeholder="e.g., 50000" min="0" required>
-                                    </div>
-                                    <small class="text-muted">Your monthly income helps the landlord assess your application.</small>
                                 </div>
 
                                 <!-- Move-in Date -->

@@ -52,9 +52,13 @@
                     <tr>
                         <td>{{ $doc->document_type_label }}</td>
                         <td>
-                            <a href="{{ document_url($doc->file_path) }}" target="_blank" class="file-link">
+                            <button type="button"
+                                    class="file-link js-preview-landlord-doc"
+                                    data-file-url="{{ document_url($doc->file_path) }}"
+                                    data-file-name="{{ $doc->file_name }}"
+                                    style="background: none; border: none; padding: 0; cursor: pointer;">
                                 <i class="fas fa-file"></i> {{ $doc->file_name }}
-                            </a>
+                            </button>
                         </td>
                         <td>{{ $doc->uploaded_at->format('M d, Y H:i') }}</td>
                         <td>

@@ -1417,6 +1417,14 @@
             color: #f1f5f9 !important;
         }
 
+        body.dark-mode .floor-unit-count {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floor-collapse-trigger:hover {
+            background: #334155 !important;
+        }
+
         body.dark-mode .summary-stats .stat-card {
             background: #0f172a !important;
             border-color: #334155 !important;
@@ -1510,6 +1518,104 @@
         body.dark-mode .bulk-edit-container .property-info p,
         body.dark-mode .bulk-edit-container .property-info p strong {
             color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floors-grid-intro {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+            border-color: #334155 !important;
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .floors-grid-intro strong {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .floors-grid-intro i {
+            color: #a5b4fc !important;
+        }
+
+        body.dark-mode .floors-grid-intro em {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floor-picker-rail {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode .floor-picker-tile {
+            border-color: #334155 !important;
+            box-shadow: none !important;
+            background: #1e293b !important;
+        }
+
+        body.dark-mode #floorPickerGrid .floor-picker-tile:nth-child(even) {
+            background: #172554 !important;
+        }
+
+        body.dark-mode .floor-picker-tile:hover {
+            border-color: #475569 !important;
+            box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45) !important;
+        }
+
+        body.dark-mode .floor-picker-tile:focus-visible {
+            outline-color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floor-picker-tile--active {
+            outline-color: #ea580c !important;
+            border-color: #9a3412 !important;
+            background: #431407 !important;
+            box-shadow: 0 4px 14px -6px rgba(234, 88, 12, 0.35) !important;
+        }
+
+        body.dark-mode .floor-picker-heading {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floor-picker-digit {
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-mode .floor-picker-tile--active .floor-picker-digit {
+            color: #fdba74 !important;
+        }
+
+        body.dark-mode .floor-picker-count {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .floor-picker-tile--active .floor-picker-count {
+            background: #431407 !important;
+            border-color: #9a3412 !important;
+            color: #fed7aa !important;
+        }
+
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 1),
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 2),
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 3),
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 4),
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 5),
+        body.dark-mode .floor-section--collapsed:nth-child(6n + 6) {
+            background: linear-gradient(160deg, #1e293b 0%, #0f172a 65%, #172554 100%) !important;
+        }
+
+        body.dark-mode .floor-section--collapsed:hover {
+            border-color: #6366f1 !important;
+            box-shadow: 0 16px 36px -12px rgba(99, 102, 241, 0.45) !important;
+        }
+
+        body.dark-mode .floor-section--collapsed .floor-unit-count {
+            background: rgba(15, 23, 42, 0.85) !important;
+            border-color: rgba(129, 140, 248, 0.35) !important;
+            color: #cbd5e1 !important;
+        }
+
+        body.dark-mode .floor-section:not(.floor-section--collapsed) .floor-card-digit {
+            color: #f1f5f9 !important;
+            -webkit-text-fill-color: #f1f5f9 !important;
         }
 
         /* ========== Universal Light-Surface Overrides (last line of defense) ========== */
