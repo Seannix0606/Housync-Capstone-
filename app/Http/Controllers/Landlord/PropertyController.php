@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Landlord;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StorePropertyRequest;
 use App\Http\Requests\Landlord\UpdatePropertyRequest;
-use App\Services\SupabaseService;
+use App\Services\Media\PropertyMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -63,7 +63,7 @@ class PropertyController extends Controller
         return view('landlord.create-apartment');
     }
 
-    public function storeApartment(StorePropertyRequest $request)
+    public function storeApartment(StorePropertyRequest $request, PropertyMediaService $propertyMediaService)
     {
         Log::info('Property creation request received', [
             'data' => $request->only(['name', 'property_type', 'address', 'floors', 'bedrooms']),
@@ -72,50 +72,6 @@ class PropertyController extends Controller
         ]);
 
         try {
-            $coverPath = null;
-            if ($request->hasFile('cover_image')) {
-                try {
-                    $supabase = new SupabaseService;
-                    $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
-                    $path = 'properties/'.$filename;
-                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
-
-                    if ($uploadResult['success']) {
-                        $coverPath = $uploadResult['url'];
-                    } else {
-                        throw new \Exception($uploadResult['message'] ?? 'Supabase upload failed');
-                    }
-                } catch (\Exception $exception) {
-                    Log::warning('Supabase upload failed, falling back to local storage', ['error' => $exception->getMessage()]);
-                    $filename = 'apartment-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
-                    $path = $request->file('cover_image')->storeAs('apartment-covers', $filename, 'public');
-                    $coverPath = asset('storage/'.$path);
-                }
-            }
-
-            $galleryPaths = [];
-            if ($request->hasFile('gallery')) {
-                foreach ($request->file('gallery') as $index => $file) {
-                    try {
-                        $supabase = $supabase ?? new SupabaseService;
-                        $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
-                        $path = 'properties/gallery/'.$filename;
-                        $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
-
-                        if ($uploadResult['success']) {
-                            $galleryPaths[] = $uploadResult['url'];
-                        } else {
-                            throw new \Exception($uploadResult['message'] ?? 'Supabase upload failed');
-                        }
-                    } catch (\Exception $exception) {
-                        Log::warning('Supabase gallery upload failed, falling back to local', ['index' => $index]);
-                        $filename = 'apartment-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
-                        $path = $file->storeAs('apartment-gallery', $filename, 'public');
-                        $galleryPaths[] = asset('storage/'.$path);
-                    }
-                }
-            }
-
             /** @var \App\Models\User $landlord */
             $landlord = Auth::user();
 
@@ -135,9 +91,17 @@ class PropertyController extends Controller
                 'contact_email' => $request->contact_email,
                 'amenities' => $request->amenities ?? [],
                 'status' => 'active',
-                'cover_image' => $coverPath,
-                'gallery' => $galleryPaths ?: null,
             ]);
+
+            $mediaPayload = $propertyMediaService->uploadForProperty(
+                $property->id,
+                $request->file('property_cover_image'),
+                $request->file('property_gallery', [])
+            );
+
+            if (! empty($mediaPayload)) {
+                $property->update($mediaPayload);
+            }
 
             $successMessage = $request->property_type === 'house'
                 ? "House created successfully! You can now add bedrooms as units from the 'My Units' page."
@@ -160,7 +124,7 @@ class PropertyController extends Controller
         return view('landlord.edit-apartment', compact('apartment'));
     }
 
-    public function updateApartment(UpdatePropertyRequest $request, $id)
+    public function updateApartment(UpdatePropertyRequest $request, $id, PropertyMediaService $propertyMediaService)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
@@ -190,35 +154,13 @@ class PropertyController extends Controller
                 'status' => $request->status,
             ];
 
-            if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService;
-                $filename = 'property-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
-                $path = 'properties/'.$filename;
-                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
+            $mediaPayload = $propertyMediaService->uploadForProperty(
+                $property->id,
+                $request->file('property_cover_image'),
+                $request->file('property_gallery', [])
+            );
 
-                if ($uploadResult['success']) {
-                    $updateData['cover_image'] = $uploadResult['url'];
-                }
-            }
-
-            if ($request->hasFile('gallery')) {
-                $supabase = new SupabaseService;
-                $galleryPaths = $property->gallery ?? [];
-
-                foreach ($request->file('gallery') as $index => $file) {
-                    $filename = 'property-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
-                    $path = 'properties/gallery/'.$filename;
-                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
-
-                    if ($uploadResult['success']) {
-                        $galleryPaths[] = $uploadResult['url'];
-                    }
-                }
-
-                $galleryPaths = array_slice($galleryPaths, 0, 12);
-                $updateData['gallery'] = $galleryPaths;
-            }
-
+            $updateData = array_merge($updateData, $mediaPayload);
             $property->update($updateData);
 
             // Backward compatibility variable
