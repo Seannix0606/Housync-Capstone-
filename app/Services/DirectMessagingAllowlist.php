@@ -55,9 +55,17 @@ class DirectMessagingAllowlist
         return User::query()
             ->whereIn('role', self::messageableRoles())
             ->where('id', '!=', $viewer->id)
-            ->where(function ($q) use ($like) {
-                $q->where('email', 'like', $like)
-                    ->orWhereHas('tenantProfile', fn ($q) => $q->where('name', 'like', $like))
+            ->where(function ($q) use ($like, $viewer) {
+                if (self::canDiscoverDirectoryEmails($viewer)) {
+                    $q->where('email', 'like', $like)
+                        ->orWhereHas('tenantProfile', fn ($q) => $q->where('name', 'like', $like))
+                        ->orWhereHas('landlordProfile', fn ($q) => $q->where('name', 'like', $like))
+                        ->orWhereHas('staffProfile', fn ($q) => $q->where('name', 'like', $like));
+
+                    return;
+                }
+
+                $q->whereHas('tenantProfile', fn ($q) => $q->where('name', 'like', $like))
                     ->orWhereHas('landlordProfile', fn ($q) => $q->where('name', 'like', $like))
                     ->orWhereHas('staffProfile', fn ($q) => $q->where('name', 'like', $like));
             })
@@ -234,8 +242,22 @@ class DirectMessagingAllowlist
         }
 
         // Keep this opt-in: only reveal emails when an explicit ability is granted.
+        if (self::canDiscoverDirectoryEmails($viewer)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function canDiscoverDirectoryEmails(User $viewer): bool
+    {
+        if (method_exists($viewer, 'canDiscoverEmails') && $viewer->canDiscoverEmails()) {
+            return true;
+        }
+
         if (method_exists($viewer, 'can')) {
             return $viewer->can('users.view-email')
+                || $viewer->can('discover-emails')
                 || $viewer->can('users.view_email')
                 || $viewer->can('view user email')
                 || $viewer->can('view-email');
@@ -313,6 +335,7 @@ class DirectMessagingAllowlist
             ->where('landlord_id', $to->id)
             ->with('unit')
             ->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'pending_approval' THEN 2 WHEN 'pending' THEN 3 WHEN 'terminated' THEN 4 ELSE 5 END")
+            ->orderBy('unit_id')
             ->first();
 
         if ($assignment && $assignment->unit) {
@@ -337,6 +360,7 @@ class DirectMessagingAllowlist
                 ->where('tenant_id', $to->id)
                 ->with('unit')
                 ->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'pending_approval' THEN 2 WHEN 'pending' THEN 3 WHEN 'terminated' THEN 4 ELSE 5 END")
+                ->orderBy('unit_id')
                 ->first();
 
             if ($assignment && $assignment->unit) {
