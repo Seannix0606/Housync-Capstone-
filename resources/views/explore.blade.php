@@ -598,7 +598,7 @@
                         <option value="featured">Featured</option>
                     </select>
                     <h6 class="mb-0 text-muted">
-                        <span id="resultsCount">{{ $units->total() }}</span> found
+                        <span id="resultsCount">{{ $properties->total() }}</span> found
                     </h6>
                 </div>
             </div>
@@ -729,12 +729,12 @@
 
         <!-- Properties Grid -->
         <div id="propertiesContainer">
-            @include('partials.unit-cards', ['units' => $units])
+            @include('partials.property-cards', ['properties' => $properties])
         </div>
 
         <!-- Pagination -->
         <div id="paginationContainer" class="d-flex justify-content-center">
-            {{ $units->links('pagination::bootstrap-5') }}
+            {{ $properties->links('pagination::bootstrap-5') }}
         </div>
     </div>
 
