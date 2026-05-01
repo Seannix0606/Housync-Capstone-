@@ -198,7 +198,7 @@ class DirectMessagingAllowlist
                 'id' => $sa->staff_id,
                 'name' => $sa->staff->name,
                 'role' => 'staff',
-                'subtitle' => $sa->staff_type_display.' · Unit '.($sa->unit->unit_number ?? '—'),
+                'subtitle' => $sa->staff_type_display.' · Unit '.($sa->unit?->unit_number ?? '—'),
             ];
         }
 
