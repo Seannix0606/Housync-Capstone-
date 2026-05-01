@@ -83,7 +83,9 @@
                             Price on inquiry
                         @endif
                     </h3>
-                    <p class="text-muted mb-3">per month</p>
+                    @if(!is_null($minAvailableRent))
+                        <p class="text-muted mb-3">per month</p>
+                    @endif
                     <div class="mb-2"><strong>Type:</strong> {{ ucfirst($property->property_type ?? 'N/A') }}</div>
                     <div class="mb-2"><strong>Available units:</strong> {{ $property->available_units_count ?? 0 }}</div>
                     @if($property->landlord)

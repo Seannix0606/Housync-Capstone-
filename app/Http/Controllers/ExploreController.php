@@ -102,17 +102,17 @@ class ExploreController extends Controller
             });
         }
 
-        if ($request->filled('min_price')) {
+        if ($request->filled('min_price') || $request->filled('max_price')) {
             $query->whereHas('units', function ($unitQuery) use ($request) {
-                $unitQuery->where('status', 'available')
-                    ->where('rent_amount', '>=', (float) $request->min_price);
-            });
-        }
+                $unitQuery->where('status', 'available');
 
-        if ($request->filled('max_price')) {
-            $query->whereHas('units', function ($unitQuery) use ($request) {
-                $unitQuery->where('status', 'available')
-                    ->where('rent_amount', '<=', (float) $request->max_price);
+                if ($request->filled('min_price')) {
+                    $unitQuery->where('rent_amount', '>=', (float) $request->min_price);
+                }
+
+                if ($request->filled('max_price')) {
+                    $unitQuery->where('rent_amount', '<=', (float) $request->max_price);
+                }
             });
         }
 
@@ -138,7 +138,7 @@ class ExploreController extends Controller
     public function show($slug)
     {
         // Try to find by unit ID in slug (format: property-name-unit-number-{id})
-        if (preg_match('/-(\d+)$/', $slug, $matches)) {
+        if (preg_match('/-unit-(\d+)$/', $slug, $matches)) {
             $unitId = (int) $matches[1];
             $unit = Unit::with(['property.landlord'])->find($unitId);
 

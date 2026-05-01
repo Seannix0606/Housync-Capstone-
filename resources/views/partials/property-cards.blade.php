@@ -59,7 +59,7 @@
                         <a href="{{ route('property.show', $property->slug ?? $property->id) }}" class="property-title-link">{{ $property->name ?? 'Untitled Property' }}</a>
                     </h3>
                     
-                    @if($property->address)
+                    @if(!empty($property->address) || !empty($property->city))
                         <div class="property-address">
                             <i class="fas fa-map-marker-alt"></i>
                             <span>{{ Str::limit(trim(($property->address ?? '').' '.($property->city ?? '')), 60) }}</span>

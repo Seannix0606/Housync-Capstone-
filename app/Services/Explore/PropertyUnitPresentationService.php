@@ -44,7 +44,7 @@ class PropertyUnitPresentationService
                 return [
                     'floor_key' => (string) $floorKey,
                     'floor_label' => $this->formatFloorLabel($floorKey),
-                    'available_count' => $floorUnits->count(),
+                    'available_count' => $floorUnits->filter(fn (Unit $unit) => $unit->is_available)->count(),
                     'units' => $floorUnits->map(function (Unit $unit) use ($property, $displayTerm) {
                         $unitLabel = trim(($displayTerm.' '.($unit->unit_number ?? $unit->id)));
 
