@@ -76,6 +76,8 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 
     Route::controller(SuperAdminPropertyController::class)->group(function () {
         Route::get('/apartments', 'apartments')->name('apartments');
+        Route::get('/properties/{id}', 'show')->name('properties.show')->whereNumber('id');
+        Route::get('/properties/{id}/units', 'units')->name('properties.units')->whereNumber('id');
     });
 
     Route::controller(SuperAdminUserController::class)->group(function () {
@@ -101,6 +103,12 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
         Route::post('/settings/{group}', 'updateSettingsGroup')->name('settings.group.update');
         Route::get('/check-dark-mode', 'checkDarkMode')->name('check-dark-mode');
     });
+});
+
+// Compatibility aliases for requested superadmin property URLs.
+Route::middleware(['role:super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/properties/{id}', [SuperAdminPropertyController::class, 'show'])->name('properties.show')->whereNumber('id');
+    Route::get('/properties/{id}/units', [SuperAdminPropertyController::class, 'units'])->name('properties.units')->whereNumber('id');
 });
 
 /*

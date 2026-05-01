@@ -480,19 +480,19 @@
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\Property::count() }}</div>
+                    <div class="stat-value">{{ $stats['total_properties'] }}</div>
                     <div class="stat-label">Total Properties</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\Unit::count() }}</div>
+                    <div class="stat-value">{{ $stats['total_units'] }}</div>
                     <div class="stat-label">Total Units</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\Unit::where('status', 'occupied')->count() }}</div>
+                    <div class="stat-value">{{ $stats['occupied_units'] }}</div>
                     <div class="stat-label">Occupied Units</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{{ \App\Models\User::approvedLandlords()->count() }}</div>
+                    <div class="stat-value">{{ $stats['active_landlords'] }}</div>
                     <div class="stat-label">Active Landlords</div>
                 </div>
             </div>
@@ -519,7 +519,7 @@
                             <label class="form-label">Landlord</label>
                             <select name="landlord" class="form-control">
                                 <option value="">All Landlords</option>
-                                @foreach(\App\Models\User::approvedLandlords()->get() as $landlord)
+                                @foreach($landlords as $landlord)
                                     <option value="{{ $landlord->id }}" {{ request('landlord') == $landlord->id ? 'selected' : '' }}>
                                         {{ $landlord->name }}
                                     </option>
@@ -534,28 +534,9 @@
                     </div>
                 </form>
 
-                @php
-                    $apartments = \App\Models\Property::with(['landlord', 'units'])
-                        ->when(request('search'), function($query) {
-                            $search = request('search');
-                            $query->where(function($subQuery) use ($search) {
-                                $subQuery->where('name', 'like', '%' . $search . '%')
-                                  ->orWhere('address', 'like', '%' . $search . '%')
-                                  ->orWhereHas('landlord', function($landlordQuery) use ($search) {
-                                      $landlordQuery->where('name', 'like', '%' . $search . '%');
-                                  });
-                            });
-                        })
-                        ->when(request('landlord'), function($query) {
-                            $query->where('landlord_id', request('landlord'));
-                        })
-                        ->latest()
-                        ->paginate(12);
-                @endphp
-
-                @if($apartments->count() > 0)
+                @if($properties->count() > 0)
                     <div class="properties-grid">
-                        @foreach($apartments as $apartment)
+                        @foreach($properties as $apartment)
                             <div class="property-card">
                                 <div class="property-header">
                                     <div>
@@ -612,10 +593,10 @@
                                 </div>
 
                                 <div class="btn-group">
-                                    <a href="#" class="btn btn-primary btn-sm" onclick="viewProperty({{ $apartment->id }})">
+                                    <a href="{{ route('super-admin.properties.show', $apartment->id) }}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-eye"></i> View Details
                                     </a>
-                                    <a href="#" class="btn btn-secondary btn-sm" onclick="viewUnits({{ $apartment->id }})">
+                                    <a href="{{ route('super-admin.properties.units', $apartment->id) }}" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-door-open"></i> View Units
                                     </a>
                                 </div>
@@ -624,9 +605,9 @@
                     </div>
 
                     <!-- Pagination -->
-                    @if($apartments->hasPages())
+                    @if($properties->hasPages())
                         <div class="pagination">
-                            {{ $apartments->links() }}
+                            {{ $properties->links() }}
                         </div>
                     @endif
                 @else
@@ -650,15 +631,4 @@
                     </div>
                 @endif
             </div>
-    <script>
-        function viewProperty(apartmentId) {
-            // You can implement property details modal or redirect to detail page
-            alert('Property details for ID: ' + apartmentId + '\nThis would show detailed property information.');
-        }
-
-        function viewUnits(apartmentId) {
-            // You can implement units view modal or redirect to units page
-            alert('Units view for property ID: ' + apartmentId + '\nThis would show all units in this property.');
-        }
-    </script>
 @endsection

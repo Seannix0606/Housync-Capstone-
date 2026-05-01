@@ -3,33 +3,34 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Property;
+use App\Services\SuperAdmin\PropertyService;
+use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    public function apartments()
+    public function __construct(private readonly PropertyService $propertyService) {}
+
+    public function apartments(Request $request)
     {
-        $query = Property::with('landlord', 'units');
+        $filters = $request->only(['search', 'status', 'landlord']);
+        $properties = $this->propertyService->getPaginatedProperties($filters);
+        $stats = $this->propertyService->getPropertyStats();
+        $landlords = $this->propertyService->getApprovedLandlords();
 
-        if (request('search')) {
-            $search = request('search');
-            $query->where(function ($query) use ($search) {
-                $query->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('address', 'like', '%'.$search.'%');
-            });
-        }
+        return view('super-admin.apartments', compact('properties', 'stats', 'landlords'));
+    }
 
-        if (request('status')) {
-            $query->where('status', request('status'));
-        }
+    public function show(int $id)
+    {
+        $property = $this->propertyService->getPropertyDetails($id);
 
-        if (request('landlord')) {
-            $query->where('landlord_id', request('landlord'));
-        }
+        return view('super-admin.property-details', compact('property'));
+    }
 
-        $properties = $query->latest()->paginate(15);
-        $apartments = $properties;
+    public function units(int $id)
+    {
+        $property = $this->propertyService->getPropertyWithUnits($id);
 
-        return view('super-admin.apartments', compact('apartments', 'properties'));
+        return view('super-admin.property-units', compact('property'));
     }
 }
