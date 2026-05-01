@@ -700,6 +700,7 @@
     <script>
         let currentPreviewObjectUrl = null;
         let currentImageZoom = 1;
+        let currentPreviewController = null;
 
         function getFileExtension(fileName, fileUrl) {
             const source = (fileName || fileUrl || '').split('?')[0].toLowerCase();
@@ -715,16 +716,64 @@
 
             if (!modal || !title || !content || !downloadBtn) return;
 
-            title.textContent = fileName || 'Document Preview';
+            // Cancel any in-flight request to avoid stale responses
+            if (currentPreviewController) {
+                currentPreviewController.abort();
+                currentPreviewController = null;
+            }
+
+            // Sanitize fileName for safe display (not for HTML insertion)
+            const safeFileName = fileName ? String(fileName).replace(/[<>"'&]/g, '') : 'Document Preview';
+            title.textContent = safeFileName;
             downloadBtn.href = fileUrl;
-            downloadBtn.setAttribute('download', fileName || 'document');
+            downloadBtn.setAttribute('download', safeFileName);
             currentImageZoom = 1;
 
             modal.style.display = 'block';
             content.innerHTML = '<div style="color: #64748b;">Loading preview...</div>';
 
             const ext = getFileExtension(fileName, fileUrl);
-            fetch(fileUrl)
+            const isImageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'].includes(ext);
+            const isPdfExt = ext === 'pdf';
+
+            // Try direct src first (avoids CORS issues for same-origin URLs)
+            if (isImageExt) {
+                const img = document.createElement('img');
+                img.src = fileUrl;
+                img.alt = safeFileName; // Set via property, not innerHTML
+                img.onerror = () => {
+                    // Fallback to blob method if direct src fails
+                    loadPreviewAsBlob(fileUrl, safeFileName, 'image');
+                };
+                content.innerHTML = '';
+                content.appendChild(img);
+                resetPreviewZoom();
+            } else if (isPdfExt) {
+                const iframe = document.createElement('iframe');
+                iframe.src = fileUrl;
+                iframe.title = safeFileName; // Set via property, not innerHTML
+                iframe.onerror = () => {
+                    // Fallback to blob method if direct src fails
+                    loadPreviewAsBlob(fileUrl, safeFileName, 'pdf');
+                };
+                content.innerHTML = '';
+                content.appendChild(iframe);
+            } else {
+                // Non-previewable file type
+                content.innerHTML = `
+                    <div style="text-align:center; padding: 2rem;">
+                        <i class="fas fa-file" style="font-size:2rem; color:#64748b; margin-bottom: 0.75rem;"></i>
+                        <p style="margin:0; color:#64748b;">This file type cannot be previewed inline.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function loadPreviewAsBlob(fileUrl, safeFileName, fileType) {
+            // Create new AbortController for this request
+            currentPreviewController = new AbortController();
+            
+            fetch(fileUrl, { signal: currentPreviewController.signal })
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error('Unable to load file preview.');
@@ -737,33 +786,45 @@
                     }
                     currentPreviewObjectUrl = URL.createObjectURL(blob);
 
-                    const blobType = (blob.type || '').toLowerCase();
-                    const isImageByExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'].includes(ext);
-                    const isPdfByExt = ext === 'pdf';
-                    const isImageByMime = blobType.startsWith('image/');
-                    const isPdfByMime = blobType === 'application/pdf';
+                    const content = document.getElementById('filePreviewContent');
+                    if (!content) return;
 
-                    if (isImageByExt || isImageByMime) {
-                        content.innerHTML = `<div class="preview-scroll-area"><img src="${currentPreviewObjectUrl}" alt="${fileName || 'Preview'}"></div>`;
+                    if (fileType === 'image') {
+                        // Use DOM API to safely set alt attribute (prevents XSS)
+                        const scrollArea = document.createElement('div');
+                        scrollArea.className = 'preview-scroll-area';
+
+                        const img = document.createElement('img');
+                        img.src = currentPreviewObjectUrl;
+                        img.alt = safeFileName; // Set via property, not string interpolation
+
+                        scrollArea.appendChild(img);
+                        content.innerHTML = '';
+                        content.appendChild(scrollArea);
                         resetPreviewZoom();
-                    } else if (isPdfByExt || isPdfByMime) {
-                        content.innerHTML = `<iframe src="${currentPreviewObjectUrl}" title="${fileName || 'PDF Preview'}"></iframe>`;
-                    } else {
+                    } else if (fileType === 'pdf') {
+                        // Use DOM API to safely set title attribute (prevents XSS)
+                        const iframe = document.createElement('iframe');
+                        iframe.src = currentPreviewObjectUrl;
+                        iframe.title = safeFileName; // Set via property, not string interpolation
+
+                        content.innerHTML = '';
+                        content.appendChild(iframe);
+                    }
+                })
+                .catch((err) => {
+                    if (err.name === 'AbortError') {
+                        return; // Ignore cancelled requests
+                    }
+                    const content = document.getElementById('filePreviewContent');
+                    if (content) {
                         content.innerHTML = `
                             <div style="text-align:center; padding: 2rem;">
-                                <i class="fas fa-file" style="font-size:2rem; color:#64748b; margin-bottom: 0.75rem;"></i>
-                                <p style="margin:0; color:#64748b;">This file type cannot be previewed inline.</p>
+                                <i class="fas fa-exclamation-circle" style="font-size:2rem; color:#ef4444; margin-bottom: 0.75rem;"></i>
+                                <p style="margin:0; color:#64748b;">Could not load preview. Use "Download File".</p>
                             </div>
                         `;
                     }
-                })
-                .catch(() => {
-                    content.innerHTML = `
-                        <div style="text-align:center; padding: 2rem;">
-                            <i class="fas fa-exclamation-circle" style="font-size:2rem; color:#ef4444; margin-bottom: 0.75rem;"></i>
-                            <p style="margin:0; color:#64748b;">Could not load preview. Use "Download File".</p>
-                        </div>
-                    `;
                 });
         }
 
