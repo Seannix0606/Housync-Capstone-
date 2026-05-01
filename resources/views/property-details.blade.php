@@ -307,16 +307,6 @@
                                     <input type="text" class="form-control" id="applicant_occupation" name="occupation" placeholder="e.g., Software Engineer" required>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="applicant_monthly_income" class="form-label">Monthly Income <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="applicant_monthly_income" name="monthly_income" placeholder="e.g., 50000" min="0" required>
-                                    </div>
-                                    <small class="text-muted">Your monthly income helps the landlord assess your application.</small>
-                                </div>
-
-
                                 <!-- Additional Notes -->
                                 <div class="mb-3">
                                     <label for="applicant_notes" class="form-label">Message to Landlord (Optional)</label>
