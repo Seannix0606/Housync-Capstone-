@@ -532,9 +532,7 @@
                 </div>
 
                 @php
-                    $visiblePendingLandlords = $pendingLandlords->filter(function ($landlord) {
-                        return optional($landlord->landlordProfile)->status === 'pending';
-                    });
+                    $visiblePendingLandlords = $pendingLandlords;
                 @endphp
                 @if($visiblePendingLandlords->count() > 0)
                     <div class="table-container">

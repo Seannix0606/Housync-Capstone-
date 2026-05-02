@@ -34,6 +34,8 @@ class LandlordVerificationController extends Controller
             return back()->with('error', 'User is not a landlord.');
         }
 
+        $landlord->load('landlordProfile');
+
         if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'approved') {
             return back()->with('error', 'This landlord is already approved.');
         }
@@ -54,6 +56,8 @@ class LandlordVerificationController extends Controller
         if ($landlord->role !== 'landlord') {
             return back()->with('error', 'User is not a landlord.');
         }
+
+        $landlord->load('landlordProfile');
 
         if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'rejected') {
             return back()->with('error', 'This landlord application has already been rejected.');
