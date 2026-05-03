@@ -303,7 +303,7 @@
             </div>
         </div>
         
-        <form method="POST" action="{{ route('landlord.store-apartment') }}" class="form-container" enctype="multipart/form-data">
+        <form id="createApartmentForm" method="POST" action="{{ route('landlord.store-apartment') }}" class="form-container" enctype="multipart/form-data">
             @csrf
             
             <!-- Basic Information -->
@@ -498,12 +498,12 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Property Cover Image</label>
-                        <input type="file" name="property_cover_image" accept="image/*" class="form-control">
+                        <input type="file" name="property_cover_image" id="createApartmentCoverImageInput" accept="image/*" class="form-control">
                         <p class="form-help">Shown in property hero and explore property card (JPEG/PNG up to 3MB)</p>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Property Gallery (up to 8)</label>
-                        <input type="file" name="property_gallery[]" accept="image/*" multiple class="form-control">
+                        <input type="file" name="property_gallery[]" id="createApartmentGalleryInput" accept="image/*" multiple class="form-control">
                         <div id="previewContainer" style="display: none; gap: 10px; flex-wrap: wrap; margin-top: 20px;"></div>
                         <script>
                             const propertyGalleryInput = document.querySelector('input[name="property_gallery[]"]');
@@ -639,8 +639,43 @@
 <script>
     // Form validation and enhancement
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
+        const form = document.getElementById('createApartmentForm');
         const inputs = form.querySelectorAll('input, select, textarea');
+        const coverImageInput = document.getElementById('createApartmentCoverImageInput');
+        const galleryInput = document.getElementById('createApartmentGalleryInput');
+
+        if (coverImageInput) {
+            coverImageInput.addEventListener('change', function () {
+                const selectedFile = this.files && this.files[0];
+                if (!selectedFile) {
+                    console.warn('[Create Apartment Upload] No cover image selected.');
+                    return;
+                }
+
+                console.log('[Create Apartment Upload] Cover image selected', {
+                    name: selectedFile.name,
+                    type: selectedFile.type,
+                    size_bytes: selectedFile.size,
+                    size_mb: (selectedFile.size / (1024 * 1024)).toFixed(2),
+                });
+            });
+        }
+
+        if (galleryInput) {
+            galleryInput.addEventListener('change', function () {
+                const files = Array.from(this.files || []);
+                console.log('[Create Apartment Upload] Gallery files selected', {
+                    count: files.length,
+                    files: files.map(function (file) {
+                        return {
+                            name: file.name,
+                            type: file.type,
+                            size_bytes: file.size,
+                        };
+                    }),
+                });
+            });
+        }
 
         // Real-time validation
         inputs.forEach(input => {
@@ -749,6 +784,14 @@
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Property...';
                 }
+
+                console.log('[Create Apartment Upload] Submitting form', {
+                    action: form.action,
+                    method: form.method,
+                    enctype: form.enctype,
+                    cover_selected: Boolean(coverImageInput && coverImageInput.files && coverImageInput.files[0]),
+                    gallery_count: galleryInput && galleryInput.files ? galleryInput.files.length : 0,
+                });
                 // Allow form to submit
                 return true;
             }

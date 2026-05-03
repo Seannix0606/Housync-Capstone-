@@ -7,6 +7,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
+use Throwable;
 
 /**
  * Persists billing-related images (tenant payment proofs, landlord InstaPay codes)
@@ -79,12 +81,22 @@ class PaymentVerificationImageStorageService
         UploadedFile $uploadedFile,
         string $relativePathIncludingDirectory,
     ): string {
-        $bucketName = config('services.supabase.bucket');
-        $uploadResult = $this->supabaseService->uploadFile(
-            $bucketName,
-            $relativePathIncludingDirectory,
-            $uploadedFile->getRealPath(),
-        );
+        $bucketName = (string) config('services.supabase.bucket', 'house-sync');
+        $uploadResult = ['success' => false, 'message' => 'Supabase upload was not attempted.'];
+
+        try {
+            $uploadResult = $this->supabaseService->uploadFile(
+                $bucketName,
+                $relativePathIncludingDirectory,
+                $uploadedFile->getRealPath(),
+            );
+        } catch (Throwable $exception) {
+            Log::error('Billing verification image Supabase upload threw an exception; falling back to local disk', [
+                'relative_path' => $relativePathIncludingDirectory,
+                'bucket' => $bucketName,
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
         if (! empty($uploadResult['success'])) {
             $publicUrl = $uploadResult['url'] ?? null;
@@ -101,6 +113,27 @@ class PaymentVerificationImageStorageService
         $directory = dirname($relativePathIncludingDirectory);
         $fileName = basename($relativePathIncludingDirectory);
 
-        return $uploadedFile->storeAs($directory, $fileName, 'private');
+        try {
+            return $uploadedFile->storeAs($directory, $fileName, 'private');
+        } catch (Throwable $privateDiskException) {
+            Log::error('Billing verification image private-disk fallback failed; trying public disk', [
+                'relative_path' => $relativePathIncludingDirectory,
+                'error' => $privateDiskException->getMessage(),
+            ]);
+        }
+
+        try {
+            return $uploadedFile->storeAs($directory, $fileName, 'public');
+        } catch (Throwable $publicDiskException) {
+            Log::error('Billing verification image public-disk fallback failed', [
+                'relative_path' => $relativePathIncludingDirectory,
+                'error' => $publicDiskException->getMessage(),
+            ]);
+
+            throw new RuntimeException(
+                'Unable to store billing verification image on Supabase, private disk, or public disk.',
+                previous: $publicDiskException,
+            );
+        }
     }
 }

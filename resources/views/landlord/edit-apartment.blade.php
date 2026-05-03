@@ -481,7 +481,7 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('landlord.update-apartment', $apartment->id) }}" class="form-container" enctype="multipart/form-data">
+                <form id="editApartmentForm" method="POST" action="{{ route('landlord.update-apartment', $apartment->id) }}" class="form-container" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -932,8 +932,43 @@
     <script>
         // Form validation and enhancement
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
+            const form = document.getElementById('editApartmentForm');
             const inputs = form.querySelectorAll('input, select, textarea');
+            const coverImageInput = document.getElementById('cover_image');
+            const galleryInput = document.getElementById('gallery_input');
+
+            if (coverImageInput) {
+                coverImageInput.addEventListener('change', function () {
+                    const selectedFile = this.files && this.files[0];
+                    if (!selectedFile) {
+                        console.warn('[Edit Apartment Upload] No cover image selected.');
+                        return;
+                    }
+
+                    console.log('[Edit Apartment Upload] Cover image selected', {
+                        name: selectedFile.name,
+                        type: selectedFile.type,
+                        size_bytes: selectedFile.size,
+                        size_mb: (selectedFile.size / (1024 * 1024)).toFixed(2),
+                    });
+                });
+            }
+
+            if (galleryInput) {
+                galleryInput.addEventListener('change', function () {
+                    const files = Array.from(this.files || []);
+                    console.log('[Edit Apartment Upload] Gallery files selected', {
+                        count: files.length,
+                        files: files.map(function (file) {
+                            return {
+                                name: file.name,
+                                type: file.type,
+                                size_bytes: file.size,
+                            };
+                        }),
+                    });
+                });
+            }
 
             // Real-time validation
             inputs.forEach(input => {
@@ -1006,7 +1041,16 @@
                 if (!isValid) {
                     e.preventDefault();
                     alert('Please fix the errors before submitting.');
+                    return;
                 }
+
+                console.log('[Edit Apartment Upload] Submitting form', {
+                    action: form.action,
+                    method: form.method,
+                    enctype: form.enctype,
+                    cover_selected: Boolean(coverImageInput && coverImageInput.files && coverImageInput.files[0]),
+                    gallery_count: galleryInput && galleryInput.files ? galleryInput.files.length : 0,
+                });
             });
 
             // Detect when total units is increased
