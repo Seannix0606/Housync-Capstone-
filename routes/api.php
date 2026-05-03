@@ -51,6 +51,7 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
 //   landlord-instapay-quick-response-codes/ — private (guarded: landlord owner or their tenants)
 //   tenant-documents/                        — public disk (guarded via TenantDocument)
 //   chat-attachments/                        — public disk (guarded via conversation membership)
+//   properties/                              — public disk (no auth required; public property images)
 //   anything else                            — 404 (unlisted directories are never served)
 //
 // Cache-Control is set to "private, no-store" to prevent shared caches (CDNs,
@@ -167,6 +168,13 @@ Route::get('/storage/{path}', function (Request $request, $path) {
             ->exists();
 
         abort_unless($isParticipant || $user->isSuperAdmin(), 403);
+
+    } elseif (str_starts_with($relativePath, 'properties/')) {
+        // Property images: public — no authentication required.
+        // These are served from the public disk and are intentionally world-readable
+        // (shown on the explore page to unauthenticated visitors).
+        // No auth check needed; the path traversal guard above already ensures the
+        // resolved file stays within storage/app/public.
 
     } else {
         // Unlisted directory — return 404 (not 403) to avoid leaking that the file exists.
