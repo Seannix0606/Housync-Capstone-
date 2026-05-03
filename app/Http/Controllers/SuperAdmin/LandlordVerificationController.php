@@ -14,8 +14,9 @@ class LandlordVerificationController extends Controller
     public function pendingLandlords()
     {
         $pendingLandlords = User::where('role', 'landlord')
+            ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
             ->with([
-                'landlordProfile',
+                'landlordProfile' => fn ($q) => $q->where('status', 'pending'),
                 'approvedBy',
                 'landlordDocuments',
             ])
