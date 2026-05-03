@@ -18,7 +18,6 @@ class PropertyMediaService
             $payload['cover_image'] = $this->uploadSingle(
                 file: $coverImage,
                 supabasePath: "properties/{$propertyId}/cover/".$this->buildFilename('property-cover', $coverImage),
-                localPath: "properties/{$propertyId}/cover"
             );
         }
 
@@ -32,7 +31,6 @@ class PropertyMediaService
                 $galleryPaths[] = $this->uploadSingle(
                     file: $galleryImage,
                     supabasePath: "properties/{$propertyId}/gallery/".time()."-{$index}-".$this->buildFilename('property-gallery', $galleryImage),
-                    localPath: "properties/{$propertyId}/gallery"
                 );
             }
 
@@ -44,22 +42,36 @@ class PropertyMediaService
         return $payload;
     }
 
-    private function uploadSingle(UploadedFile $file, string $supabasePath, string $localPath): string
+    private function uploadSingle(UploadedFile $file, string $supabasePath): string
     {
-        if (! app()->environment('testing')) {
-            $supabase = new SupabaseService;
-            $result = $supabase->uploadFile(
-                config('services.supabase.bucket'),
-                $supabasePath,
-                $file->getRealPath()
-            );
-
-            if ($result['success'] ?? false) {
-                return $result['url'];
-            }
+        if (app()->environment('testing')) {
+            return $supabasePath;
         }
 
-        return $file->store($localPath, 'public');
+        $supabase = new SupabaseService;
+        $result = $supabase->uploadFile(
+            config('services.supabase.bucket'),
+            $supabasePath,
+            $file->getRealPath()
+        );
+
+        if ($result['success'] ?? false) {
+            return $result['url'];
+        }
+
+        \Illuminate\Support\Facades\Log::error('Supabase property media upload failed', [
+            'path'        => $supabasePath,
+            'message'     => $result['message'] ?? 'unknown error',
+            'error'       => $result['error'] ?? null,
+            'status_code' => $result['status_code'] ?? null,
+            'response'    => $result['response'] ?? null,
+        ]);
+
+        throw new \RuntimeException(
+            'Failed to upload property image to Supabase storage. '.
+            ($result['message'] ?? 'Unknown error').
+            ' (path: '.$supabasePath.')'
+        );
     }
 
     private function buildFilename(string $prefix, UploadedFile $file): string
