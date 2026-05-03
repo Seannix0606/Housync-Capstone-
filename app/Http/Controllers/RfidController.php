@@ -621,7 +621,9 @@ class RfidController extends Controller
      * Scope resolution order (first match wins):
      *   1. ?property_id=X  — caller-supplied property scope
      *   2. ?landlord_id=X  — caller-supplied landlord scope
-     *   3. Authenticated session user — auto-scoped to their properties
+     *   3. Authenticated session user — rows for their properties OR rows attributed to
+     *      their account via raw_data.landlord_id (WiFi firmware; includes new-card scans
+     *      with property_id null)
      *   4. No scope at all  — rejected (422) to prevent cross-tenant UID leakage
      */
     public function getLatestCardUID(Request $request)
@@ -639,9 +641,18 @@ class RfidController extends Controller
                 // Scope to all properties of the specified landlord
                 $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
             } elseif ($user = auth()->user()) {
-                // Authenticated web session — auto-scope to this landlord's properties
+                // Authenticated web session — property rows and/or device-attributed scans
+                $sessionLandlordId = (int) $user->id;
                 $ownedIds = $user->properties()->pluck('id');
-                $query->whereIn('property_id', $ownedIds);
+
+                $query->where(function ($q) use ($ownedIds, $sessionLandlordId) {
+                    if ($ownedIds->isNotEmpty()) {
+                        $q->whereIn('property_id', $ownedIds);
+                    }
+                    // WiFi firmware sends landlord_id (users.id); stored in raw_data on each scan.
+                    $q->orWhere('raw_data->landlord_id', $sessionLandlordId)
+                        ->orWhere('raw_data->landlord_id', (string) $sessionLandlordId);
+                });
             } else {
                 // No scope and no auth — refuse rather than expose cross-tenant UIDs
                 return response()->json([
@@ -676,6 +687,7 @@ class RfidController extends Controller
             return response()->json([
                 'success' => true,
                 'card_uid' => $latestLog->card_uid,
+                'access_log_id' => $latestLog->id,
                 'message' => 'Latest Card UID retrieved successfully',
                 'scanned_at' => $latestLog->access_time->toISOString(),
                 'age_seconds' => $age,
