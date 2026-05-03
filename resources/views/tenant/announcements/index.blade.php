@@ -33,9 +33,6 @@
                                     <i class="fas fa-{{ $announcement->type === 'emergency' ? 'exclamation-triangle' : ($announcement->type === 'maintenance' ? 'tools' : ($announcement->type === 'event' ? 'calendar-alt' : 'info-circle')) }}"></i>
                                     {{ ucfirst($announcement->type) }}
                                 </span>
-                                <span class="priority-badge priority-{{ $announcement->priority }}">
-                                    {{ ucfirst($announcement->priority) }}
-                                </span>
                             </div>
                             <span class="announcement-date">
                                 <i class="far fa-clock"></i> {{ $announcement->published_at->format('M d, Y') }}
@@ -177,35 +174,6 @@
 }
 
 .type-badge.type-general {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-.priority-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.priority-badge.priority-urgent {
-    background: #fef2f2;
-    color: #dc2626;
-}
-
-.priority-badge.priority-high {
-    background: #fffbeb;
-    color: #d97706;
-}
-
-.priority-badge.priority-normal {
-    background: #eff6ff;
-    color: #2563eb;
-}
-
-.priority-badge.priority-low {
     background: #f1f5f9;
     color: #64748b;
 }

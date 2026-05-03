@@ -49,16 +49,8 @@
                                         'event' => 'info',
                                         default => 'secondary'
                                     };
-                                    $priorityBadge = match($announcement->priority) {
-                                        'low' => 'secondary',
-                                        'normal' => 'primary',
-                                        'high' => 'warning',
-                                        'urgent' => 'danger',
-                                        default => 'secondary'
-                                    };
                                 @endphp
                                 <span class="badge bg-{{ $typeBadge }}"><i class="fas fa-tag me-1"></i>{{ ucfirst($announcement->type) }}</span>
-                                <span class="badge bg-{{ $priorityBadge }}"><i class="fas fa-flag me-1"></i>{{ ucfirst($announcement->priority) }}</span>
                                 @if($announcement->is_published)
                                     <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Published</span>
                                 @else

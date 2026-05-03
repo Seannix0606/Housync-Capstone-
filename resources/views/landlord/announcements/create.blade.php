@@ -57,22 +57,13 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="type" class="form-label">Type <span class="text-danger">*</span></label>
                                 <select class="form-select" id="type" name="type" required>
                                     <option value="general" {{ old('type') === 'general' ? 'selected' : '' }}>General</option>
                                     <option value="maintenance" {{ old('type') === 'maintenance' ? 'selected' : '' }}>Maintenance</option>
                                     <option value="emergency" {{ old('type') === 'emergency' ? 'selected' : '' }}>Emergency</option>
                                     <option value="event" {{ old('type') === 'event' ? 'selected' : '' }}>Event</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="priority" class="form-label">Priority <span class="text-danger">*</span></label>
-                                <select class="form-select" id="priority" name="priority" required>
-                                    <option value="low" {{ old('priority') === 'low' ? 'selected' : '' }}>Low</option>
-                                    <option value="normal" {{ old('priority', 'normal') === 'normal' ? 'selected' : '' }}>Normal</option>
-                                    <option value="high" {{ old('priority') === 'high' ? 'selected' : '' }}>High</option>
-                                    <option value="urgent" {{ old('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option>
                                 </select>
                             </div>
                         </div>
