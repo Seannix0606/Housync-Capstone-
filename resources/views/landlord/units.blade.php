@@ -284,6 +284,16 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="edit_unit_stories" class="form-label">Interior stories <span class="text-muted small">(optional)</span></label>
+                                    <input type="number" class="form-control" id="edit_unit_stories" name="unit_stories" value="${data.unit_stories !== null && data.unit_stories !== undefined ? data.unit_stories : ''}" min="1" max="50" placeholder="Levels inside this unit">
+                                    <small class="form-text text-muted">Per-unit levels (for duplex sides, townhomes, etc.). Leave blank if unknown.</small>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="mb-3">
                             <div class="form-check">

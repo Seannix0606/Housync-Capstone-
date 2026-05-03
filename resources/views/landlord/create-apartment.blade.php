@@ -197,6 +197,27 @@
         cursor: pointer;
     }
 
+    .unit-media-slots {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
+
+    .unit-media-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .unit-media-card h4 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
     .amenity-item input[type="checkbox"]:checked + label {
         color: #f97316;
         font-weight: 600;
@@ -284,8 +305,8 @@
         </div>
         <div class="progress-connector"></div>
         <div class="progress-step">
-            <i class="fas fa-plus"></i>
-            <span>Add Units Later</span>
+            <i class="fas fa-images"></i>
+            <span>Photos &amp; units</span>
         </div>
         <div class="progress-connector"></div>
         <div class="progress-step">
@@ -338,24 +359,90 @@
                         @enderror
                     </div>
 
+                    <input type="hidden" name="unit_count" id="duplex_unit_count_input" value="2" disabled>
+
                     <div class="form-group" id="floors_group">
-                        <label class="form-label required">Number of Floors</label>
-                        <input type="number" name="floors" id="floors" class="form-control @error('floors') error @enderror" 
+                        <label class="form-label required" id="floors_label">Number of units</label>
+                        <input type="number" name="floors" id="floors" class="form-control @error('floors') error @enderror"
                                value="{{ old('floors', 1) }}" min="1" placeholder="e.g., 5" required>
                         @error('floors')
                             <div class="form-error">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">How many floors does this building have?</small>
+                        <small class="form-text text-muted" id="floors_hint">How many rentable units does this property have?</small>
+                    </div>
+
+                    <div class="form-group" id="building_floors_group" style="display: none;">
+                        <label class="form-label required" id="building_floors_label">Building stories (floors)</label>
+                        <input type="number" name="building_floors" id="building_floors" class="form-control @error('building_floors') error @enderror"
+                               value="{{ old('building_floors') }}" min="1" max="200" placeholder="e.g., 2">
+                        @error('building_floors')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted" id="building_floors_hint">Above-grade levels for the whole structure. For a duplex this is optional listing context (for example a stacked building); it does not set each unit’s interior stories.</small>
+                    </div>
+
+                    <div class="form-group" id="dwelling_stories_group" style="display: none;">
+                        <label class="form-label" for="dwelling_stories">Stories inside this dwelling <span class="text-muted">(optional)</span></label>
+                        <input type="number" name="dwelling_stories" id="dwelling_stories" class="form-control @error('dwelling_stories') error @enderror"
+                               value="{{ old('dwelling_stories') }}" min="1" max="50" placeholder="e.g., 2">
+                        @error('dwelling_stories')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">Interior levels of the rented dwelling. Can differ from total building stories when helpful for tenants.</small>
                     </div>
 
                     <div class="form-group" id="bedrooms_group" style="display: none;">
-                        <label class="form-label required">Number of Bedrooms</label>
-                        <input type="number" name="bedrooms" id="bedrooms" class="form-control @error('bedrooms') error @enderror" 
+                        <label class="form-label required">Bedrooms (typical per dwelling)</label>
+                        <input type="number" name="bedrooms" id="bedrooms" class="form-control @error('bedrooms') error @enderror"
                                value="{{ old('bedrooms', 1) }}" min="1" placeholder="e.g., 3">
                         @error('bedrooms')
                             <div class="form-error">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">How many bedrooms does this house have?</small>
+                        <small class="form-text text-muted" id="bedrooms_hint">For a single-family home, total bedrooms. For townhomes, typical per unit if they are similar.</small>
+                    </div>
+
+                    <div class="form-grid" id="duplex_unit_bedrooms_group" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label required">Unit 1 bedrooms</label>
+                            <input type="number" name="unit_bedrooms[0]" id="unit_bedrooms_0" class="form-control @error('unit_bedrooms.0') error @enderror"
+                                   value="{{ old('unit_bedrooms.0', 2) }}" min="0" max="50" placeholder="e.g., 2">
+                            @error('unit_bedrooms.0')
+                                <div class="form-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Unit 2 bedrooms</label>
+                            <input type="number" name="unit_bedrooms[1]" id="unit_bedrooms_1" class="form-control @error('unit_bedrooms.1') error @enderror"
+                                   value="{{ old('unit_bedrooms.1', 2) }}" min="0" max="50" placeholder="e.g., 2">
+                            @error('unit_bedrooms.1')
+                                <div class="form-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-group full-width">
+                            <small class="form-text text-muted">Each side of a duplex can differ (e.g. 2 BR vs 3 BR). Use 0 for a studio-style unit.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" id="duplex_unit_stories_group" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label required">Unit 1 interior stories</label>
+                            <input type="number" name="unit_stories[0]" id="unit_stories_0" class="form-control @error('unit_stories.0') error @enderror"
+                                   value="{{ old('unit_stories.0', 1) }}" min="1" max="50" placeholder="e.g., 1">
+                            @error('unit_stories.0')
+                                <div class="form-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Unit 2 interior stories</label>
+                            <input type="number" name="unit_stories[1]" id="unit_stories_1" class="form-control @error('unit_stories.1') error @enderror"
+                                   value="{{ old('unit_stories.1', 1) }}" min="1" max="50" placeholder="e.g., 2">
+                            @error('unit_stories.1')
+                                <div class="form-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-group full-width">
+                            <small class="form-text text-muted">How many levels each rental unit occupies inside its side (for example 1 for a single-level flat, 2 for a two-story unit).</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -367,8 +454,8 @@
                     Property Structure
                 </h3>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Note:</strong> You can add units later from the "My Units" page after creating this property.
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Units are created automatically from the type and count above. Add <strong>property</strong> and <strong>per-unit</strong> photos in the sections below—you do not need to visit My Units just to add images.
                 </div>
             </div>
 
@@ -502,7 +589,7 @@
                         <p class="form-help">Shown in property hero and explore property card (JPEG/PNG up to 3MB)</p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Property Gallery (up to 8)</label>
+                        <label class="form-label">Property Gallery (up to 12)</label>
                         <input type="file" name="property_gallery[]" id="createApartmentGalleryInput" accept="image/*" multiple class="form-control">
                         <div id="previewContainer" style="display: none; gap: 10px; flex-wrap: wrap; margin-top: 20px;"></div>
                         <script>
@@ -542,9 +629,22 @@
                                     reader.readAsDataURL(file);
                             })});
                         </script>
-                        <p class="form-help">Additional building/common-area photos for property listings</p>
+                        <p class="form-help">Additional building/common-area photos for property listings (up to 12)</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Per-unit photos (optional; matches units created on save) -->
+            <div class="form-section" id="unit_media_section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-door-open"></i>
+                    Unit photos (optional)
+                </h3>
+                <p class="form-help" id="unit_media_intro">
+                    Optional cover and gallery for each unit. Unit 1 matches the first auto-created unit, and so on. You can still edit units later from My Units.
+                </p>
+                <p class="form-help" id="unit_media_placeholder" style="display: none; color: #64748b;"></p>
+                <div id="unit_media_slots" class="unit-media-slots" aria-live="polite"></div>
             </div>
 
             <!-- Amenities -->
@@ -801,29 +901,275 @@
         const propertyTypeSelect = document.querySelector('select[name="property_type"]');
         const floorsGroup = document.getElementById('floors_group');
         const bedroomsGroup = document.getElementById('bedrooms_group');
+        const duplexUnitBedroomsGroup = document.getElementById('duplex_unit_bedrooms_group');
+        const duplexUnitStoriesGroup = document.getElementById('duplex_unit_stories_group');
+        const buildingFloorsGroup = document.getElementById('building_floors_group');
         const floorsInput = document.getElementById('floors');
         const bedroomsInput = document.getElementById('bedrooms');
+        const unitBedrooms0 = document.getElementById('unit_bedrooms_0');
+        const unitBedrooms1 = document.getElementById('unit_bedrooms_1');
+        const unitStories0 = document.getElementById('unit_stories_0');
+        const unitStories1 = document.getElementById('unit_stories_1');
+        const buildingFloorsInput = document.getElementById('building_floors');
+        const buildingFloorsLabel = document.getElementById('building_floors_label');
+        const buildingFloorsHint = document.getElementById('building_floors_hint');
+        const dwellingStoriesGroup = document.getElementById('dwelling_stories_group');
+        const dwellingStoriesInput = document.getElementById('dwelling_stories');
+        const floorsLabel = document.getElementById('floors_label');
+        const floorsHint = document.getElementById('floors_hint');
+        const duplexUnitCountInput = document.getElementById('duplex_unit_count_input');
+
+        const hintBuildingDuplexOptional = 'Optional: total above-grade stories of the whole building (for example a stacked duplex). This does not replace interior stories per unit below.';
+        const hintBuildingDwellingRequired = 'Required: total above-grade stories of this structure (whole building / exterior levels).';
 
         function togglePropertyFields() {
             const propertyType = propertyTypeSelect.value;
-            
+
+            if (duplexUnitCountInput) {
+                duplexUnitCountInput.setAttribute('disabled', 'disabled');
+            }
+            if (floorsInput) {
+                floorsInput.removeAttribute('readonly');
+                floorsInput.removeAttribute('data-duplex-locked');
+                floorsInput.removeAttribute('disabled');
+            }
+
+            if (duplexUnitBedroomsGroup) {
+                duplexUnitBedroomsGroup.style.display = 'none';
+            }
+            if (duplexUnitStoriesGroup) {
+                duplexUnitStoriesGroup.style.display = 'none';
+            }
+            if (unitBedrooms0) {
+                unitBedrooms0.setAttribute('disabled', 'disabled');
+                unitBedrooms0.removeAttribute('required');
+            }
+            if (unitBedrooms1) {
+                unitBedrooms1.setAttribute('disabled', 'disabled');
+                unitBedrooms1.removeAttribute('required');
+            }
+            if (unitStories0) {
+                unitStories0.setAttribute('disabled', 'disabled');
+                unitStories0.removeAttribute('required');
+            }
+            if (unitStories1) {
+                unitStories1.setAttribute('disabled', 'disabled');
+                unitStories1.removeAttribute('required');
+            }
+            if (dwellingStoriesGroup) {
+                dwellingStoriesGroup.style.display = 'none';
+            }
+            if (dwellingStoriesInput) {
+                dwellingStoriesInput.setAttribute('disabled', 'disabled');
+                dwellingStoriesInput.removeAttribute('required');
+            }
+
             if (propertyType === 'house') {
                 floorsGroup.style.display = 'none';
                 bedroomsGroup.style.display = 'block';
+                buildingFloorsGroup.style.display = 'block';
+                if (dwellingStoriesGroup) {
+                    dwellingStoriesGroup.style.display = 'block';
+                }
+                if (dwellingStoriesInput) {
+                    dwellingStoriesInput.removeAttribute('disabled');
+                }
                 floorsInput.removeAttribute('required');
+                floorsInput.setAttribute('disabled', 'disabled');
+                bedroomsInput.removeAttribute('disabled');
                 bedroomsInput.setAttribute('required', 'required');
+                buildingFloorsInput.setAttribute('required', 'required');
+                if (buildingFloorsLabel) {
+                    buildingFloorsLabel.classList.add('required');
+                    buildingFloorsLabel.textContent = 'Building stories (floors)';
+                }
+                if (buildingFloorsHint) {
+                    buildingFloorsHint.textContent = hintBuildingDwellingRequired;
+                }
+            } else if (propertyType === 'duplex') {
+                floorsGroup.style.display = 'none';
+                bedroomsGroup.style.display = 'none';
+                if (duplexUnitBedroomsGroup) {
+                    duplexUnitBedroomsGroup.style.display = 'grid';
+                }
+                if (duplexUnitStoriesGroup) {
+                    duplexUnitStoriesGroup.style.display = 'grid';
+                }
+                buildingFloorsGroup.style.display = 'block';
+                floorsInput.removeAttribute('required');
+                floorsInput.setAttribute('disabled', 'disabled');
+                bedroomsInput.removeAttribute('required');
+                bedroomsInput.setAttribute('disabled', 'disabled');
+                buildingFloorsInput.removeAttribute('required');
+                if (buildingFloorsLabel) {
+                    buildingFloorsLabel.classList.remove('required');
+                    buildingFloorsLabel.innerHTML = 'Building stories (floors) <span class="text-muted font-weight-normal">(optional)</span>';
+                }
+                if (buildingFloorsHint) {
+                    buildingFloorsHint.textContent = hintBuildingDuplexOptional;
+                }
+                if (unitBedrooms0) {
+                    unitBedrooms0.removeAttribute('disabled');
+                    unitBedrooms0.setAttribute('required', 'required');
+                }
+                if (unitBedrooms1) {
+                    unitBedrooms1.removeAttribute('disabled');
+                    unitBedrooms1.setAttribute('required', 'required');
+                }
+                if (unitStories0) {
+                    unitStories0.removeAttribute('disabled');
+                    unitStories0.setAttribute('required', 'required');
+                }
+                if (unitStories1) {
+                    unitStories1.removeAttribute('disabled');
+                    unitStories1.setAttribute('required', 'required');
+                }
+                if (duplexUnitCountInput) {
+                    duplexUnitCountInput.removeAttribute('disabled');
+                }
+            } else if (propertyType === 'townhouse') {
+                floorsGroup.style.display = 'none';
+                bedroomsGroup.style.display = 'block';
+                buildingFloorsGroup.style.display = 'block';
+                if (dwellingStoriesGroup) {
+                    dwellingStoriesGroup.style.display = 'block';
+                }
+                if (dwellingStoriesInput) {
+                    dwellingStoriesInput.removeAttribute('disabled');
+                }
+                floorsInput.removeAttribute('required');
+                floorsInput.setAttribute('disabled', 'disabled');
+                bedroomsInput.removeAttribute('disabled');
+                bedroomsInput.setAttribute('required', 'required');
+                buildingFloorsInput.setAttribute('required', 'required');
+                if (buildingFloorsLabel) {
+                    buildingFloorsLabel.classList.add('required');
+                    buildingFloorsLabel.textContent = 'Building stories (floors)';
+                }
+                if (buildingFloorsHint) {
+                    buildingFloorsHint.textContent = hintBuildingDwellingRequired;
+                }
+            } else if (propertyType === 'apartment' || propertyType === 'condominium') {
+                floorsGroup.style.display = 'block';
+                bedroomsGroup.style.display = 'none';
+                buildingFloorsGroup.style.display = 'none';
+                floorsInput.setAttribute('required', 'required');
+                floorsInput.removeAttribute('disabled');
+                bedroomsInput.removeAttribute('required');
+                bedroomsInput.removeAttribute('disabled');
+                buildingFloorsInput.removeAttribute('required');
+                if (buildingFloorsLabel) {
+                    buildingFloorsLabel.classList.add('required');
+                    buildingFloorsLabel.textContent = 'Building stories (floors)';
+                }
+                if (floorsLabel) {
+                    floorsLabel.textContent = 'Number of units';
+                }
+                if (floorsHint) {
+                    floorsHint.textContent = 'How many rentable units does this building have? (Minimum 2.)';
+                }
             } else {
                 floorsGroup.style.display = 'block';
                 bedroomsGroup.style.display = 'none';
+                buildingFloorsGroup.style.display = 'none';
                 floorsInput.setAttribute('required', 'required');
+                floorsInput.removeAttribute('disabled');
                 bedroomsInput.removeAttribute('required');
+                bedroomsInput.removeAttribute('disabled');
+                buildingFloorsInput.removeAttribute('required');
+                if (buildingFloorsLabel) {
+                    buildingFloorsLabel.classList.add('required');
+                    buildingFloorsLabel.textContent = 'Building stories (floors)';
+                }
+                if (floorsLabel) {
+                    floorsLabel.textContent = 'Number of units';
+                }
+                if (floorsHint) {
+                    floorsHint.textContent = 'How many rentable units does this property have?';
+                }
             }
         }
 
+        const unitMediaSlots = document.getElementById('unit_media_slots');
+        const unitMediaPlaceholder = document.getElementById('unit_media_placeholder');
+        const unitMediaIntro = document.getElementById('unit_media_intro');
+
+        function plannedUnitCountForPhotos() {
+            const propertyType = propertyTypeSelect ? propertyTypeSelect.value : '';
+            if (propertyType === 'house' || propertyType === 'townhouse') {
+                return 1;
+            }
+            if (propertyType === 'duplex') {
+                return 2;
+            }
+            const floors = parseInt(floorsInput && floorsInput.value ? floorsInput.value : '0', 10);
+            if (!floors || floors < 1) {
+                return 0;
+            }
+            if (propertyType === 'apartment' || propertyType === 'condominium') {
+                return floors >= 2 ? floors : 0;
+            }
+            return floors;
+        }
+
+        function rebuildUnitMediaSlots() {
+            if (!unitMediaSlots) {
+                return;
+            }
+            const n = plannedUnitCountForPhotos();
+            unitMediaSlots.innerHTML = '';
+
+            if (unitMediaPlaceholder) {
+                unitMediaPlaceholder.style.display = 'none';
+                unitMediaPlaceholder.textContent = '';
+            }
+            if (unitMediaIntro) {
+                unitMediaIntro.style.display = n > 0 ? 'block' : 'none';
+            }
+
+            if (n === 0) {
+                const pt = propertyTypeSelect ? propertyTypeSelect.value : '';
+                if (unitMediaPlaceholder && (pt === 'apartment' || pt === 'condominium')) {
+                    unitMediaPlaceholder.textContent = 'Enter how many units this building has (at least 2) above to show per-unit photo slots.';
+                    unitMediaPlaceholder.style.display = 'block';
+                }
+                return;
+            }
+
+            for (let i = 0; i < n; i++) {
+                const card = document.createElement('div');
+                card.className = 'unit-media-card';
+                const label = i + 1;
+                card.innerHTML = `
+                    <h4>Unit ${label}</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Unit ${label} cover image</label>
+                            <input type="file" name="unit_media[${i}][cover]" accept="image/*" class="form-control">
+                            <p class="form-help">JPEG/PNG up to 3MB</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Unit ${label} gallery (up to 12)</label>
+                            <input type="file" name="unit_media[${i}][gallery][]" accept="image/*" multiple class="form-control">
+                        </div>
+                    </div>
+                `;
+                unitMediaSlots.appendChild(card);
+            }
+        }
+
+        if (floorsInput) {
+            floorsInput.addEventListener('input', rebuildUnitMediaSlots);
+            floorsInput.addEventListener('change', rebuildUnitMediaSlots);
+        }
+
         if (propertyTypeSelect) {
-            propertyTypeSelect.addEventListener('change', togglePropertyFields);
-            // Initial state
+            propertyTypeSelect.addEventListener('change', function () {
+                togglePropertyFields();
+                rebuildUnitMediaSlots();
+            });
             togglePropertyFields();
+            rebuildUnitMediaSlots();
         }
     });
 </script>

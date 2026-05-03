@@ -53,6 +53,7 @@ class FormRequestValidationTest extends TestCase
             'name' => 'Test Property',
             'property_type' => 'apartment',
             'address' => '123 Test Street',
+            'floors' => 2,
         ], $overrides);
     }
 
@@ -131,11 +132,31 @@ class FormRequestValidationTest extends TestCase
         $validTypes = ['apartment', 'condominium', 'townhouse', 'house', 'duplex', 'others'];
 
         foreach ($validTypes as $index => $type) {
+            $payload = [
+                'name' => "Property {$index}",
+                'property_type' => $type,
+            ];
+
+            if (in_array($type, ['apartment', 'condominium'], true)) {
+                $payload['floors'] = 2;
+            } elseif ($type === 'duplex') {
+                $payload['building_floors'] = 2;
+                $payload['unit_bedrooms'] = [0 => 2, 1 => 2];
+                $payload['unit_stories'] = [0 => 1, 1 => 1];
+            } elseif ($type === 'house') {
+                $payload['floors'] = null;
+                $payload['bedrooms'] = 2;
+                $payload['building_floors'] = 2;
+            } elseif ($type === 'townhouse') {
+                $payload['floors'] = null;
+                $payload['building_floors'] = 2;
+                $payload['bedrooms'] = 2;
+            } else {
+                $payload['floors'] = 1;
+            }
+
             $response = $this->actingAs($landlord)
-                ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
-                    'name' => "Property {$index}",
-                    'property_type' => $type,
-                ]));
+                ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload($payload));
 
             $response->assertSessionHasNoErrors("Failed for property type: {$type}");
         }
@@ -252,6 +273,229 @@ class FormRequestValidationTest extends TestCase
 
         $response = $this->actingAs($landlord)
             ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload(['floors' => 0]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_house_rejects_multiple_units_via_floors(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'house',
+                'floors' => 3,
+                'bedrooms' => 2,
+                'building_floors' => 2,
+            ]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_townhouse_rejects_multiple_units_via_floors(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'townhouse',
+                'floors' => 2,
+                'bedrooms' => 2,
+                'building_floors' => 2,
+            ]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_duplex_requires_unit_count_minimum_two(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => 1,
+                'building_floors' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1, 1 => 1],
+            ]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_duplex_allows_omitted_floors_and_creates_two_units(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => null,
+                'building_floors' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 3],
+                'unit_stories' => [0 => 1, 1 => 2],
+            ]));
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('landlord.apartments'));
+
+        $property = \App\Models\Property::query()->where('landlord_id', $landlord->id)->latest('id')->first();
+        $this->assertNotNull($property);
+        $this->assertSame('duplex', $property->property_type);
+        $this->assertSame(2, $property->units()->count());
+        $units = $property->units()->orderBy('id')->get();
+        $this->assertSame(2, (int) $units[0]->bedrooms);
+        $this->assertSame(3, (int) $units[1]->bedrooms);
+        $this->assertSame(3, (int) $property->bedrooms);
+        $this->assertSame(1, (int) $units[0]->unit_stories);
+        $this->assertSame(2, (int) $units[1]->unit_stories);
+    }
+
+    public function test_store_property_duplex_rejects_unit_count_other_than_two(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => 3,
+                'building_floors' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1, 1 => 1],
+            ]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_duplex_rejects_top_level_bedrooms_field(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => null,
+                'building_floors' => 2,
+                'bedrooms' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1, 1 => 1],
+            ]));
+
+        $response->assertSessionHasErrors('bedrooms');
+    }
+
+    public function test_store_property_duplex_requires_interior_stories_per_unit(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => null,
+                'building_floors' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1],
+            ]));
+
+        $response->assertSessionHasErrors('unit_stories.1');
+    }
+
+    public function test_store_property_duplex_allows_omitted_building_floors_when_per_unit_stories_given(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => null,
+                'building_floors' => null,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1, 1 => 1],
+            ]));
+
+        $response->assertSessionHasNoErrors();
+
+        $property = \App\Models\Property::query()->where('landlord_id', $landlord->id)->latest('id')->first();
+        $this->assertNotNull($property);
+        $this->assertNull($property->building_floors);
+    }
+
+    public function test_store_property_house_rejects_duplex_style_unit_stories_array(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'house',
+                'floors' => null,
+                'bedrooms' => 2,
+                'building_floors' => 2,
+                'unit_stories' => [0 => 2],
+            ]));
+
+        $response->assertSessionHasErrors('unit_stories');
+    }
+
+    public function test_store_property_house_optional_dwelling_stories_seeds_unit_row(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'house',
+                'floors' => null,
+                'bedrooms' => 2,
+                'building_floors' => 2,
+                'dwelling_stories' => 3,
+            ]));
+
+        $response->assertSessionHasNoErrors();
+
+        $property = \App\Models\Property::query()->where('landlord_id', $landlord->id)->latest('id')->first();
+        $unit = $property->units()->first();
+        $this->assertNotNull($unit);
+        $this->assertSame(3, (int) $unit->unit_stories);
+    }
+
+    public function test_store_property_duplex_rejects_dwelling_stories_field(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'duplex',
+                'floors' => null,
+                'building_floors' => 2,
+                'unit_bedrooms' => [0 => 2, 1 => 2],
+                'unit_stories' => [0 => 1, 1 => 1],
+                'dwelling_stories' => 2,
+            ]));
+
+        $response->assertSessionHasErrors('dwelling_stories');
+    }
+
+    public function test_store_property_apartment_requires_at_least_two_units(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'apartment',
+                'floors' => 1,
+            ]));
+
+        $response->assertSessionHasErrors('floors');
+    }
+
+    public function test_store_property_condominium_requires_at_least_two_units(): void
+    {
+        $landlord = $this->createLandlord();
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'property_type' => 'condominium',
+                'floors' => 1,
+            ]));
 
         $response->assertSessionHasErrors('floors');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUnitRequest;
 use App\Models\Property;
@@ -10,8 +11,10 @@ use App\Models\User;
 use App\Services\Media\UnitMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
 {
@@ -113,37 +116,48 @@ class UnitController extends Controller
         }
     }
 
-    public function storeUnit(StoreUnitRequest $request, $propertyId, UnitMediaService $unitMediaService)
+    public function storeUnit(StoreUnitRequest $request, $propertyId, UnitMediaService $unitMediaService, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
-        $unit = $property->units()->create([
-            'unit_number' => $request->unit_number,
-            'unit_type' => $request->unit_type,
-            'rent_amount' => $request->rent_amount,
-            'status' => $request->status,
-            'leasing_type' => $request->leasing_type,
-            'description' => $request->description,
-            'floor_area' => $request->floor_area,
-            'floor_number' => $request->floor_number ?? 1,
-            'bedrooms' => $request->bedrooms,
-            'bathrooms' => $request->bathrooms,
-            'is_furnished' => $request->boolean('is_furnished'),
-            'amenities' => $request->amenities ?? [],
-            'notes' => $request->notes,
-        ]);
-
-        $mediaPayload = $unitMediaService->uploadForUnit(
-            $unit->id,
-            $request->file('unit_cover_image'),
-            $request->file('unit_gallery', [])
-        );
-
-        if (! empty($mediaPayload)) {
-            $unit->update($mediaPayload);
+        try {
+            $unitRules->assertMayAddUnits($property, 1);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
         }
+
+        $unit = DB::transaction(function () use ($request, $property, $unitMediaService) {
+            $unit = $property->units()->create([
+                'unit_number' => $request->unit_number,
+                'unit_type' => $request->unit_type,
+                'rent_amount' => $request->rent_amount,
+                'status' => $request->status,
+                'leasing_type' => $request->leasing_type,
+                'description' => $request->description,
+                'floor_area' => $request->floor_area,
+                'floor_number' => $request->floor_number ?? 1,
+                'unit_stories' => $request->filled('unit_stories') ? (int) $request->input('unit_stories') : null,
+                'bedrooms' => $request->bedrooms,
+                'bathrooms' => $request->bathrooms,
+                'is_furnished' => $request->boolean('is_furnished'),
+                'amenities' => $request->amenities ?? [],
+                'notes' => $request->notes,
+            ]);
+
+            $mediaPayload = $unitMediaService->uploadForUnit(
+                $unit->id,
+                $request->file('unit_cover_image'),
+                $request->file('unit_gallery', [])
+            );
+
+            if (! empty($mediaPayload)) {
+                $unit->update($mediaPayload);
+            }
+
+            return $unit;
+        });
 
         return redirect()->route('landlord.units', $propertyId)->with('success', 'Unit created successfully.');
     }
@@ -203,7 +217,7 @@ class UnitController extends Controller
         return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount'));
     }
 
-    public function finalizeBulkUnits(Request $request, $propertyId)
+    public function finalizeBulkUnits(Request $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
@@ -249,7 +263,7 @@ class UnitController extends Controller
         }
 
         if ($expectedCount > 0 && count($units) < $expectedCount) {
-            return back()->withInput()->with('error', "Only ".count($units)." of {$expectedCount} units were received. Please retry; this usually means form data was truncated.");
+            return back()->withInput()->with('error', 'Only '.count($units)." of {$expectedCount} units were received. Please retry; this usually means form data was truncated.");
         }
 
         Validator::make(['units' => $units], [
@@ -308,6 +322,12 @@ class UnitController extends Controller
                 $unitsCreated++;
             }
 
+            try {
+                $unitRules->assertMayAddUnits($property, count($unitsToInsert));
+            } catch (ValidationException $exception) {
+                return back()->withInput()->withErrors($exception->errors());
+            }
+
             \Illuminate\Support\Facades\DB::transaction(function () use ($unitsToInsert, $property) {
                 if (! empty($unitsToInsert)) {
                     $chunks = array_chunk($unitsToInsert, 100);
@@ -345,6 +365,10 @@ class UnitController extends Controller
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
 
+        if ($request->has('unit_stories') && $request->input('unit_stories') === '') {
+            $request->merge(['unit_stories' => null]);
+        }
+
         try {
             $request->validate([
                 'unit_number' => 'required|string|max:50|unique:units,unit_number,'.$unit->id.',id,property_id,'.$unit->property_id,
@@ -354,6 +378,7 @@ class UnitController extends Controller
                 'leasing_type' => 'required|in:separate,inclusive',
                 'description' => 'nullable|string|max:1000',
                 'floor_area' => 'nullable|numeric|min:0',
+                'unit_stories' => 'nullable|integer|min:1|max:50',
                 'bedrooms' => 'required|integer|min:0',
                 'bathrooms' => 'required|integer|min:1',
                 'is_furnished' => 'nullable|boolean',
@@ -392,6 +417,13 @@ class UnitController extends Controller
                 'notes' => $request->notes,
             ];
 
+            if ($request->has('unit_stories')) {
+                $rawStories = $request->input('unit_stories');
+                $updateData['unit_stories'] = ($rawStories === '' || $rawStories === null)
+                    ? null
+                    : (int) $rawStories;
+            }
+
             $unitMediaService = app(UnitMediaService::class);
             $mediaPayload = $unitMediaService->uploadForUnit(
                 $unit->id,
@@ -418,14 +450,20 @@ class UnitController extends Controller
         }
     }
 
-    public function deleteUnit($id)
+    public function deleteUnit($id, PropertyTypeUnitRulesContract $unitRules)
     {
         $unit = Unit::whereHas('property', function ($query) {
             $query->where('landlord_id', Auth::id());
         })->findOrFail($id);
 
         try {
-            $activeAssignments = $unit->tenantAssignments()->whereIn('status', ['active', 'pending'])->count();
+            $unitRules->assertDeletingUnitAllowed($unit);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        try {
+            $activeAssignments = $unit->tenantAssignments()->whereIn('status', ['active', 'pending', 'pending_approval'])->count();
 
             if ($activeAssignments > 0) {
                 return back()->with('error', 'Cannot delete unit with active tenant assignments.');
@@ -464,6 +502,7 @@ class UnitController extends Controller
             'bathrooms' => $unit->bathrooms,
             'max_occupants' => $unit->max_occupants,
             'floor_number' => $unit->floor_number,
+            'unit_stories' => $unit->unit_stories,
             'floor_area' => $unit->floor_area,
             'is_furnished' => $unit->is_furnished,
             'amenities' => $unit->amenities ?? [],
@@ -479,11 +518,17 @@ class UnitController extends Controller
         ]);
     }
 
-    public function storeApartmentUnit(Request $request, $propertyId)
+    public function storeApartmentUnit(Request $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
+
+        try {
+            $unitRules->assertMayAddUnits($property, 1);
+        } catch (ValidationException $exception) {
+            return response()->json(['success' => false, 'message' => collect($exception->errors())->flatten()->first()], 422);
+        }
 
         $request->validate([
             'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
@@ -499,22 +544,24 @@ class UnitController extends Controller
         ]);
 
         try {
-            $unit = $property->units()->create([
-                'unit_number' => $request->unit_number,
-                'unit_type' => $request->unit_type,
-                'rent_amount' => $request->rent_amount,
-                'status' => 'available',
-                'leasing_type' => 'separate',
-                'bedrooms' => $request->bedrooms,
-                'bathrooms' => $request->bathrooms,
-                'tenant_count' => 0,
-                'max_occupants' => $request->max_occupants,
-                'floor_number' => $request->floor_number ?? 1,
-                'floor_area' => $request->floor_area,
-                'description' => $request->description,
-                'amenities' => $request->amenities ?? [],
-                'is_furnished' => in_array('furnished', $request->amenities ?? []),
-            ]);
+            $unit = DB::transaction(function () use ($property, $request) {
+                return $property->units()->create([
+                    'unit_number' => $request->unit_number,
+                    'unit_type' => $request->unit_type,
+                    'rent_amount' => $request->rent_amount,
+                    'status' => 'available',
+                    'leasing_type' => 'separate',
+                    'bedrooms' => $request->bedrooms,
+                    'bathrooms' => $request->bathrooms,
+                    'tenant_count' => 0,
+                    'max_occupants' => $request->max_occupants,
+                    'floor_number' => $request->floor_number ?? 1,
+                    'floor_area' => $request->floor_area,
+                    'description' => $request->description,
+                    'amenities' => $request->amenities ?? [],
+                    'is_furnished' => in_array('furnished', $request->amenities ?? []),
+                ]);
+            });
 
             return response()->json(['success' => true, 'message' => 'Unit created successfully.', 'unit' => $unit]);
         } catch (\Exception $exception) {
