@@ -34,7 +34,25 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
 
     public function createBulkUnits(Property $property, array $payload): Collection
     {
-        $count = (int) $payload['unit_count'];
+        $unitsPerFloor = isset($payload['units_per_floor']) && $payload['units_per_floor'] !== '' && $payload['units_per_floor'] !== null
+            ? (int) $payload['units_per_floor']
+            : null;
+
+        if ($unitsPerFloor !== null) {
+            $floors = max(1, (int) ($property->building_floors ?? $property->floors ?? 1));
+            $count = $unitsPerFloor * $floors;
+            $floorForIndex = $this->floorNumbersSequence($floors, $unitsPerFloor);
+        } else {
+            $count = (int) ($payload['unit_count'] ?? 0);
+            $floorForIndex = array_fill(0, max(0, $count), 1);
+        }
+
+        if ($count < 1) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'unit_count' => ['Invalid unit count.'],
+            ]);
+        }
+
         $this->unitRules->assertMayAddUnits($property, $count);
 
         $labels = $this->generateSequentialLabels($payload['naming_pattern'], $count);
@@ -48,22 +66,41 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
             }
         }
 
-        return DB::transaction(function () use ($property, $labels, $payload) {
+        return DB::transaction(function () use ($property, $labels, $payload, $floorForIndex) {
             $created = collect();
 
-            foreach ($labels as $label) {
+            foreach ($labels as $idx => $label) {
+                $floorNumber = $floorForIndex[$idx] ?? 1;
                 $attrs = array_merge($this->minimalDefaultAttributes(), [
                     'unit_number' => $label,
                     'name' => $label,
                     'rent_amount' => $payload['default_rent'],
                     'price' => $payload['default_rent'],
                     'status' => $payload['default_status'],
+                    'floor_number' => $floorNumber,
                 ]);
                 $created->push($property->units()->create($attrs));
             }
 
             return $created;
         });
+    }
+
+    /**
+     * One floor number per generated unit index (row-major: fill floor 1, then floor 2, …).
+     *
+     * @return list<int>
+     */
+    protected function floorNumbersSequence(int $floors, int $unitsPerFloor): array
+    {
+        $out = [];
+        for ($f = 1; $f <= $floors; $f++) {
+            for ($u = 1; $u <= $unitsPerFloor; $u++) {
+                $out[] = $f;
+            }
+        }
+
+        return $out;
     }
 
     /**

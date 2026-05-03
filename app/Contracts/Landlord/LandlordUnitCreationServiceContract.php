@@ -17,7 +17,13 @@ interface LandlordUnitCreationServiceContract
     public function createSingleUnit(Property $property, array $payload): Unit;
 
     /**
-     * @param  array{unit_count: int, naming_pattern: string, default_rent: numeric-string|float|int, default_status: string}  $payload
+     * @param  array{
+     *     naming_pattern: string,
+     *     default_rent: numeric-string|float|int,
+     *     default_status: string,
+     *     unit_count?: int,
+     *     units_per_floor?: int
+     * }  $payload Use flat unit_count, or units_per_floor × property stories for multi-unit buildings.
      * @return Collection<int, Unit>
      */
     public function createBulkUnits(Property $property, array $payload): Collection;

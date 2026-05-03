@@ -81,7 +81,7 @@
                                     </span>
                                     <div>
                                         <div class="fw-semibold">Create Multiple Units (Bulk)</div>
-                                        <div class="small text-muted">Generate several units with a naming pattern.</div>
+                                        <div class="small text-muted">Set defaults here, then customize every unit per floor on the bulk editor page.</div>
                                     </div>
                                 </div>
                             </div>
@@ -97,7 +97,16 @@
                         <select class="form-select" id="addUnitPropertyId" required>
                             <option value="">Select a property</option>
                             @foreach(($properties ?? $apartments ?? collect()) as $prop)
-                                <option value="{{ $prop->id }}" data-search-label="{{ strtolower($prop->name) }}">{{ $prop->name }}</option>
+                                @php
+                                    $ptype = $prop->property_type ?? '';
+                                    $stories = max(1, (int) ($prop->building_floors ?? $prop->floors ?? 1));
+                                @endphp
+                                <option
+                                    value="{{ $prop->id }}"
+                                    data-search-label="{{ strtolower($prop->name) }}"
+                                    data-property-type="{{ $ptype }}"
+                                    data-building-stories="{{ $stories }}"
+                                >{{ $prop->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -126,47 +135,74 @@
                     </div>
 
                     <div id="addUnitFieldsBulk" class="d-none">
-                        <div class="mb-3">
-                            <label class="form-label" for="addUnitCountBulk">Number of units</label>
+                        {{-- Multi-unit buildings (not house / townhouse / duplex): units per floor × stories from property --}}
+                        <div id="addUnitBulkFlooredWrap" class="d-none">
+                            <div class="alert alert-light border small py-2 mb-3 mb-md-3">
+                                <strong>Building stories</strong> come from this property (set when you created it): <span id="addUnitBuildingStoriesDisplay">—</span>.
+                                Total units = units per floor × stories (same idea as <em>Create Multiple Units</em>).
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="addUnitUnitsPerFloor">Units per floor</label>
+                                <input type="number" class="form-control" id="addUnitUnitsPerFloor" min="1" max="200" value="4">
+                                <div class="form-text">Total new units: <strong id="addUnitFlooredTotalPreview">—</strong></div>
+                            </div>
+                        </div>
+                        <div id="addUnitBulkHouseWrap" class="d-none mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="addUnitBulkCreateAllBedrooms" value="1">
+                                <label class="form-check-label" for="addUnitBulkCreateAllBedrooms">Create each bedroom as its own unit</label>
+                            </div>
+                            <p class="text-muted small mb-0">Matches the standalone <em>Create Multiple Units</em> flow for houses.</p>
+                        </div>
+                        <div id="addUnitBulkFlatWrap" class="mb-3">
+                            <label class="form-label" for="addUnitCountBulk" id="addUnitBulkFlatLabel">Number of units</label>
                             <input type="number" class="form-control" id="addUnitCountBulk" min="1" max="200" value="2">
+                            <div class="form-text">Used for townhouses, duplexes, and other layouts without a per-floor grid (total = this × building stories when stories &gt; 1).</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="addUnitPatternBulk">Naming pattern</label>
-                            <input type="text" class="form-control" id="addUnitPatternBulk" value="Unit {n}" maxlength="120" placeholder="Unit {n}">
-                            <div class="form-text">Use <code>{n}</code> for the sequence number (e.g. Unit 1, Unit 2). If you omit <code>{n}</code>, a number is appended automatically.</div>
+                            <label class="form-label" for="addUnitBulkDefaultUnitType">Default unit type</label>
+                            <select class="form-select" id="addUnitBulkDefaultUnitType">
+                                <option value="studio" selected>Studio</option>
+                                <option value="one_bedroom">One Bedroom</option>
+                                <option value="two_bedroom">Two Bedroom</option>
+                                <option value="three_bedroom">Three Bedroom</option>
+                                <option value="penthouse">Penthouse</option>
+                            </select>
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label" for="addUnitPriceBulk">Default price</label>
+                                <label class="form-label" for="addUnitPriceBulk">Default rent (₱)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">₱</span>
                                     <input type="number" class="form-control" id="addUnitPriceBulk" min="0" step="0.01" placeholder="0">
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="addUnitStatusBulk">Default status</label>
-                                <select class="form-select" id="addUnitStatusBulk">
-                                    <option value="available">Available</option>
-                                    <option value="maintenance">Maintenance</option>
-                                </select>
+                                <label class="form-label" for="addUnitBulkDefaultBedrooms">Default bedrooms</label>
+                                <input type="number" class="form-control" id="addUnitBulkDefaultBedrooms" min="0" max="10" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="addUnitBulkDefaultBathrooms">Default bathrooms</label>
+                                <input type="number" class="form-control" id="addUnitBulkDefaultBathrooms" min="1" max="10" value="1">
                             </div>
                         </div>
+                        <p class="text-muted small mt-2 mb-0">Unit numbers and labels are edited on the next screen (per floor), same as <strong>Edit Bulk Units</strong>.</p>
                     </div>
                 </div>
 
                 {{-- Step 3 --}}
                 <div class="add-unit-panel d-none" data-add-unit-panel="3">
-                    <p class="fw-semibold mb-2">Review your entries</p>
+                    <p class="fw-semibold mb-2" id="addUnitStep3Title">Review your entries</p>
                     <div id="addUnitReviewBody" class="border rounded p-3 bg-light small"></div>
-                    <p class="text-muted small mt-3 mb-0">Submitting will create the unit(s) on the selected property.</p>
+                    <p class="text-muted small mt-3 mb-0" id="addUnitStep3Footnote">Submitting will create the unit(s) on the selected property.</p>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" id="addUnitBtnBack" disabled>Back</button>
                 <button type="button" class="btn btn-primary" id="addUnitBtnNext">Next</button>
                 <button type="button" class="btn btn-primary d-none" id="addUnitBtnSubmit">
-                    <span class="add-unit-submit-label"><i class="fas fa-check me-1"></i> Confirm &amp; create</span>
-                    <span class="add-unit-submit-spinner d-none"><i class="fas fa-spinner fa-spin me-1"></i> Creating…</span>
+                    <span class="add-unit-submit-label" id="addUnitBtnSubmitLabel"><i class="fas fa-check me-1"></i> Confirm &amp; create</span>
+                    <span class="add-unit-submit-spinner d-none" id="addUnitBtnSubmitSpinner"><i class="fas fa-spinner fa-spin me-1"></i> Creating…</span>
                 </button>
             </div>
         </div>

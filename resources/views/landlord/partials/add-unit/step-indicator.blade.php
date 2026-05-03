@@ -13,6 +13,6 @@
     <div class="add-unit-step text-center flex-fill" data-add-unit-step="3">
         <div class="add-unit-step-circle mx-auto mb-1">3</div>
         <div class="small text-muted text-uppercase" style="letter-spacing: .04em;">Step 3</div>
-        <div class="fw-semibold small">Review &amp; Submit</div>
+        <div class="fw-semibold small" id="addUnitStep3IndicatorLabel">Review &amp; Submit</div>
     </div>
 </div>

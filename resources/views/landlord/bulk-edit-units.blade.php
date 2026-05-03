@@ -3,6 +3,10 @@
 @section('title', 'Edit Bulk Units')
 
 @push('styles')
+{{-- Critical layout if Vite CSS does not load: collapsed floors must stay hidden (picker-first UX). --}}
+<style id="bulk-edit-units-critical-stack">
+#floorsContainer.floors-detail-stack:not(.floors-detail-stack--expand-all) > .floor-section--collapsed{display:none!important;}
+</style>
 @vite(['resources/css/landlord/bulk-edit-units.css'])
 @endpush
 

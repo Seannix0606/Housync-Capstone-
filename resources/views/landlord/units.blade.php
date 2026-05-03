@@ -868,7 +868,8 @@ function editUnit(unitId) {
 
     const urls = {
         single: @json(route('landlord.units.modal.single')),
-        bulk: @json(route('landlord.units.modal.bulk')),
+        bulkSessionPost: @json(route('landlord.store-bulk-units', ['apartmentId' => 888888888])),
+        bulkSessionPostPlaceholder: '888888888',
     };
 
     let step = 1;
@@ -880,6 +881,101 @@ function editUnit(unitId) {
     const btnNext = document.getElementById('addUnitBtnNext');
     const btnSubmit = document.getElementById('addUnitBtnSubmit');
     const errBox = document.getElementById('addUnitModalError');
+
+    function fixedDwellingPropertyTypes() {
+        return ['house', 'townhouse', 'duplex'];
+    }
+
+    function propertySupportsFlooredBulk(propertyType) {
+        const t = String(propertyType || '').toLowerCase();
+
+        return !fixedDwellingPropertyTypes().includes(t);
+    }
+
+    function selectedPropertyOption() {
+        const sel = document.getElementById('addUnitPropertyId');
+        if (!sel || !sel.value) {
+            return null;
+        }
+
+        return sel.options[sel.selectedIndex];
+    }
+
+    function updateFlooredTotalPreview() {
+        const wrapFloored = document.getElementById('addUnitBulkFlooredWrap');
+        if (!wrapFloored || wrapFloored.classList.contains('d-none')) {
+            return;
+        }
+        const opt = selectedPropertyOption();
+        const stories = opt ? parseInt(opt.getAttribute('data-building-stories') || '1', 10) : 1;
+        const upf = parseInt(document.getElementById('addUnitUnitsPerFloor').value, 10) || 0;
+        const total = Math.max(0, stories * upf);
+        const el = document.getElementById('addUnitFlooredTotalPreview');
+        if (el) {
+            el.textContent = String(total);
+        }
+    }
+
+    function updateBulkFloorUi() {
+        const floored = document.getElementById('addUnitBulkFlooredWrap');
+        const flat = document.getElementById('addUnitBulkFlatWrap');
+        const houseWrap = document.getElementById('addUnitBulkHouseWrap');
+        const flatLabel = document.getElementById('addUnitBulkFlatLabel');
+        const storiesDisp = document.getElementById('addUnitBuildingStoriesDisplay');
+        if (!floored || !flat) {
+            return;
+        }
+        if (mode !== 'bulk') {
+            return;
+        }
+        const opt = selectedPropertyOption();
+        const ptypeRaw = opt ? (opt.getAttribute('data-property-type') || '') : '';
+        const ptype = String(ptypeRaw).toLowerCase();
+        const stories = opt ? parseInt(opt.getAttribute('data-building-stories') || '1', 10) : 1;
+        const cab = document.getElementById('addUnitBulkCreateAllBedrooms');
+
+        if (houseWrap) {
+            houseWrap.classList.toggle('d-none', ptype !== 'house');
+        }
+
+        if (ptype === 'house') {
+            floored.classList.add('d-none');
+            const bedroomMode = cab && cab.checked;
+            flat.classList.toggle('d-none', bedroomMode);
+            if (flatLabel) {
+                flatLabel.textContent = 'Units per floor (layout)';
+            }
+            return;
+        }
+
+        if (flatLabel) {
+            flatLabel.textContent = 'Number of units';
+        }
+
+        if (opt && propertySupportsFlooredBulk(ptypeRaw)) {
+            floored.classList.remove('d-none');
+            flat.classList.add('d-none');
+            if (storiesDisp) {
+                storiesDisp.textContent = String(stories);
+            }
+            updateFlooredTotalPreview();
+        } else {
+            floored.classList.add('d-none');
+            flat.classList.remove('d-none');
+        }
+    }
+
+    document.getElementById('addUnitPropertyId')?.addEventListener('change', updateBulkFloorUi);
+    document.getElementById('addUnitUnitsPerFloor')?.addEventListener('input', updateFlooredTotalPreview);
+    document.getElementById('addUnitBulkCreateAllBedrooms')?.addEventListener('change', updateBulkFloorUi);
+    document.getElementById('addUnitBulkDefaultUnitType')?.addEventListener('change', function () {
+        const map = { studio: 0, one_bedroom: 1, two_bedroom: 2, three_bedroom: 3, penthouse: 3 };
+        const b = map[this.value];
+        const el = document.getElementById('addUnitBulkDefaultBedrooms');
+        if (el !== null && b !== undefined) {
+            el.value = String(b);
+        }
+    });
 
     function showError(msg) {
         if (!errBox) return;
@@ -905,6 +1001,48 @@ function editUnit(unitId) {
         } else {
             btnNext.disabled = false;
         }
+        if (step === 2 && mode === 'bulk') {
+            updateBulkFloorUi();
+        }
+
+        const step3Ind = document.getElementById('addUnitStep3IndicatorLabel');
+        const step3Title = document.getElementById('addUnitStep3Title');
+        const step3Foot = document.getElementById('addUnitStep3Footnote');
+        const submitLbl = document.getElementById('addUnitBtnSubmitLabel');
+        const submitSpin = document.getElementById('addUnitBtnSubmitSpinner');
+        if (step === 3 && mode === 'bulk') {
+            if (step3Ind) {
+                step3Ind.textContent = 'Bulk editor';
+            }
+            if (step3Title) {
+                step3Title.textContent = 'Open full-page bulk editor';
+            }
+            if (step3Foot) {
+                step3Foot.textContent = 'You will leave this modal and go to Edit Bulk Units to customize each unit and floor, then finalize.';
+            }
+            if (submitLbl) {
+                submitLbl.innerHTML = '<i class="fas fa-arrow-right me-1"></i> Open bulk editor';
+            }
+            if (submitSpin) {
+                submitSpin.classList.add('d-none');
+            }
+        } else if (step === 3) {
+            if (step3Ind) {
+                step3Ind.textContent = 'Review & Submit';
+            }
+            if (step3Title) {
+                step3Title.textContent = 'Review your entries';
+            }
+            if (step3Foot) {
+                step3Foot.textContent = 'Submitting will create the unit on the selected property.';
+            }
+            if (submitLbl) {
+                submitLbl.innerHTML = '<i class="fas fa-check me-1"></i> Confirm & create';
+            }
+            if (submitSpin) {
+                submitSpin.classList.add('d-none');
+            }
+        }
     }
 
     function resetWizard() {
@@ -919,14 +1057,35 @@ function editUnit(unitId) {
         document.getElementById('addUnitPriceSingle').value = '';
         document.getElementById('addUnitStatusSingle').value = 'available';
         document.getElementById('addUnitCountBulk').value = '2';
-        document.getElementById('addUnitPatternBulk').value = 'Unit {n}';
+        const upf = document.getElementById('addUnitUnitsPerFloor');
+        if (upf) {
+            upf.value = '4';
+        }
         document.getElementById('addUnitPriceBulk').value = '';
-        document.getElementById('addUnitStatusBulk').value = 'available';
+        const ut = document.getElementById('addUnitBulkDefaultUnitType');
+        if (ut) {
+            ut.value = 'studio';
+        }
+        const db = document.getElementById('addUnitBulkDefaultBedrooms');
+        if (db) {
+            db.value = '0';
+        }
+        const dba = document.getElementById('addUnitBulkDefaultBathrooms');
+        if (dba) {
+            dba.value = '1';
+        }
+        const cab = document.getElementById('addUnitBulkCreateAllBedrooms');
+        if (cab) {
+            cab.checked = false;
+        }
         document.getElementById('addUnitFieldsSingle').classList.remove('d-none');
         document.getElementById('addUnitFieldsBulk').classList.add('d-none');
         document.getElementById('addUnitReviewBody').innerHTML = '';
-        btnSubmit.querySelector('.add-unit-submit-label')?.classList.remove('d-none');
-        btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.add('d-none');
+        const submitLblEl = document.getElementById('addUnitBtnSubmitLabel');
+        if (submitLblEl) {
+            submitLblEl.classList.remove('d-none');
+        }
+        document.getElementById('addUnitBtnSubmitSpinner')?.classList.add('d-none');
         btnSubmit.disabled = false;
         syncStepUi();
     }
@@ -946,6 +1105,7 @@ function editUnit(unitId) {
             } else {
                 single.classList.add('d-none');
                 bulk.classList.remove('d-none');
+                updateBulkFloorUi();
             }
             syncStepUi();
         });
@@ -987,19 +1147,56 @@ function editUnit(unitId) {
                     return;
                 }
             } else {
-                const cnt = parseInt(document.getElementById('addUnitCountBulk').value, 10);
                 const price = document.getElementById('addUnitPriceBulk').value;
-                const pat = document.getElementById('addUnitPatternBulk').value.trim();
-                if (!cnt || cnt < 1) {
-                    showError('Please enter how many units to create.');
+                const opt = selectedPropertyOption();
+                const ptype = opt ? String(opt.getAttribute('data-property-type') || '').toLowerCase() : '';
+                const useFloors = opt && propertySupportsFlooredBulk(opt.getAttribute('data-property-type') || '');
+                const cab = document.getElementById('addUnitBulkCreateAllBedrooms');
+
+                if (ptype === 'house') {
+                    if (!cab || !cab.checked) {
+                        const upf = parseInt(document.getElementById('addUnitCountBulk').value, 10);
+                        if (!upf || upf < 1) {
+                            showError('Enter units per floor, or turn on “each bedroom as its own unit”.');
+                            return;
+                        }
+                    }
+                } else if (useFloors) {
+                    const upf = parseInt(document.getElementById('addUnitUnitsPerFloor').value, 10);
+                    const stories = parseInt(opt.getAttribute('data-building-stories') || '1', 10);
+                    if (!upf || upf < 1) {
+                        showError('Please enter units per floor.');
+                        return;
+                    }
+                    if (stories * upf > 200) {
+                        showError('Total units (units per floor × building stories) cannot exceed 200.');
+                        return;
+                    }
+                } else {
+                    const cnt = parseInt(document.getElementById('addUnitCountBulk').value, 10);
+                    if (!cnt || cnt < 1) {
+                        showError('Please enter how many units to create.');
+                        return;
+                    }
+                }
+
+                const ut = document.getElementById('addUnitBulkDefaultUnitType');
+                if (!ut || !ut.value) {
+                    showError('Please select a default unit type.');
                     return;
                 }
-                if (!pat) {
-                    showError('Please enter a naming pattern.');
+                const beds = parseInt(document.getElementById('addUnitBulkDefaultBedrooms').value, 10);
+                const baths = parseInt(document.getElementById('addUnitBulkDefaultBathrooms').value, 10);
+                if (Number.isNaN(beds) || beds < 0) {
+                    showError('Please enter default bedrooms.');
+                    return;
+                }
+                if (Number.isNaN(baths) || baths < 1) {
+                    showError('Please enter default bathrooms (at least 1).');
                     return;
                 }
                 if (price === '' || Number(price) < 0) {
-                    showError('Please enter a valid default price.');
+                    showError('Please enter a valid default rent.');
                     return;
                 }
             }
@@ -1031,11 +1228,26 @@ function editUnit(unitId) {
             html += '<dt class="col-sm-4">Price</dt><dd class="col-sm-8">₱' + Number(document.getElementById('addUnitPriceSingle').value).toLocaleString() + '</dd>';
             html += '<dt class="col-sm-4">Status</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitStatusSingle').value) + '</dd>';
         } else {
-            html += '<dt class="col-sm-4">Mode</dt><dd class="col-sm-8">Bulk</dd>';
-            html += '<dt class="col-sm-4">Count</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitCountBulk').value) + '</dd>';
-            html += '<dt class="col-sm-4">Naming pattern</dt><dd class="col-sm-8"><code>' + escapeHtml(document.getElementById('addUnitPatternBulk').value.trim()) + '</code></dd>';
-            html += '<dt class="col-sm-4">Default price</dt><dd class="col-sm-8">₱' + Number(document.getElementById('addUnitPriceBulk').value).toLocaleString() + '</dd>';
-            html += '<dt class="col-sm-4">Default status</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitStatusBulk').value) + '</dd>';
+            const opt = selectedPropertyOption();
+            const ptypeRaw = opt ? (opt.getAttribute('data-property-type') || '') : '';
+            const ptype = String(ptypeRaw).toLowerCase();
+            const useFloors = opt && propertySupportsFlooredBulk(ptypeRaw);
+            const cab = document.getElementById('addUnitBulkCreateAllBedrooms');
+            html += '<dt class="col-sm-4">Mode</dt><dd class="col-sm-8">Bulk → full-page editor</dd>';
+            if (ptype === 'house' && cab && cab.checked) {
+                html += '<dt class="col-sm-4">House layout</dt><dd class="col-sm-8">One unit per bedroom</dd>';
+            } else if (useFloors) {
+                const stories = parseInt(opt.getAttribute('data-building-stories') || '1', 10);
+                const upf = parseInt(document.getElementById('addUnitUnitsPerFloor').value, 10);
+                html += '<dt class="col-sm-4">Building stories</dt><dd class="col-sm-8">' + escapeHtml(String(stories)) + ' <span class="text-muted">(from property)</span></dd>';
+                html += '<dt class="col-sm-4">Units per floor</dt><dd class="col-sm-8">' + escapeHtml(String(upf)) + '</dd>';
+                html += '<dt class="col-sm-4">Total placeholders</dt><dd class="col-sm-8">' + escapeHtml(String(stories * upf)) + '</dd>';
+            } else {
+                html += '<dt class="col-sm-4">Units per floor / count</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitCountBulk').value) + '</dd>';
+            }
+            html += '<dt class="col-sm-4">Default unit type</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitBulkDefaultUnitType').value) + '</dd>';
+            html += '<dt class="col-sm-4">Default rent</dt><dd class="col-sm-8">₱' + Number(document.getElementById('addUnitPriceBulk').value).toLocaleString() + '</dd>';
+            html += '<dt class="col-sm-4">Default beds / baths</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitBulkDefaultBedrooms').value) + ' / ' + escapeHtml(document.getElementById('addUnitBulkDefaultBathrooms').value) + '</dd>';
         }
         html += '</dl>';
         document.getElementById('addUnitReviewBody').innerHTML = html;
@@ -1098,37 +1310,73 @@ function editUnit(unitId) {
         if (mr) mr.textContent = '₱' + Number(stats.monthly_revenue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
 
-    btnSubmit.addEventListener('click', async () => {
-        showError('');
-        const pid = parseInt(document.getElementById('addUnitPropertyId').value, 10);
-        const scope = statsScopePropertyId();
-        const body = { stats_scope_property_id: scope || null };
-        let url = urls.single;
-        if (mode === 'single') {
-            url = urls.single;
-            Object.assign(body, {
-                property_id: pid,
-                unit_number: document.getElementById('addUnitNameSingle').value.trim(),
-                rent_amount: document.getElementById('addUnitPriceSingle').value,
-                status: document.getElementById('addUnitStatusSingle').value,
-            });
+    function appendBulkSessionField(form, name, value) {
+        const i = document.createElement('input');
+        i.type = 'hidden';
+        i.name = name;
+        i.value = String(value);
+        form.appendChild(i);
+    }
+
+    function submitBulkSessionForm() {
+        const pid = document.getElementById('addUnitPropertyId').value;
+        const action = urls.bulkSessionPost.split(urls.bulkSessionPostPlaceholder).join(pid);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = action;
+
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = csrfToken;
+        form.appendChild(token);
+
+        const opt = selectedPropertyOption();
+        const ptype = opt ? String(opt.getAttribute('data-property-type') || '').toLowerCase() : '';
+
+        appendBulkSessionField(form, 'default_unit_type', document.getElementById('addUnitBulkDefaultUnitType').value);
+        appendBulkSessionField(form, 'default_rent', document.getElementById('addUnitPriceBulk').value);
+        appendBulkSessionField(form, 'default_bedrooms', document.getElementById('addUnitBulkDefaultBedrooms').value);
+        appendBulkSessionField(form, 'default_bathrooms', document.getElementById('addUnitBulkDefaultBathrooms').value);
+
+        const cab = document.getElementById('addUnitBulkCreateAllBedrooms');
+
+        if (ptype === 'house' && cab && cab.checked) {
+            appendBulkSessionField(form, 'create_all_bedrooms', '1');
+        } else if (opt && propertySupportsFlooredBulk(opt.getAttribute('data-property-type') || '')) {
+            appendBulkSessionField(form, 'units_per_floor', document.getElementById('addUnitUnitsPerFloor').value);
         } else {
-            url = urls.bulk;
-            Object.assign(body, {
-                property_id: pid,
-                unit_count: parseInt(document.getElementById('addUnitCountBulk').value, 10),
-                naming_pattern: document.getElementById('addUnitPatternBulk').value.trim(),
-                default_rent: document.getElementById('addUnitPriceBulk').value,
-                default_status: document.getElementById('addUnitStatusBulk').value,
-            });
+            appendBulkSessionField(form, 'units_per_floor', document.getElementById('addUnitCountBulk').value);
         }
 
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    btnSubmit.addEventListener('click', async () => {
+        showError('');
+        if (mode === 'bulk') {
+            submitBulkSessionForm();
+
+            return;
+        }
+
+        const pid = parseInt(document.getElementById('addUnitPropertyId').value, 10);
+        const scope = statsScopePropertyId();
+        const body = {
+            stats_scope_property_id: scope || null,
+            property_id: pid,
+            unit_number: document.getElementById('addUnitNameSingle').value.trim(),
+            rent_amount: document.getElementById('addUnitPriceSingle').value,
+            status: document.getElementById('addUnitStatusSingle').value,
+        };
+
         btnSubmit.disabled = true;
-        btnSubmit.querySelector('.add-unit-submit-label')?.classList.add('d-none');
-        btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.remove('d-none');
+        document.getElementById('addUnitBtnSubmitLabel')?.classList.add('d-none');
+        document.getElementById('addUnitBtnSubmitSpinner')?.classList.remove('d-none');
 
         try {
-            const res = await fetch(url, {
+            const res = await fetch(urls.single, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1140,7 +1388,7 @@ function editUnit(unitId) {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok || !data.success) {
-                let msg = data.message || 'Could not create units.';
+                let msg = data.message || 'Could not create unit.';
                 if (data.errors) {
                     const first = Object.values(data.errors)[0];
                     if (Array.isArray(first) && first[0]) msg = first[0];
@@ -1165,8 +1413,8 @@ function editUnit(unitId) {
             showError('Something went wrong. Please try again.');
         } finally {
             btnSubmit.disabled = false;
-            btnSubmit.querySelector('.add-unit-submit-label')?.classList.remove('d-none');
-            btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.add('d-none');
+            document.getElementById('addUnitBtnSubmitLabel')?.classList.remove('d-none');
+            document.getElementById('addUnitBtnSubmitSpinner')?.classList.add('d-none');
         }
     });
 
