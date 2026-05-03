@@ -34,6 +34,7 @@ class StoreUnitRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'floor_area' => 'nullable|numeric|min:0',
             'floor_number' => 'nullable|integer|min:1',
+            'unit_stories' => 'nullable|integer|min:1|max:50',
             'bedrooms' => 'required|integer|min:0',
             'bathrooms' => 'required|integer|min:1',
             'is_furnished' => 'boolean',

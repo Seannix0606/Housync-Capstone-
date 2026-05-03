@@ -6,6 +6,8 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
+use App\Http\Controllers\Landlord\LandlordInstapayQuickResponseCodeController;
+use App\Http\Controllers\Landlord\LandlordUnitModalController;
 use App\Http\Controllers\Landlord\RegistrationController as LandlordRegistrationController;
 use App\Http\Controllers\Landlord\SettingsController as LandlordSettingsController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
@@ -19,7 +21,6 @@ use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsCont
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Controllers\Tenant\AnnouncementController as TenantAnnouncementController;
 use App\Http\Controllers\Tenant\ApplicationController as TenantApplicationController;
-use App\Http\Controllers\Landlord\LandlordInstapayQuickResponseCodeController;
 use App\Http\Controllers\Tenant\BillingController as TenantBillingController;
 use App\Http\Controllers\Tenant\ChatController as TenantChatController;
 use App\Http\Controllers\Tenant\LeaseController as TenantLeaseController;
@@ -149,6 +150,10 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
         Route::get('/apartments/{id}/details', 'getApartmentDetails')->name('apartment-details')->whereNumber('id');
         Route::get('/apartments/{id}/units', 'getApartmentUnits')->name('apartment-units')->whereNumber('id');
     });
+
+    // Units (modal quick-create API — register before /units/{apartmentId?})
+    Route::post('/units/modal/single', [LandlordUnitModalController::class, 'storeSingle'])->name('units.modal.single');
+    Route::post('/units/modal/bulk', [LandlordUnitModalController::class, 'storeBulk'])->name('units.modal.bulk');
 
     // Units
     Route::controller(\App\Http\Controllers\Landlord\UnitController::class)->group(function () {

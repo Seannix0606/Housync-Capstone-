@@ -3,10 +3,19 @@
 @section('title', 'Edit Bulk Units')
 
 @push('styles')
+{{-- Critical layout if Vite CSS does not load: collapsed floors must stay hidden (picker-first UX). --}}
+<style id="bulk-edit-units-critical-stack">
+#floorsContainer.floors-detail-stack:not(.floors-detail-stack--expand-all) > .floor-section--collapsed{display:none!important;}
+</style>
 @vite(['resources/css/landlord/bulk-edit-units.css'])
 @endpush
 
 @section('content')
+@php
+    $structureStories = isset($apartment)
+        ? max(1, (int) ($apartment->building_floors ?? $apartment->floors ?? 1))
+        : 1;
+@endphp
 <!-- Loading Modal -->
 <div id="loadingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center; min-width: 300px;">
@@ -30,7 +39,7 @@
     <div class="property-info" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
         <h4 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.125rem;">{{ $apartment->name }}</h4>
         <p style="color: #64748b; margin: 0;"><strong>Type:</strong> {{ ucfirst($apartment->property_type) }} | 
-           <strong>Floors:</strong> {{ $apartment->floors ?? 'Not specified' }} | 
+           <strong>Building stories:</strong> {{ $structureStories }} | 
            <strong>Address:</strong> {{ $apartment->address }}</p>
     </div>
     @endif
@@ -55,7 +64,7 @@
             <div class="stat-label">Total Units</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" id="totalFloors">{{ $apartment->floors ?? 1 }}</div>
+            <div class="stat-number" id="totalFloors">{{ $structureStories }}</div>
             <div class="stat-label">Floors</div>
         </div>
         <div class="stat-card">
@@ -90,7 +99,7 @@
 
         <div id="floorPickerRail" class="floor-picker-rail">
             <div id="floorPickerGrid" class="floors-grid floors-grid--picker">
-                @for($floor = 1; $floor <= ($apartment->floors ?? 1); $floor++)
+                @for($floor = 1; $floor <= $structureStories; $floor++)
                 <button type="button"
                     id="floor-picker-tile-{{ $floor }}"
                     class="floor-picker-tile"
@@ -110,7 +119,7 @@
 
         <!-- Floors Container -->
         <div id="floorsContainer" class="floors-detail-stack">
-            @for($floor = 1; $floor <= ($apartment->floors ?? 1); $floor++)
+            @for($floor = 1; $floor <= $structureStories; $floor++)
             <div class="floor-section floor-section--collapsed" data-floor="{{ $floor }}">
                 <div class="floor-header">
                     <button type="button"
@@ -128,9 +137,11 @@
                         </span>
                     </button>
                     <div class="floor-controls">
+                        @if(($bulkNewUnitsRemaining ?? null) === null || ($bulkNewUnitsRemaining ?? 0) > 0)
                         <button type="button" class="btn btn-sm btn-outline" onclick="addUnitToFloor({{ $floor }})" title="Add unit">
                             <i class="fas fa-plus" aria-hidden="true"></i><span class="floor-btn-label"> Add Unit</span>
                         </button>
+                        @endif
                         <button type="button" class="btn btn-sm btn-outline" onclick="removeFloor({{ $floor }})" style="color: #ef4444;" title="Remove floor">
                             <i class="fas fa-trash" aria-hidden="true"></i><span class="floor-btn-label"> Remove Floor</span>
                         </button>
@@ -180,14 +191,14 @@
 
 @push('scripts')
 <script type="application/json" id="bulk-edit-config">
-{!! json_encode([
-    'totalFloors' => $apartment->floors ?? 1,
+{!! \Illuminate\Support\Js::from([
+    'totalFloors' => $structureStories,
     'propertyType' => $apartment->property_type,
     'bulkParams' => $bulkParams ?? [],
     'apartmentBedrooms' => $apartment->bedrooms ?? 1,
     'existingUnitNumbers' => ($apartment->units ? $apartment->units->pluck('unit_number')->toArray() : []),
     'existingUnitsCount' => $existingUnitsCount ?? 0,
-], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+]) !!}
 </script>
 @vite(['resources/js/landlord/bulk-edit-units.js'])
 @endpush

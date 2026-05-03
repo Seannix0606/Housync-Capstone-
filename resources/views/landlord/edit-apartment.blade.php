@@ -517,16 +517,31 @@
                                 @enderror
                             </div>
 
+                            @php
+                                $editPropertyType = old('property_type', $apartment->property_type);
+                            @endphp
                             <div class="form-group">
                                 <label class="form-label required">Total Units</label>
-                                <input type="number" name="total_units" id="total_units" class="form-control @error('total_units') error @enderror" 
-                                       value="{{ old('total_units', $apartment->total_units) }}" min="{{ $apartment->units()->count() }}" placeholder="e.g., 24" required>
+                                <input type="number" name="total_units" id="total_units" class="form-control @error('total_units') error @enderror"
+                                       value="{{ old('total_units', $apartment->total_units) }}"
+                                       @if(in_array($editPropertyType, ['house', 'townhouse'], true))
+                                           min="1" max="1" readonly
+                                       @elseif($editPropertyType === 'duplex')
+                                           min="2" max="2" readonly
+                                       @else
+                                           min="{{ $apartment->units()->count() }}"
+                                       @endif
+                                       placeholder="e.g., 24" required>
                                 @error('total_units')
                                     <div class="form-error">{{ $message }}</div>
                                 @enderror
                                 <small class="form-text text-muted">
                                     Current actual units: {{ $apartment->units()->count() }}
-                                    @if($apartment->units()->count() < $apartment->total_units)
+                                    @if(in_array($editPropertyType, ['house', 'townhouse'], true))
+                                        Single-family and townhouse listings are always <strong>1 unit</strong>.
+                                    @elseif($editPropertyType === 'duplex')
+                                        Duplex listings are always <strong>2 units</strong>.
+                                    @elseif($apartment->units()->count() < $apartment->total_units)
                                         ({{ $apartment->total_units - $apartment->units()->count() }} units need to be created)
                                     @endif
                                 </small>
@@ -627,10 +642,37 @@
                         </h3>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label">Number of Floors</label>
-                                <input type="number" name="floors" class="form-control @error('floors') error @enderror" 
+                                <label class="form-label">Number of units (apartment / condo / townhouse / other)</label>
+                                <input type="number" name="floors" class="form-control @error('floors') error @enderror"
                                        value="{{ old('floors', $apartment->floors) }}" min="1" placeholder="e.g., 5">
                                 @error('floors')
+                                    <div class="form-error">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Leave as-is for single-family or duplex (unit count is fixed); used as unit count for multi-unit types.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Building stories (floors)</label>
+                                <input type="number" name="building_floors" class="form-control @error('building_floors') error @enderror"
+                                       value="{{ old('building_floors', $apartment->building_floors) }}" min="1" max="200" placeholder="e.g., 2">
+                                @error('building_floors')
+                                    <div class="form-error">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">
+                                    Above-grade levels for the whole structure.
+                                    @if(old('property_type', $apartment->property_type) === 'duplex')
+                                        Optional for duplexes when unclear; interior stories per rental unit are edited under My Units.
+                                    @else
+                                        Especially useful for house and townhouse listings.
+                                    @endif
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Bedrooms (typical per dwelling)</label>
+                                <input type="number" name="bedrooms" class="form-control @error('bedrooms') error @enderror"
+                                       value="{{ old('bedrooms', $apartment->bedrooms) }}" min="1" placeholder="e.g., 3">
+                                @error('bedrooms')
                                     <div class="form-error">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -1055,9 +1097,41 @@
 
             // Detect when total units is increased
             const totalUnitsInput = document.getElementById('total_units');
-            const currentUnitCount = parseInt(document.getElementById('current_unit_count').value);
+            const currentUnitCount = parseInt(document.getElementById('current_unit_count').value, 10);
             const increaseNotice = document.getElementById('increase_units_notice');
             const additionalCountSpan = document.getElementById('additional_count');
+            const propertyTypeSelectEdit = document.querySelector('select[name="property_type"]');
+
+            function syncEditTotalUnitsForPropertyType() {
+                if (!totalUnitsInput || !propertyTypeSelectEdit) {
+                    return;
+                }
+                const t = propertyTypeSelectEdit.value;
+                if (t === 'house' || t === 'townhouse') {
+                    totalUnitsInput.value = '1';
+                    totalUnitsInput.readOnly = true;
+                    totalUnitsInput.setAttribute('min', '1');
+                    totalUnitsInput.setAttribute('max', '1');
+                } else if (t === 'duplex') {
+                    totalUnitsInput.value = '2';
+                    totalUnitsInput.readOnly = true;
+                    totalUnitsInput.setAttribute('min', '2');
+                    totalUnitsInput.setAttribute('max', '2');
+                } else {
+                    totalUnitsInput.readOnly = false;
+                    totalUnitsInput.removeAttribute('max');
+                    totalUnitsInput.setAttribute('min', String(currentUnitCount));
+                    const curVal = parseInt(totalUnitsInput.value, 10) || 0;
+                    if (curVal < currentUnitCount) {
+                        totalUnitsInput.value = String(currentUnitCount);
+                    }
+                }
+            }
+
+            if (propertyTypeSelectEdit) {
+                propertyTypeSelectEdit.addEventListener('change', syncEditTotalUnitsForPropertyType);
+                syncEditTotalUnitsForPropertyType();
+            }
 
             if (totalUnitsInput && increaseNotice) {
                 totalUnitsInput.addEventListener('input', function() {

@@ -303,6 +303,9 @@
             <!-- Form Container -->
             <div class="form-container">
                 @if(isset($apartment))
+                @php
+                    $structureStories = max(1, (int) ($apartment->building_floors ?? $apartment->floors ?? 1));
+                @endphp
                 <!-- Property Info -->
                 <div class="property-info">
                     <h4>Property Information</h4>
@@ -311,8 +314,9 @@
                     <p><strong>Address:</strong> {{ $apartment->address }}</p>
                     @if($apartment->property_type === 'house')
                         <p><strong>Bedrooms:</strong> {{ $apartment->bedrooms ?? 'Not specified' }}</p>
+                        <p><strong>Stories:</strong> {{ $apartment->building_floors ?? $apartment->floors ?? 'Not specified' }}</p>
                     @else
-                        <p><strong>Floors:</strong> {{ $apartment->floors ?? 'Not specified' }}</p>
+                        <p><strong>Building stories:</strong> {{ $structureStories }}</p>
                     @endif
                 </div>
                 @endif
@@ -371,7 +375,7 @@
                                 <label for="floor_number" class="form-label">Floor Number *</label>
                                 <select id="floor_number" name="floor_number" class="form-control @error('floor_number') error @enderror" required>
                                     <option value="">Select Floor</option>
-                                    @for($i = 1; $i <= ($apartment->floors ?? 1); $i++)
+                                    @for($i = 1; $i <= $structureStories; $i++)
                                         <option value="{{ $i }}" {{ old('floor_number') == $i ? 'selected' : '' }}>
                                             Floor {{ $i }}
                                         </option>
@@ -382,6 +386,16 @@
                                 @enderror
                             </div>
                             @endif
+
+                            <div class="form-group">
+                                <label for="unit_stories" class="form-label">Interior stories <span class="text-muted">(optional)</span></label>
+                                <input type="number" id="unit_stories" name="unit_stories" class="form-control @error('unit_stories') error @enderror"
+                                       value="{{ old('unit_stories') }}" min="1" max="50" placeholder="Levels inside this unit">
+                                @error('unit_stories')
+                                    <div class="error-message">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">How many floor levels this rental occupies inside its footprint (not the same as building-wide stories).</small>
+                            </div>
                         </div>
 
                         <div class="form-row">

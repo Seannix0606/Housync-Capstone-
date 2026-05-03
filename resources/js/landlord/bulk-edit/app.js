@@ -280,9 +280,14 @@ export function mountBulkEditPage(rawConfig) {
         return btn;
     }
 
-    function addUnitToFloor(floor, unitData = null) {
+    function addUnitToFloor(floor, unitData = null, opts = {}) {
+        const expandAccordion = opts.expandAccordion !== false;
         const section = document.querySelector(`.floor-section[data-floor="${floor}"]`);
-        if (section && section.classList.contains('floor-section--collapsed')) {
+        if (
+            expandAccordion &&
+            section &&
+            section.classList.contains('floor-section--collapsed')
+        ) {
             openFloorAccordion(floor, true);
         }
 
@@ -470,10 +475,11 @@ export function mountBulkEditPage(rawConfig) {
             if (f === sourceFloor) return;
             section.querySelectorAll('.unit-row').forEach((r) => r.remove());
             templates.forEach((t) => {
-                addUnitToFloor(parseInt(f, 10), { ...t });
+                addUnitToFloor(parseInt(f, 10), { ...t }, { expandAccordion: false });
             });
         });
         updateStats();
+        openFloorAccordion(parseInt(sourceFloor, 10), false);
     }
 
     function duplicateFloor() {
@@ -498,7 +504,9 @@ export function mountBulkEditPage(rawConfig) {
         const templates = Array.from(sourceSection.querySelectorAll('.unit-row')).map(
             readUnitRowSnapshot,
         );
-        templates.forEach((t) => addUnitToFloor(newFloor, { ...t }));
+        templates.forEach((t) =>
+            addUnitToFloor(newFloor, { ...t }, { expandAccordion: false }),
+        );
 
         openFloorAccordion(newFloor, true);
         updateStats();
@@ -664,17 +672,21 @@ export function mountBulkEditPage(rawConfig) {
         if (propertyType === 'house' && createAllBedrooms) {
             const bedrooms = config.apartmentBedrooms;
             for (let i = 1; i <= bedrooms; i++) {
-                addUnitToFloor(1, {
-                    unit_number: `Bedroom ${i}`,
-                    unit_type: defaultUnitType,
-                    rent_amount: defaultRent,
-                    bedrooms: defaultBedrooms,
-                    bathrooms: defaultBathrooms,
-                    status: 'available',
-                    leasing_type: 'separate',
-                    max_occupants: 4,
-                    is_furnished: false,
-                });
+                addUnitToFloor(
+                    1,
+                    {
+                        unit_number: `Bedroom ${i}`,
+                        unit_type: defaultUnitType,
+                        rent_amount: defaultRent,
+                        bedrooms: defaultBedrooms,
+                        bathrooms: defaultBathrooms,
+                        status: 'available',
+                        leasing_type: 'separate',
+                        max_occupants: 4,
+                        is_furnished: false,
+                    },
+                    { expandAccordion: false },
+                );
             }
             hideLoadingMessage();
         } else {
@@ -696,17 +708,21 @@ export function mountBulkEditPage(rawConfig) {
                         );
                         break;
                     }
-                    const success = addUnitToFloor(floor, {
-                        unit_number: unitNumber,
-                        unit_type: defaultUnitType,
-                        rent_amount: defaultRent,
-                        bedrooms: defaultBedrooms,
-                        bathrooms: defaultBathrooms,
-                        status: 'available',
-                        leasing_type: 'separate',
-                        max_occupants: 4,
-                        is_furnished: false,
-                    });
+                    const success = addUnitToFloor(
+                        floor,
+                        {
+                            unit_number: unitNumber,
+                            unit_type: defaultUnitType,
+                            rent_amount: defaultRent,
+                            bedrooms: defaultBedrooms,
+                            bathrooms: defaultBathrooms,
+                            status: 'available',
+                            leasing_type: 'separate',
+                            max_occupants: 4,
+                            is_furnished: false,
+                        },
+                        { expandAccordion: false },
+                    );
 
                     if (success) {
                         totalUnitsCreated++;
@@ -729,6 +745,10 @@ export function mountBulkEditPage(rawConfig) {
             if (hdr) hdr.setAttribute('aria-expanded', 'false');
         });
         clearFloorPickerActive();
+
+        if (document.querySelectorAll('.unit-row').length > 0) {
+            openFloorAccordion(1, false);
+        }
     }
 
     window.selectFloorTile = selectFloorTile;

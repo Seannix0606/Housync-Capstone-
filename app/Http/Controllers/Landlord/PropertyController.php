@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StorePropertyRequest;
 use App\Http\Requests\Landlord\UpdatePropertyRequest;
+use App\Services\Landlord\PropertyCreationUnitMediaApplicator;
+use App\Services\Landlord\PropertyService;
 use App\Services\Media\PropertyMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class PropertyController extends Controller
 {
@@ -63,10 +68,27 @@ class PropertyController extends Controller
         return view('landlord.create-apartment');
     }
 
-    public function storeApartment(StorePropertyRequest $request, PropertyMediaService $propertyMediaService)
-    {
+    public function storeApartment(
+        StorePropertyRequest $request,
+        PropertyService $propertyService,
+        PropertyMediaService $propertyMediaService,
+        PropertyCreationUnitMediaApplicator $propertyCreationUnitMediaApplicator
+    ) {
         Log::info('Property creation request received', [
-            'data' => $request->only(['name', 'property_type', 'address', 'floors', 'bedrooms']),
+            'data' => $request->only([
+                'name',
+                'property_type',
+                'city',
+                'state',
+                'postal_code',
+                'floors',
+                'bedrooms',
+                'building_floors',
+                'unit_stories',
+                'dwelling_stories',
+                'year_built',
+                'parking_spaces',
+            ]),
             'method' => $request->method(),
             'url' => $request->url(),
         ]);
@@ -75,39 +97,55 @@ class PropertyController extends Controller
             /** @var \App\Models\User $landlord */
             $landlord = Auth::user();
 
-            $floors = $request->property_type === 'house' ? null : $request->floors;
-            $bedrooms = $request->property_type === 'house' ? $request->bedrooms : null;
+            $property = DB::transaction(function () use ($request, $landlord, $propertyService, $propertyMediaService, $propertyCreationUnitMediaApplicator) {
+                $property = $propertyService->createPropertyWithUnits([
+                    'landlord_id' => $landlord->id,
+                    'name' => $request->name,
+                    'property_type' => $request->property_type,
+                    'address' => $request->address,
+                    'city' => $request->city,
+                    'state' => $request->state,
+                    'postal_code' => $request->postal_code,
+                    'description' => $request->description,
+                    'floors' => $request->floors,
+                    'unit_count' => $request->input('unit_count'),
+                    'bedrooms' => $request->bedrooms,
+                    'building_floors' => $request->input('building_floors'),
+                    'unit_bedrooms' => $request->input('unit_bedrooms'),
+                    'unit_stories' => $request->input('unit_stories'),
+                    'dwelling_stories' => $request->input('dwelling_stories'),
+                    'year_built' => $request->year_built,
+                    'parking_spaces' => $request->parking_spaces,
+                    'contact_person' => $request->contact_person,
+                    'contact_phone' => $request->contact_phone,
+                    'contact_email' => $request->contact_email,
+                    'amenities' => $request->amenities ?? [],
+                    'status' => 'active',
+                ]);
 
-            $property = $landlord->properties()->create([
-                'name' => $request->name,
-                'property_type' => $request->property_type,
-                'address' => $request->address,
-                'description' => $request->description,
-                'total_units' => 0,
-                'floors' => $floors,
-                'bedrooms' => $bedrooms,
-                'contact_person' => $request->contact_person,
-                'contact_phone' => $request->contact_phone,
-                'contact_email' => $request->contact_email,
-                'amenities' => $request->amenities ?? [],
-                'status' => 'active',
-            ]);
+                $mediaPayload = $propertyMediaService->uploadForProperty(
+                    $property->id,
+                    $request->file('property_cover_image'),
+                    $request->file('property_gallery', [])
+                );
 
-            $mediaPayload = $propertyMediaService->uploadForProperty(
-                $property->id,
-                $request->file('property_cover_image'),
-                $request->file('property_gallery', [])
-            );
+                if (! empty($mediaPayload)) {
+                    $property->update($mediaPayload);
+                }
 
-            if (! empty($mediaPayload)) {
-                $property->update($mediaPayload);
-            }
+                $propertyCreationUnitMediaApplicator->applyFromRequest($property->fresh(), $request);
 
-            $successMessage = $request->property_type === 'house'
-                ? "House created successfully! You can now add bedrooms as units from the 'My Units' page."
-                : "Property created successfully! You can now add units from the 'My Units' page.";
+                return $property->fresh(['units']);
+            });
+
+            $unitCount = $property->units->count();
+            $successMessage = $unitCount === 1
+                ? 'Property created successfully with 1 unit.'
+                : "Property created successfully with {$unitCount} units.";
 
             return redirect()->route('landlord.apartments')->with('success', $successMessage);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
         } catch (\Exception $exception) {
             Log::error('Error creating property: '.$exception->getMessage());
 
@@ -131,8 +169,18 @@ class PropertyController extends Controller
         $property = $landlord->properties()->findOrFail($id);
 
         try {
-            $floors = $request->property_type === 'house' ? null : $request->floors;
-            $bedrooms = $request->property_type === 'house' ? $request->bedrooms : null;
+            $floorsColumn = match ($request->property_type) {
+                'house', 'duplex', 'townhouse' => null,
+                default => $request->floors,
+            };
+            $dwellingTypes = ['house', 'duplex', 'townhouse'];
+            $bedrooms = in_array($request->property_type, $dwellingTypes, true) ? $request->bedrooms : null;
+            $buildingFloors = in_array($request->property_type, $dwellingTypes, true) ? $request->building_floors : null;
+            $totalUnits = match ($request->property_type) {
+                'duplex' => 2,
+                'house', 'townhouse' => 1,
+                default => $request->total_units,
+            };
 
             $updateData = [
                 'name' => $request->name,
@@ -142,8 +190,9 @@ class PropertyController extends Controller
                 'state' => $request->state,
                 'postal_code' => $request->postal_code,
                 'description' => $request->description,
-                'total_units' => $request->total_units,
-                'floors' => $floors,
+                'total_units' => $totalUnits,
+                'floors' => $floorsColumn,
+                'building_floors' => $buildingFloors,
                 'bedrooms' => $bedrooms,
                 'year_built' => $request->year_built,
                 'parking_spaces' => $request->parking_spaces,
@@ -193,7 +242,7 @@ class PropertyController extends Controller
 
                 $activeTenantsCount = $property->units()
                     ->whereHas('tenantAssignments', function ($query) {
-                        $query->whereIn('status', ['active', 'pending']);
+                        $query->whereIn('status', ['active', 'pending', 'pending_approval']);
                     })->count();
 
                 if ($activeTenantsCount > 0) {
@@ -216,7 +265,7 @@ class PropertyController extends Controller
             if ($unitCount > 0) {
                 $activeTenantsCount = $property->units()
                     ->whereHas('tenantAssignments', function ($query) {
-                        $query->whereIn('status', ['active', 'pending']);
+                        $query->whereIn('status', ['active', 'pending', 'pending_approval']);
                     })->count();
 
                 if ($activeTenantsCount > 0) {
@@ -239,21 +288,26 @@ class PropertyController extends Controller
         }
     }
 
-    public function getApartmentDetails($id)
+    public function getApartmentDetails($id, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->with('units')->findOrFail($id);
 
+        $totalUnits = $property->units->count();
+        $maxUnits = $unitRules->maximumUnitsForType($property->property_type);
+
         return response()->json([
             'id' => $property->id,
             'name' => $property->name,
-            'total_units' => $property->units->count(),
+            'property_type' => $property->property_type,
+            'total_units' => $totalUnits,
             'occupied_units' => $property->getOccupiedUnitsCount(),
             'available_units' => $property->getAvailableUnitsCount(),
             'maintenance_units' => $property->getMaintenanceUnitsCount(),
             'occupancy_rate' => $property->getOccupancyRate(),
             'total_revenue' => $property->getTotalRevenue(),
+            'can_add_units' => $maxUnits === null || $totalUnits < $maxUnits,
         ]);
     }
 

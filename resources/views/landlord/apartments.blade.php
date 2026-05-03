@@ -504,9 +504,15 @@ function viewApartmentDetails(apartmentId) {
                     <div class="col-12">
                         <h6 class="fw-bold mb-3">Quick Actions</h6>
                         <div class="d-flex gap-2 flex-wrap">
+                            ${data.can_add_units !== false ? `
                             <a href="/landlord/apartments/${data.id}/units/create" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus"></i> Add Unit
                             </a>
+                            ` : `
+                            <span class="btn btn-secondary btn-sm disabled opacity-75" style="cursor: not-allowed;" title="This property type has a fixed unit count (already full). Edit units in My Units or create another property.">
+                                <i class="fas fa-plus"></i> Add Unit
+                            </span>
+                            `}
                             <a href="/landlord/units/${data.id}" class="btn btn-outline-primary btn-sm">
                                 <i class="fas fa-door-open"></i> View Units
                             </a>

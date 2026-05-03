@@ -185,6 +185,11 @@
 @endpush
 
 @section('content')
+@php
+    $structureStories = isset($apartment)
+        ? max(1, (int) ($apartment->building_floors ?? $apartment->floors ?? 1))
+        : 1;
+@endphp
 <div class="bulk-creation-container">
     <!-- Header -->
     <div class="content-header">
@@ -201,9 +206,10 @@
         <p><strong>Type:</strong> {{ ucfirst($apartment->property_type) }}</p>
         <p><strong>Address:</strong> {{ $apartment->address }}</p>
         @if($apartment->property_type !== 'house')
-            <p><strong>Floors:</strong> {{ $apartment->floors ?? 'Not specified' }}</p>
+            <p><strong>Building stories:</strong> {{ $structureStories }}</p>
         @else
             <p><strong>Bedrooms:</strong> {{ $apartment->bedrooms ?? 'Not specified' }}</p>
+            <p><strong>Stories:</strong> {{ $apartment->building_floors ?? 'Not specified' }}</p>
         @endif
     </div>
     @endif
@@ -237,7 +243,7 @@
                     @error('units_per_floor')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
-                    <small style="color: #64748b;">How many units per floor? (Total: {{ $apartment->floors ?? 1 }} floors)</small>
+                    <small style="color: #64748b;">How many units per floor? (Total: {{ $structureStories }} floors)</small>
                 </div>
                 @endif
             </div>
@@ -358,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const unitsPerFloorInput = document.getElementById('units_per_floor');
             if (unitsPerFloorInput) {
                 const unitsPerFloor = parseInt(unitsPerFloorInput.value, 10) || 0;
-                const totalFloors = {{ (int) ($apartment->floors ?? 1) }};
+                const totalFloors = {{ (int) $structureStories }};
                 const estimatedUnits = unitsPerFloor * totalFloors;
 
                 // Warn if overall unit count is very high (can slow down the bulk editor)

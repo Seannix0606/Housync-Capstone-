@@ -112,6 +112,17 @@
             transform: translateY(-2px);
         }
 
+        .property-card-at-cap {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+
+        .property-card-at-cap:hover {
+            border-color: #e2e8f0;
+            box-shadow: none;
+            transform: none;
+        }
+
         .property-header {
             display: flex;
             justify-content: space-between;
@@ -287,7 +298,13 @@
                 @if($apartments->count() > 0)
                     <div class="properties-grid">
                         @foreach($apartments as $apartment)
-                            <div class="property-card" onclick="selectProperty({{ $apartment->id }})">
+                            @php
+                                $ptype = $apartment->property_type ?? '';
+                                $uc = (int) ($apartment->units_count ?? 0);
+                                $maxU = $unitRules->maximumUnitsForType($ptype);
+                                $atCap = $maxU !== null && $uc >= $maxU;
+                            @endphp
+                            <div class="property-card {{ $atCap ? 'property-card-at-cap' : '' }}" @unless($atCap) onclick="selectProperty({{ $apartment->id }})" @endunless>
                                 <div class="property-header">
                                     <h3 class="property-title">{{ $apartment->name }}</h3>
                                     <span class="property-id">#{{ $apartment->id }}</span>
@@ -304,7 +321,7 @@
                                     </div>
                                     <div class="info-item">
                                         <i class="fas fa-building"></i>
-                                        <span>{{ $apartment->units->count() }} Units</span>
+                                        <span>{{ $uc }} Units</span>
                                     </div>
                                     <div class="info-item">
                                         <i class="fas fa-users"></i>
@@ -314,7 +331,7 @@
 
                                 <div class="property-stats">
                                     <div class="stat-item">
-                                        <span class="stat-value">{{ $apartment->units->count() }}</span>
+                                        <span class="stat-value">{{ $uc }}</span>
                                         <span class="stat-label">Total Units</span>
                                     </div>
                                     <div class="stat-item">
@@ -323,9 +340,15 @@
                                     </div>
                                 </div>
 
-                                <a href="{{ route('landlord.create-unit-for-apartment', $apartment->id) }}" class="select-btn">
-                                    <i class="fas fa-plus"></i> Add Unit to This Property
-                                </a>
+                                @if($atCap)
+                                    <span class="select-btn select-btn-muted" style="cursor: not-allowed; opacity: 0.85;">
+                                        <i class="fas fa-ban"></i> At unit limit for this type
+                                    </span>
+                                @else
+                                    <a href="{{ route('landlord.create-unit-for-apartment', $apartment->id) }}" class="select-btn">
+                                        <i class="fas fa-plus"></i> Add Unit to This Property
+                                    </a>
+                                @endif
                             </div>
                         @endforeach
                     </div>

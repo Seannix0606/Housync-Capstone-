@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int $tenant_count
  * @property int|null $max_occupants
  * @property int|null $floor_number
+ * @property int|null $unit_stories Interior stories / levels within this unit (not building-wide).
  * @property string|null $description
  * @property float|null $floor_area
  * @property int $bedrooms
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $notes
  * @property string|null $cover_image
  * @property array|null $gallery
+ * @property string|null $name
+ * @property float|null $price
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -37,6 +40,8 @@ class Unit extends Model
 
     protected $fillable = [
         'unit_number',
+        'name',
+        'price',
         'property_id',
         'unit_type',
         'rent_amount',
@@ -45,6 +50,7 @@ class Unit extends Model
         'tenant_count',
         'max_occupants',
         'floor_number',
+        'unit_stories',
         'description',
         'floor_area',
         'bedrooms',
@@ -58,6 +64,7 @@ class Unit extends Model
 
     protected $casts = [
         'rent_amount' => 'decimal:2',
+        'price' => 'decimal:2',
         'floor_area' => 'decimal:2',
         'is_furnished' => 'boolean',
         'amenities' => 'array',
@@ -65,6 +72,7 @@ class Unit extends Model
         'tenant_count' => 'integer',
         'max_occupants' => 'integer',
         'floor_number' => 'integer',
+        'unit_stories' => 'integer',
         'bedrooms' => 'integer',
         'bathrooms' => 'integer',
     ];
@@ -168,6 +176,14 @@ class Unit extends Model
     public function property()
     {
         return $this->belongsTo(Property::class);
+    }
+
+    /**
+     * Bookings for this unit
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 
     /**
