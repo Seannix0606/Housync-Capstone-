@@ -55,7 +55,7 @@
                         <br>
                         <small class="text-muted">
                             <i class="mdi mdi-information-outline me-1"></i>
-                            <strong>Note:</strong> Please ensure files are under 5MB and in PDF, JPG, or PNG format.
+                            <strong>Note:</strong> Please ensure files are under 25MB and in PDF, JPG, or PNG format.
                         </small>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -222,7 +222,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label">File <span class="text-danger">*</span></label>
                                     <input type="file" name="documents[]" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <small class="text-muted">Max size: 5MB</small>
+                                    <small class="text-muted">Max size: 25MB</small>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">&nbsp;</label>
@@ -275,7 +275,7 @@
 
                     <div class="alert alert-warning">
                         <h6 class="alert-heading">File Size Limit:</h6>
-                        <p class="mb-0">Maximum <strong>5MB</strong> per document</p>
+                        <p class="mb-0">Maximum <strong>25MB</strong> per document</p>
                     </div>
 
                     <h6>Required (to apply for a unit)</h6>
@@ -508,7 +508,7 @@ function addDocumentField() {
         <div class="col-md-6">
             <label class="form-label">File <span class="text-danger">*</span></label>
             <input type="file" name="documents[]" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                            <small class="text-muted">Max size: 2MB (compress large files)</small>
+                            <small class="text-muted">Max size: 25MB (compress large files)</small>
         </div>
         <div class="col-md-2">
             <label class="form-label">&nbsp;</label>
@@ -547,8 +547,8 @@ function removeDocumentField(button) {
 document.getElementById('documentForm')?.addEventListener('submit', function(e) {
     const fileInputs = document.querySelectorAll('input[type="file"]');
     const documentTypeSelects = document.querySelectorAll('select[name="document_types[]"]');
-    // Server now configured for 10MB - allow 5MB uploads
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    // allow 25MB uploads
+    const maxSize = 25 * 1024 * 1024; // 25MB in bytes
     
     // Clear any previous error messages
     const existingAlerts = document.querySelectorAll('.alert-danger');
@@ -577,11 +577,11 @@ document.getElementById('documentForm')?.addEventListener('submit', function(e) 
         if (input.files.length > 0) {
             const file = input.files[0];
             
-            // Check file size (server configured for 10MB max, we allow 5MB)
+            // Check file size (we allow up to 25MB)
             if (file.size > maxSize) {
                 e.preventDefault();
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                showError(`File "${file.name}" is too large (${fileSizeMB}MB). Maximum allowed size is 5MB. Please compress or resize your file.`);
+                showError(`File "${file.name}" is too large (${fileSizeMB}MB). Maximum allowed size is 25MB. Please compress or resize your file.`);
                 return false;
             }
             
