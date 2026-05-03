@@ -68,7 +68,6 @@
                             <tr>
                                 <th>Title</th>
                                 <th>Type</th>
-                                <th>Priority</th>
                                 <th>Property</th>
                                 <th>Status</th>
                                 <th>Pinned</th>
@@ -95,18 +94,6 @@
                                             };
                                         @endphp
                                         <span class="badge bg-{{ $typeBadge }}">{{ ucfirst($announcement->type) }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $priorityBadge = match($announcement->priority) {
-                                                'low' => 'secondary',
-                                                'normal' => 'primary',
-                                                'high' => 'warning',
-                                                'urgent' => 'danger',
-                                                default => 'secondary'
-                                            };
-                                        @endphp
-                                        <span class="badge bg-{{ $priorityBadge }}">{{ ucfirst($announcement->priority) }}</span>
                                     </td>
                                     <td>{{ $announcement->property ? $announcement->property->name : 'All Properties' }}</td>
                                     <td>

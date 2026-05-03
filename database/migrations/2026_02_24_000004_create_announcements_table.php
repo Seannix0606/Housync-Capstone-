@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('title');
             $table->text('content');
             $table->string('type')->default('general'); // general, maintenance, emergency, event
-            $table->string('priority')->default('normal'); // low, normal, high, urgent
             $table->string('audience')->default('all_tenants'); // all_tenants, property_tenants, all_staff, everyone
             $table->boolean('is_pinned')->default(false);
             $table->timestamp('published_at')->nullable();

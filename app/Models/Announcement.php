@@ -12,7 +12,6 @@ class Announcement extends Model
         'title',
         'content',
         'type',
-        'priority',
         'audience',
         'is_pinned',
         'published_at',
@@ -73,13 +72,4 @@ class Announcement extends Model
         };
     }
 
-    public function getPriorityBadgeClassAttribute()
-    {
-        return match ($this->priority) {
-            'urgent' => 'danger',
-            'high' => 'warning',
-            'low' => 'secondary',
-            default => 'info',
-        };
-    }
 }

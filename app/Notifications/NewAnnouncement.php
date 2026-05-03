@@ -28,7 +28,6 @@ class NewAnnouncement extends Notification
             'announcement_id' => $this->announcement->id,
             'title' => $this->announcement->title,
             'announcement_type' => $this->announcement->type,
-            'priority' => $this->announcement->priority,
             'property_name' => $this->announcement->property?->name,
             'message' => "{$prefix}New announcement: \"{$this->announcement->title}\"",
             'url' => $this->getUrl($notifiable),
