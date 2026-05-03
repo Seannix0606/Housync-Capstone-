@@ -411,7 +411,7 @@
                     
                     <!-- Action Buttons -->
                     <div class="d-flex gap-2 mb-4">
-                        <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials()" title="Copy both email and password">
+                        <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials(this)" title="Copy both email and password">
                             <i class="mdi mdi-content-copy me-1"></i> Copy All Credentials
                         </button>
                         <button type="button" class="btn btn-outline-success" onclick="printStaffCredentials()" title="Print credentials">
@@ -456,7 +456,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 @if(session('credentials') || session('staff_credentials'))
-                    <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials()">
+                    <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials(this)">
                         <i class="mdi mdi-content-copy me-1"></i> Copy Credentials
                     </button>
                 @else
@@ -548,32 +548,67 @@ function copyText(elementId) {
     });
 }
 
-function copyAllStaffCredentials() {
-    const email = document.getElementById('assignedStaffEmail').value;
-    const password = document.getElementById('assignedStaffPassword').value;
+function copyAllStaffCredentials(triggerBtn) {
+    const emailEl = document.getElementById('assignedStaffEmail');
+    const passwordEl = document.getElementById('assignedStaffPassword');
+    const email = emailEl ? emailEl.value : '';
+    const password = passwordEl ? passwordEl.value : '';
     const credentials = `Staff Login Credentials:
 Email: ${email}
 Password: ${password}
 
 Please use these credentials to log in to your staff dashboard.`;
-    
-    navigator.clipboard.writeText(credentials).then(function() {
-        // Show success message
-        const btn = event.target.closest('button');
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="mdi mdi-check me-1"></i> Copied!';
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-success');
-        
-        setTimeout(() => {
-            btn.innerHTML = originalHtml;
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-primary');
+
+    const showCopiedOnButton = function () {
+        if (!triggerBtn || triggerBtn.tagName !== 'BUTTON') {
+            return;
+        }
+        const originalHtml = triggerBtn.innerHTML;
+        triggerBtn.innerHTML = '<i class="mdi mdi-check me-1"></i> Copied!';
+        triggerBtn.classList.remove('btn-primary');
+        triggerBtn.classList.add('btn-success');
+        setTimeout(function () {
+            triggerBtn.innerHTML = originalHtml;
+            triggerBtn.classList.remove('btn-success');
+            triggerBtn.classList.add('btn-primary');
         }, 3000);
-    }).catch(function(err) {
-        console.error('Could not copy text: ', err);
-        alert('Could not copy to clipboard. Please copy manually.');
-    });
+    };
+
+    const fallbackCopyString = function (text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        try {
+            document.execCommand('copy');
+            showCopiedOnButton();
+        } finally {
+            document.body.removeChild(ta);
+        }
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(credentials).then(function () {
+            showCopiedOnButton();
+        }).catch(function (err) {
+            console.error('Could not copy text: ', err);
+            try {
+                fallbackCopyString(credentials);
+            } catch (e) {
+                alert('Could not copy to clipboard. Please copy manually.');
+            }
+        });
+    } else {
+        try {
+            fallbackCopyString(credentials);
+        } catch (e) {
+            alert('Could not copy to clipboard. Please copy manually.');
+        }
+    }
 }
 
 function printStaffCredentials() {
