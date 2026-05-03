@@ -945,7 +945,6 @@ class TenantAssignmentController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'occupation' => 'required|string|max:255',
-            'monthly_income' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -1023,7 +1022,6 @@ class TenantAssignmentController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => $request->monthly_income,
                     'notes' => $request->notes,
                 ]);
 
@@ -1079,7 +1077,6 @@ class TenantAssignmentController extends Controller
             'phone' => 'required|regex:/^[0-9]+$/|max:20',
             'address' => 'required|string|max:500',
             'occupation' => 'required|string|max:255',
-            'monthly_income' => 'required|numeric|min:0',
             'move_in_date' => 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -1131,7 +1128,6 @@ class TenantAssignmentController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => $request->monthly_income,
                     'notes' => $request->notes,
                 ]);
             });

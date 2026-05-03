@@ -37,7 +37,6 @@ class TenantAssignment extends Model
         'status',
         'notes',
         'occupation',
-        'monthly_income',
         'generated_password',
     ];
 
@@ -47,7 +46,6 @@ class TenantAssignment extends Model
         'lease_end_date' => 'date',
         'rent_amount' => 'decimal:2',
         'security_deposit' => 'decimal:2',
-        'monthly_income' => 'decimal:2',
     ];
 
     // Relationships

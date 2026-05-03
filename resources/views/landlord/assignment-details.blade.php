@@ -73,10 +73,6 @@
                                         <td>{{ $assignment->occupation ?? 'N/A' }}</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Monthly Income:</strong></td>
-                                        <td>₱{{ number_format($assignment->monthly_income ?? 0, 2) }}</td>
-                                    </tr>
-                                    <tr>
                                         <td><strong>Application Date:</strong></td>
                                         <td>{{ $assignment->created_at->format('M d, Y') }}</td>
                                     </tr>

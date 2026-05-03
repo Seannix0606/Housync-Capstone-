@@ -149,7 +149,6 @@
                                                 <small class="text-muted">{{ $assignment->tenant->email }}</small>
                                                 @if($assignment->status === 'pending_approval')
                                                     <br><small class="text-info"><i class="mdi mdi-briefcase"></i> {{ $assignment->occupation }}</small>
-                                                    <br><small class="text-success"><i class="mdi mdi-currency-php"></i> {{ number_format($assignment->monthly_income, 2) }}/mo</small>
                                                 @endif
                                             </div>
                                         </div>
