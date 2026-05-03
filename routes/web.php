@@ -43,7 +43,8 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'showLogin')->name('login');
     Route::post('/login', 'login')->name('login.post')->middleware('throttle:5,1');
-    Route::get('/register', fn () => view('register'))->name('register');
+    Route::get('/register', fn () => view('register-choice'))->name('register');
+    Route::get('/register/tenant', fn () => view('register'))->name('register.tenant');
     Route::post('/register', 'register')->name('register.post');
     Route::post('/logout', 'logout')->name('logout');
 });
@@ -75,6 +76,8 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
 
     Route::controller(SuperAdminPropertyController::class)->group(function () {
         Route::get('/apartments', 'apartments')->name('apartments');
+        Route::get('/properties/{id}', 'show')->name('properties.show')->whereNumber('id');
+        Route::get('/properties/{id}/units', 'units')->name('properties.units')->whereNumber('id');
     });
 
     Route::controller(SuperAdminUserController::class)->group(function () {
@@ -100,6 +103,12 @@ Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admi
         Route::post('/settings/{group}', 'updateSettingsGroup')->name('settings.group.update');
         Route::get('/check-dark-mode', 'checkDarkMode')->name('check-dark-mode');
     });
+});
+
+// Compatibility aliases for requested superadmin property URLs.
+Route::middleware(['role:super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/properties/{id}', [SuperAdminPropertyController::class, 'show'])->name('properties.show')->whereNumber('id');
+    Route::get('/properties/{id}/units', [SuperAdminPropertyController::class, 'units'])->name('properties.units')->whereNumber('id');
 });
 
 /*
@@ -326,6 +335,7 @@ Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(fun
         Route::get('/messages/{id}', 'show')->name('chat.show');
         Route::post('/messages/start-with-landlord', 'startWithLandlord')->name('chat.start-with-landlord');
         Route::post('/messages/start-with-user', 'startWithUser')->name('chat.start-with-user')->middleware('throttle:30,1');
+        Route::post('/messages/start-from-listing', 'startFromListing')->name('chat.start-from-listing');
         Route::post('/messages/create-ticket', 'createTicket')->name('chat.create-ticket');
         Route::post('/messages/{id}/send', 'sendMessage')->name('chat.send')->middleware('throttle:30,1');
         Route::get('/messages/{id}/fetch', 'getMessages')->name('chat.fetch');

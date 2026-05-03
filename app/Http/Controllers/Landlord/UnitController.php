@@ -7,10 +7,11 @@ use App\Http\Requests\Landlord\StoreUnitRequest;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
-use App\Services\SupabaseService;
+use App\Services\Media\UnitMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class UnitController extends Controller
 {
@@ -112,43 +113,13 @@ class UnitController extends Controller
         }
     }
 
-    public function storeUnit(StoreUnitRequest $request, $propertyId)
+    public function storeUnit(StoreUnitRequest $request, $propertyId, UnitMediaService $unitMediaService)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
-        $coverPath = null;
-        if ($request->hasFile('cover_image')) {
-            $supabase = new SupabaseService;
-            $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
-            $path = 'units/'.$filename;
-            $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
-
-            if ($uploadResult['success']) {
-                $coverPath = $uploadResult['url'];
-            } else {
-                return back()->withInput()->with('error', 'Failed to upload cover image.');
-            }
-        }
-
-        $galleryPaths = [];
-        if ($request->hasFile('gallery')) {
-            foreach ($request->file('gallery') as $index => $file) {
-                $supabase = new SupabaseService;
-                $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
-                $path = 'units/gallery/'.$filename;
-                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
-
-                if ($uploadResult['success']) {
-                    $galleryPaths[] = $uploadResult['url'];
-                } else {
-                    return back()->withInput()->with('error', 'Failed to upload gallery image '.($index + 1).': '.($uploadResult['message'] ?? 'Unknown error'));
-                }
-            }
-        }
-
-        $property->units()->create([
+        $unit = $property->units()->create([
             'unit_number' => $request->unit_number,
             'unit_type' => $request->unit_type,
             'rent_amount' => $request->rent_amount,
@@ -162,9 +133,17 @@ class UnitController extends Controller
             'is_furnished' => $request->boolean('is_furnished'),
             'amenities' => $request->amenities ?? [],
             'notes' => $request->notes,
-            'cover_image' => $coverPath,
-            'gallery' => $galleryPaths ?: null,
         ]);
+
+        $mediaPayload = $unitMediaService->uploadForUnit(
+            $unit->id,
+            $request->file('unit_cover_image'),
+            $request->file('unit_gallery', [])
+        );
+
+        if (! empty($mediaPayload)) {
+            $unit->update($mediaPayload);
+        }
 
         return redirect()->route('landlord.units', $propertyId)->with('success', 'Unit created successfully.');
     }
@@ -230,19 +209,50 @@ class UnitController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
+        $units = [];
+        $expectedCount = (int) $request->input('units_expected_count', 0);
+
+        // Prefer compact JSON payload to avoid PHP max_input_vars truncation on large batches.
+        $payload = $request->input('units_payload');
+        if (is_string($payload) && $payload !== '') {
+            try {
+                $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
+                if (is_array($decoded)) {
+                    $units = $decoded;
+                }
+            } catch (\JsonException $jsonException) {
+                Log::warning('Invalid bulk units payload JSON', [
+                    'property_id' => $propertyId,
+                    'error' => $jsonException->getMessage(),
+                ]);
+
+                return back()->withInput()->with('error', 'Invalid units payload received. Please try again.');
+            }
+        }
+
+        // Backward compatibility with old frontend that posts units[x][field] keys.
+        if (empty($units) && is_array($request->input('units'))) {
+            $units = $request->input('units');
+        }
+
         // Debug: Log the number of units received
-        $unitsReceived = $request->input('units', []);
+        $unitsReceived = $units;
         Log::info('Bulk units received', [
             'property_id' => $propertyId,
             'units_count' => is_array($unitsReceived) ? count($unitsReceived) : 0,
+            'expected_units_count' => $expectedCount,
             'post_data_size' => strlen(serialize($request->all())),
         ]);
 
-        if (! $request->has('units') || empty($request->input('units'))) {
+        if (empty($units)) {
             return back()->with('error', 'No units data received. Please try again.');
         }
 
-        $request->validate([
+        if ($expectedCount > 0 && count($units) < $expectedCount) {
+            return back()->withInput()->with('error', "Only ".count($units)." of {$expectedCount} units were received. Please retry; this usually means form data was truncated.");
+        }
+
+        Validator::make(['units' => $units], [
             'units' => 'required|array',
             'units.*.unit_number' => 'required|string|max:50',
             'units.*.unit_type' => 'required|string|max:100',
@@ -253,7 +263,7 @@ class UnitController extends Controller
             'units.*.leasing_type' => 'required|in:separate,inclusive',
             'units.*.max_occupants' => 'required|integer|min:1',
             'units.*.floor_number' => 'required|integer|min:1',
-        ]);
+        ])->validate();
 
         try {
             $unitsCreated = 0;
@@ -263,7 +273,7 @@ class UnitController extends Controller
             $unitsToInsert = [];
             $now = now();
 
-            $dedupedUnits = collect($request->units)->unique('unit_number')->values()->all();
+            $dedupedUnits = collect($units)->unique('unit_number')->values()->all();
 
             foreach ($dedupedUnits as $unitData) {
                 if (in_array($unitData['unit_number'], $existingUnitNumbers)) {
@@ -349,8 +359,15 @@ class UnitController extends Controller
                 'is_furnished' => 'nullable|boolean',
                 'amenities' => 'nullable|array',
                 'notes' => 'nullable|string|max:1000',
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-                'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+                'unit_cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+                'unit_gallery' => 'nullable|array|max:12',
+                'unit_gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+                'property_cover_image' => 'prohibited',
+                'property_gallery' => 'prohibited',
+                'property_gallery.*' => 'prohibited',
+                'cover_image' => 'prohibited',
+                'gallery' => 'prohibited',
+                'gallery.*' => 'prohibited',
             ]);
         } catch (\Illuminate\Validation\ValidationException $exception) {
             if ($request->ajax() || $request->wantsJson()) {
@@ -375,37 +392,13 @@ class UnitController extends Controller
                 'notes' => $request->notes,
             ];
 
-            if ($request->hasFile('cover_image')) {
-                $supabase = new SupabaseService;
-                $filename = 'unit-'.time().'-'.uniqid().'.'.$request->file('cover_image')->getClientOriginalExtension();
-                $path = 'units/'.$filename;
-                $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $request->file('cover_image')->getRealPath());
-
-                if ($uploadResult['success']) {
-                    $updateData['cover_image'] = $uploadResult['url'];
-                } else {
-                    throw new \Exception('Failed to upload cover image: '.($uploadResult['message'] ?? 'Unknown error'));
-                }
-            }
-
-            if ($request->hasFile('gallery')) {
-                $supabase = new SupabaseService;
-                $galleryPaths = $unit->gallery ?? [];
-
-                foreach ($request->file('gallery') as $index => $file) {
-                    $filename = 'unit-gallery-'.time().'-'.$index.'-'.uniqid().'.'.$file->getClientOriginalExtension();
-                    $path = 'units/gallery/'.$filename;
-                    $uploadResult = $supabase->uploadFile(config('services.supabase.bucket'), $path, $file->getRealPath());
-
-                    if ($uploadResult['success']) {
-                        $galleryPaths[] = $uploadResult['url'];
-                    } else {
-                        throw new \Exception('Failed to upload gallery image '.($index + 1).': '.($uploadResult['message'] ?? 'Unknown error'));
-                    }
-                }
-
-                $updateData['gallery'] = array_slice($galleryPaths, 0, 12);
-            }
+            $unitMediaService = app(UnitMediaService::class);
+            $mediaPayload = $unitMediaService->uploadForUnit(
+                $unit->id,
+                $request->file('unit_cover_image'),
+                $request->file('unit_gallery', [])
+            );
+            $updateData = array_merge($updateData, $mediaPayload);
 
             $unit->update($updateData);
 

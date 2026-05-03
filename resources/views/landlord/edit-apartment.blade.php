@@ -771,7 +771,7 @@
                         </h3>
                         <div class="form-grid">
                             <div class="form-group full-width">
-                                <label class="form-label">Cover Image</label>
+                                <label class="form-label">Property Cover Image</label>
                                 @if($apartment->cover_image_url)
                                     <div class="mb-2">
                                         <p class="text-muted small mb-2">Current cover image:</p>
@@ -780,16 +780,16 @@
                                 @else
                                     <p class="text-muted small mb-2">No cover image yet. Upload one below.</p>
                                 @endif
-                                <input type="file" name="cover_image" id="cover_image" accept="image/*" class="form-control" onchange="previewCoverImage(this)">
+                                <input type="file" name="property_cover_image" id="cover_image" accept="image/*" class="form-control" onchange="previewCoverImage(this)">
                                 <div id="cover_image_preview" class="mt-2" style="display: none;">
                                     <img id="cover_preview_img" src="" alt="Cover Preview" style="max-width: 300px; max-height: 300px; border-radius: 8px; border: 2px solid #e2e8f0;">
                                 </div>
-                                <p class="form-help text-muted mt-1">Main image displayed for this property (JPEG/PNG, max 5MB)</p>
+                                <p class="form-help text-muted mt-1">Displayed in property hero and explore property card (JPEG/PNG, max 5MB)</p>
                             </div>
                         </div>
                         
                         <div class="form-group full-width mt-3">
-                            <label class="form-label">Gallery Images (up to 12)</label>
+                            <label class="form-label">Property Gallery (up to 12)</label>
                             @if($apartment->gallery_urls && count($apartment->gallery_urls) > 0)
                                 <div class="mb-2">
                                     <p class="text-muted small">Current gallery images ({{ count($apartment->gallery_urls) }}):</p>
@@ -805,11 +805,11 @@
                                 <p class="text-muted small mb-2">No gallery images yet. Add images below.</p>
                             @endif
                             <div class="gallery-upload-container">
-                                <input type="file" name="gallery[]" id="gallery_input" accept="image/*" multiple class="form-control" onchange="handleGalleryUpload(this)" style="display: none;">
+                                <input type="file" name="property_gallery[]" id="gallery_input" accept="image/*" multiple class="form-control" onchange="handleGalleryUpload(this)" style="display: none;">
                                 <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('gallery_input').click()">
                                     <i class="fas fa-plus-circle me-2"></i>Add Images to Gallery
                                 </button>
-                                <p class="form-help text-muted mt-2">Add multiple images to showcase the property (JPEG/PNG, max 5MB each)</p>
+                                <p class="form-help text-muted mt-2">Extra property-level photos only (used for property listing/gallery)</p>
                             </div>
                             
                             <div id="gallery_preview" class="gallery-preview mt-3" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
