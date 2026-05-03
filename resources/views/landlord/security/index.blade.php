@@ -32,18 +32,6 @@
         </div>
     @endif
 
-    @if(isset($readerLocationsSummary) && $readerLocationsSummary->isNotEmpty())
-        <div class="alert alert-light border mb-4 d-flex flex-wrap align-items-center gap-2">
-            <span class="fw-semibold text-secondary"><i class="fas fa-map-marker-alt me-1"></i> Reader locations (last 30 days)</span>
-            @foreach($readerLocationsSummary as $loc)
-                <span class="badge rounded-pill bg-light text-primary border">
-                    {{ ucfirst(str_replace('_', ' ', $loc->reader_location)) }}
-                    <span class="fw-normal opacity-75 ms-1">· {{ \Carbon\Carbon::parse($loc->last_seen_at)->diffForHumans() }}</span>
-                </span>
-            @endforeach
-        </div>
-    @endif
-
     <!-- Apartment Filter -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -231,7 +219,6 @@
                             <th>Time</th>
                             <th>Card UID</th>
                             <th>Tenant</th>
-                            <th>Reader</th>
                             <th>Result</th>
                             <th>Reason</th>
                         </tr>
@@ -242,7 +229,6 @@
                                 <td><small>{{ $log->access_time->format('M j, g:i A') }}</small></td>
                                 <td><code class="small">{{ $log->card_uid }}</code></td>
                                 <td><small>{{ $log->tenant_name }}</small></td>
-                                <td><small>{{ $log->reader_location_display }}</small></td>
                                 <td><span class="badge bg-{{ $log->display_badge_class }}">{{ $log->display_result }}</span></td>
                                 <td>
                                     @if($log->denial_reason)
@@ -254,7 +240,7 @@
                             </tr>
                         @empty
                             <tr id="recent-logs-empty-row">
-                                <td colspan="6" class="text-center text-muted py-3">
+                                <td colspan="5" class="text-center text-muted py-3">
                                     No recent access attempts yet.
                                 </td>
                             </tr>
@@ -278,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!Array.isArray(logs) || logs.length === 0) {
             bodyEl.innerHTML = `
                 <tr id="recent-logs-empty-row">
-                    <td colspan="6" class="text-center text-muted py-3">
+                    <td colspan="5" class="text-center text-muted py-3">
                         No recent access attempts yet.
                     </td>
                 </tr>`;
@@ -290,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td><small>${l.access_time_human || ''}</small></td>
                 <td><code class="small">${l.card_uid || ''}</code></td>
                 <td><small>${l.tenant_name || ''}</small></td>
-                <td><small>${l.reader_location_display || '—'}</small></td>
                 <td><span class="badge bg-${l.result_badge_class || 'secondary'}">${l.result_text || ''}</span></td>
                 <td>${l.denial_reason ? `<small class="text-muted">${l.denial_reason}</small>` : '<small class="text-success">Access granted</small>'}</td>
             </tr>`).join('');

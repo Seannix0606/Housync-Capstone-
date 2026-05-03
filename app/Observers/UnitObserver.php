@@ -7,6 +7,10 @@ use App\Models\Property;
 use App\Models\Unit;
 use Illuminate\Support\Str;
 
+/**
+ * Legacy explore-listing sync (pre–landlord Property refactor).
+ * Not registered in AppServiceProvider. Do not enable without rewriting for the current Property model.
+ */
 class UnitObserver
 {
     /**
