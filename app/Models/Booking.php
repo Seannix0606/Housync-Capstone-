@@ -33,7 +33,9 @@ class Booking extends Model
 
             $unit = Unit::query()->find($booking->unit_id);
             if ($unit === null) {
-                return;
+                throw ValidationException::withMessages([
+                    'unit_id' => ['The selected unit does not exist.'],
+                ]);
             }
 
             if ($booking->property_id !== null && (int) $booking->property_id !== (int) $unit->property_id) {

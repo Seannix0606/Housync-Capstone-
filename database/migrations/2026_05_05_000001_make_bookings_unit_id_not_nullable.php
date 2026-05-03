@@ -16,7 +16,11 @@ return new class extends Migration
             return;
         }
 
-        DB::table('bookings')->whereNull('unit_id')->delete();
+        if (DB::table('bookings')->whereNull('unit_id')->exists()) {
+            throw new \RuntimeException(
+                'Found bookings with null unit_id. Backfill or remove them before making unit_id NOT NULL.'
+            );
+        }
 
         $driver = Schema::getConnection()->getDriverName();
 
@@ -31,8 +35,7 @@ return new class extends Migration
             });
             DB::statement(
                 'INSERT INTO bookings (id, property_id, unit_id, created_at, updated_at) '
-                .'SELECT id, property_id, unit_id, created_at, updated_at FROM bookings_unit_id_not_null_legacy '
-                .'WHERE unit_id IS NOT NULL'
+                .'SELECT id, property_id, unit_id, created_at, updated_at FROM bookings_unit_id_not_null_legacy'
             );
             Schema::drop('bookings_unit_id_not_null_legacy');
             Schema::enableForeignKeyConstraints();
@@ -61,6 +64,25 @@ return new class extends Migration
         }
 
         $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            Schema::disableForeignKeyConstraints();
+            Schema::rename('bookings', 'bookings_unit_id_nn_down_legacy');
+            Schema::create('bookings', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('property_id')->constrained('properties')->cascadeOnDelete();
+                $table->foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete();
+                $table->timestamps();
+            });
+            DB::statement(
+                'INSERT INTO bookings (id, property_id, unit_id, created_at, updated_at) '
+                .'SELECT id, property_id, unit_id, created_at, updated_at FROM bookings_unit_id_nn_down_legacy'
+            );
+            Schema::drop('bookings_unit_id_nn_down_legacy');
+            Schema::enableForeignKeyConstraints();
+
+            return;
+        }
 
         if (in_array($driver, ['mysql', 'mariadb'], true)) {
             DB::statement('ALTER TABLE bookings MODIFY unit_id BIGINT UNSIGNED NULL');

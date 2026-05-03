@@ -260,6 +260,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!bodyEl) return;
     const propertyId = @json($propertyId);
 
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function renderRows(logs) {
         if (!Array.isArray(logs) || logs.length === 0) {
             bodyEl.innerHTML = `
@@ -273,11 +283,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const rows = logs.map(l => `
             <tr>
-                <td><small>${l.access_time_human || ''}</small></td>
-                <td><code class="small">${l.card_uid || ''}</code></td>
-                <td><small>${l.tenant_name || ''}</small></td>
-                <td><span class="badge bg-${l.result_badge_class || 'secondary'}">${l.result_text || ''}</span></td>
-                <td>${l.denial_reason ? `<small class="text-muted">${l.denial_reason}</small>` : '<small class="text-success">Access granted</small>'}</td>
+                <td><small>${escapeHtml(l.access_time_human)}</small></td>
+                <td><code class="small">${escapeHtml(l.card_uid)}</code></td>
+                <td><small>${escapeHtml(l.tenant_name)}</small></td>
+                <td><span class="badge bg-${escapeHtml(l.result_badge_class || 'secondary')}">${escapeHtml(l.result_text)}</span></td>
+                <td>${l.denial_reason ? `<small class="text-muted">${escapeHtml(l.denial_reason)}</small>` : '<small class="text-success">Access granted</small>'}</td>
             </tr>`).join('');
         bodyEl.innerHTML = rows;
     }

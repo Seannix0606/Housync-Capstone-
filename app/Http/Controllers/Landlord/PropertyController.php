@@ -74,7 +74,20 @@ class PropertyController extends Controller
         PropertyCreationUnitMediaApplicator $propertyCreationUnitMediaApplicator
     ) {
         Log::info('Property creation request received', [
-            'data' => $request->only(['name', 'property_type', 'address', 'floors', 'bedrooms', 'building_floors', 'unit_stories', 'dwelling_stories']),
+            'data' => $request->only([
+                'name',
+                'property_type',
+                'city',
+                'state',
+                'postal_code',
+                'floors',
+                'bedrooms',
+                'building_floors',
+                'unit_stories',
+                'dwelling_stories',
+                'year_built',
+                'parking_spaces',
+            ]),
             'method' => $request->method(),
             'url' => $request->url(),
         ]);
@@ -89,6 +102,9 @@ class PropertyController extends Controller
                     'name' => $request->name,
                     'property_type' => $request->property_type,
                     'address' => $request->address,
+                    'city' => $request->city,
+                    'state' => $request->state,
+                    'postal_code' => $request->postal_code,
                     'description' => $request->description,
                     'floors' => $request->floors,
                     'unit_count' => $request->input('unit_count'),
@@ -97,6 +113,8 @@ class PropertyController extends Controller
                     'unit_bedrooms' => $request->input('unit_bedrooms'),
                     'unit_stories' => $request->input('unit_stories'),
                     'dwelling_stories' => $request->input('dwelling_stories'),
+                    'year_built' => $request->year_built,
+                    'parking_spaces' => $request->parking_spaces,
                     'contact_person' => $request->contact_person,
                     'contact_phone' => $request->contact_phone,
                     'contact_email' => $request->contact_email,
