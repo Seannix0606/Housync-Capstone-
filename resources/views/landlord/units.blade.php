@@ -21,21 +21,21 @@
     <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
 @endif
 <!-- Stats Cards -->
-<div class="stats-grid mb-4">
+<div class="stats-grid mb-4" id="landlordUnitsStats">
     <div class="stat-card">
-        <div class="stat-value">{{ $stats['total_units'] }}</div>
+        <div class="stat-value" id="statTotalUnits">{{ $stats['total_units'] }}</div>
         <div class="stat-label">Total Units</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value">{{ $stats['available_units'] }}</div>
+        <div class="stat-value" id="statAvailableUnits">{{ $stats['available_units'] }}</div>
         <div class="stat-label">Available Units</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value">{{ $stats['occupied_units'] }}</div>
+        <div class="stat-value" id="statOccupiedUnits">{{ $stats['occupied_units'] }}</div>
         <div class="stat-label">Occupied Units</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value">₱{{ number_format($stats['monthly_revenue'], 0) }}</div>
+        <div class="stat-value" id="statMonthlyRevenue">₱{{ number_format($stats['monthly_revenue'], 0) }}</div>
         <div class="stat-label">Monthly Revenue</div>
     </div>
 </div>
@@ -70,7 +70,7 @@
                     <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
                 </select>
             </div>
-            <a href="{{ route('landlord.create-unit') }}" class="btn btn-primary ms-2"><i class="fas fa-plus"></i> Add New Unit</a>
+            <button type="button" class="btn btn-primary ms-2" id="openAddUnitModal" data-bs-toggle="modal" data-bs-target="#addUnitModal"><i class="fas fa-plus"></i> Add New Unit</button>
         </div>
     </div>
     @if($units->count() > 0)
@@ -89,7 +89,7 @@
                         <th style="width: 10%;" class="text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="unitsTableBody">
                     @foreach($units as $unit)
                     <tr>
                         <td>
@@ -170,12 +170,71 @@
         </div>
     @endif
 </div>
-<!-- Modals and JS remain below as before -->
+
+@include('landlord.partials.add-unit.modal')
+
+    <!-- Unit Details Modal -->
+    <div class="modal fade" id="unitDetailsModal" tabindex="-1" aria-labelledby="unitDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unitDetailsModalLabel">Unit Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="unitDetailsContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading unit details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="editUnitBtn" style="display: none;">
+                        <i class="fas fa-edit"></i> Edit Unit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Edit Unit Modal -->
+    <div class="modal fade" id="editUnitModal" tabindex="-1" aria-labelledby="editUnitModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUnitModalLabel">Edit Unit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editUnitForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body" id="editUnitContent">
+                        <div class="text-center py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading unit details...</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveUnitBtn" style="display: none;">
+                            <i class="fas fa-save"></i> Update Unit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
-    <script>
-
-        function editUnit(unitId) {
+@push('scripts')
+<script>
+function editUnit(unitId) {
             // Show the edit modal
             const modal = new bootstrap.Modal(document.getElementById('editUnitModal'));
             const modalTitle = document.getElementById('editUnitModalLabel');
@@ -630,7 +689,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-bold text-muted">Property</label>
-                                    <p class="mb-1">${data.apartment_name}</p>
+                                    <p class="mb-1">${data.property_name}</p>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-bold text-muted">Unit Type</label>
@@ -747,7 +806,7 @@
                                     <a href="/landlord/tenant-assignments?unit_id=${data.id}" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-history"></i> Assignment History
                                     </a>
-                                    <a href="/landlord/units/${data.apartment_id}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="/landlord/units/${data.property_id}" class="btn btn-outline-secondary btn-sm">
                                         <i class="fas fa-building"></i> View Property
                                     </a>
                                 </div>
@@ -802,64 +861,316 @@
             }
         }
 
-    </script>
+(function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const modalEl = document.getElementById('addUnitModal');
+    if (!modalEl) return;
 
-    <!-- Unit Details Modal -->
-    <div class="modal fade" id="unitDetailsModal" tabindex="-1" aria-labelledby="unitDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="unitDetailsModalLabel">Unit Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="unitDetailsContent">
-                    <div class="text-center py-4">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Loading unit details...</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="editUnitBtn" style="display: none;">
-                        <i class="fas fa-edit"></i> Edit Unit
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    const urls = {
+        single: @json(route('landlord.units.modal.single')),
+        bulk: @json(route('landlord.units.modal.bulk')),
+    };
 
+    let step = 1;
+    let mode = null;
 
-    <!-- Edit Unit Modal -->
-    <div class="modal fade" id="editUnitModal" tabindex="-1" aria-labelledby="editUnitModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editUnitModalLabel">Edit Unit</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="editUnitForm" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-body" id="editUnitContent">
-                        <div class="text-center py-4">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Loading unit details...</p>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="saveUnitBtn" style="display: none;">
-                            <i class="fas fa-save"></i> Update Unit
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    const panels = () => modalEl.querySelectorAll('[data-add-unit-panel]');
+    const stepEls = () => modalEl.querySelectorAll('[data-add-unit-step]');
+    const btnBack = document.getElementById('addUnitBtnBack');
+    const btnNext = document.getElementById('addUnitBtnNext');
+    const btnSubmit = document.getElementById('addUnitBtnSubmit');
+    const errBox = document.getElementById('addUnitModalError');
 
-</body>
-</html> 
+    function showError(msg) {
+        if (!errBox) return;
+        errBox.textContent = msg || '';
+        errBox.classList.toggle('d-none', !msg);
+    }
+
+    function syncStepUi() {
+        stepEls().forEach((el) => {
+            const n = parseInt(el.getAttribute('data-add-unit-step'), 10);
+            el.classList.toggle('is-active', n === step);
+            el.classList.toggle('is-done', n < step);
+        });
+        panels().forEach((el) => {
+            const n = parseInt(el.getAttribute('data-add-unit-panel'), 10);
+            el.classList.toggle('d-none', n !== step);
+        });
+        btnBack.disabled = step === 1;
+        btnNext.classList.toggle('d-none', step === 3);
+        btnSubmit.classList.toggle('d-none', step !== 3);
+        if (step === 1) {
+            btnNext.disabled = !mode;
+        } else {
+            btnNext.disabled = false;
+        }
+    }
+
+    function resetWizard() {
+        step = 1;
+        mode = null;
+        showError('');
+        modalEl.querySelectorAll('.add-unit-mode-card').forEach((c) => c.classList.remove('is-selected'));
+        document.getElementById('addUnitPropertySearch').value = '';
+        document.getElementById('addUnitPropertyId').value = '';
+        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => { opt.hidden = false; });
+        document.getElementById('addUnitNameSingle').value = '';
+        document.getElementById('addUnitPriceSingle').value = '';
+        document.getElementById('addUnitStatusSingle').value = 'available';
+        document.getElementById('addUnitCountBulk').value = '2';
+        document.getElementById('addUnitPatternBulk').value = 'Unit {n}';
+        document.getElementById('addUnitPriceBulk').value = '';
+        document.getElementById('addUnitStatusBulk').value = 'available';
+        document.getElementById('addUnitFieldsSingle').classList.remove('d-none');
+        document.getElementById('addUnitFieldsBulk').classList.add('d-none');
+        document.getElementById('addUnitReviewBody').innerHTML = '';
+        btnSubmit.querySelector('.add-unit-submit-label')?.classList.remove('d-none');
+        btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.add('d-none');
+        btnSubmit.disabled = false;
+        syncStepUi();
+    }
+
+    modalEl.addEventListener('hidden.bs.modal', resetWizard);
+
+    modalEl.querySelectorAll('[data-add-unit-mode]').forEach((card) => {
+        card.addEventListener('click', () => {
+            mode = card.getAttribute('data-add-unit-mode');
+            modalEl.querySelectorAll('.add-unit-mode-card').forEach((c) => c.classList.remove('is-selected'));
+            card.classList.add('is-selected');
+            const single = document.getElementById('addUnitFieldsSingle');
+            const bulk = document.getElementById('addUnitFieldsBulk');
+            if (mode === 'single') {
+                single.classList.remove('d-none');
+                bulk.classList.add('d-none');
+            } else {
+                single.classList.add('d-none');
+                bulk.classList.remove('d-none');
+            }
+            syncStepUi();
+        });
+    });
+
+    document.getElementById('addUnitPropertySearch')?.addEventListener('input', function () {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
+            if (!opt.value) {
+                opt.hidden = false;
+                return;
+            }
+            const label = opt.getAttribute('data-search-label') || '';
+            opt.hidden = q !== '' && !label.includes(q);
+        });
+    });
+
+    btnNext.addEventListener('click', () => {
+        showError('');
+        if (step === 1 && !mode) {
+            showError('Please choose single or bulk creation.');
+            return;
+        }
+        if (step === 2) {
+            const pid = document.getElementById('addUnitPropertyId').value;
+            if (!pid) {
+                showError('Please select a property.');
+                return;
+            }
+            if (mode === 'single') {
+                const name = document.getElementById('addUnitNameSingle').value.trim();
+                const price = document.getElementById('addUnitPriceSingle').value;
+                if (!name) {
+                    showError('Please enter a unit name.');
+                    return;
+                }
+                if (price === '' || Number(price) < 0) {
+                    showError('Please enter a valid price.');
+                    return;
+                }
+            } else {
+                const cnt = parseInt(document.getElementById('addUnitCountBulk').value, 10);
+                const price = document.getElementById('addUnitPriceBulk').value;
+                const pat = document.getElementById('addUnitPatternBulk').value.trim();
+                if (!cnt || cnt < 1) {
+                    showError('Please enter how many units to create.');
+                    return;
+                }
+                if (!pat) {
+                    showError('Please enter a naming pattern.');
+                    return;
+                }
+                if (price === '' || Number(price) < 0) {
+                    showError('Please enter a valid default price.');
+                    return;
+                }
+            }
+            renderReview();
+        }
+        step = Math.min(3, step + 1);
+        syncStepUi();
+    });
+
+    btnBack.addEventListener('click', () => {
+        showError('');
+        step = Math.max(1, step - 1);
+        syncStepUi();
+    });
+
+    function propertyLabel(id) {
+        const opt = document.querySelector('#addUnitPropertyId option[value="' + id + '"]');
+        return opt ? opt.textContent.trim() : '';
+    }
+
+    function renderReview() {
+        const pid = document.getElementById('addUnitPropertyId').value;
+        const pName = propertyLabel(pid);
+        let html = '<dl class="row mb-0">';
+        html += '<dt class="col-sm-4">Property</dt><dd class="col-sm-8">' + escapeHtml(pName) + '</dd>';
+        if (mode === 'single') {
+            html += '<dt class="col-sm-4">Mode</dt><dd class="col-sm-8">Single unit</dd>';
+            html += '<dt class="col-sm-4">Unit name</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitNameSingle').value.trim()) + '</dd>';
+            html += '<dt class="col-sm-4">Price</dt><dd class="col-sm-8">₱' + Number(document.getElementById('addUnitPriceSingle').value).toLocaleString() + '</dd>';
+            html += '<dt class="col-sm-4">Status</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitStatusSingle').value) + '</dd>';
+        } else {
+            html += '<dt class="col-sm-4">Mode</dt><dd class="col-sm-8">Bulk</dd>';
+            html += '<dt class="col-sm-4">Count</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitCountBulk').value) + '</dd>';
+            html += '<dt class="col-sm-4">Naming pattern</dt><dd class="col-sm-8"><code>' + escapeHtml(document.getElementById('addUnitPatternBulk').value.trim()) + '</code></dd>';
+            html += '<dt class="col-sm-4">Default price</dt><dd class="col-sm-8">₱' + Number(document.getElementById('addUnitPriceBulk').value).toLocaleString() + '</dd>';
+            html += '<dt class="col-sm-4">Default status</dt><dd class="col-sm-8">' + escapeHtml(document.getElementById('addUnitStatusBulk').value) + '</dd>';
+        }
+        html += '</dl>';
+        document.getElementById('addUnitReviewBody').innerHTML = html;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function statsScopePropertyId() {
+        const sel = document.getElementById('apartmentFilter');
+        const v = sel ? sel.value : '';
+        return v ? parseInt(v, 10) : null;
+    }
+
+    function formatUnitType(t) {
+        if (!t) return 'N/A';
+        return String(t).replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    }
+
+    function statusBadge(status) {
+        const map = {
+            available: ['bg-success', 'Available'],
+            occupied: ['bg-danger', 'Occupied'],
+            maintenance: ['bg-warning', 'Maintenance'],
+        };
+        const x = map[status] || ['bg-secondary', status];
+        return '<span class="badge ' + x[0] + '">' + x[1] + '</span>';
+    }
+
+    function rowHtml(u) {
+        return '<tr>'
+            + '<td><div class="d-flex align-items-center"><div class="unit-number-badge">' + escapeHtml(u.unit_number) + '</div></div></td>'
+            + '<td><div class="d-flex align-items-center"><i class="fas fa-building text-muted me-2"></i><span class="property-name">' + escapeHtml(u.property_name) + '</span></div></td>'
+            + '<td><span class="unit-type">' + escapeHtml(formatUnitType(u.unit_type)) + '</span></td>'
+            + '<td class="text-center"><div class="d-flex justify-content-center align-items-center gap-3">'
+            + '<span class="bed-bath-info" title="Bedrooms"><i class="fas fa-bed text-muted me-1"></i>' + (u.bedrooms ?? 0) + '</span>'
+            + '<span class="bed-bath-info" title="Bathrooms"><i class="fas fa-bath text-muted me-1"></i>' + (u.bathrooms ?? 1) + '</span>'
+            + '</div></td>'
+            + '<td class="text-center"><span class="floor-number">' + (u.floor_number ?? 'N/A') + '</span></td>'
+            + '<td class="text-center">' + statusBadge(u.status) + '</td>'
+            + '<td class="text-end"><span class="rent-amount">₱' + Number(u.rent_amount ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) + '</span></td>'
+            + '<td class="text-center"><span class="max-occupants">' + (u.max_occupants ?? '-') + '</span></td>'
+            + '<td class="text-center"><div class="btn-group" role="group">'
+            + '<button onclick="editUnit(' + u.id + ')" class="btn btn-sm btn-outline-primary" title="Edit Unit"><i class="fas fa-edit"></i></button>'
+            + '<button onclick="viewUnitDetails(' + u.id + ')" class="btn btn-sm btn-outline-info" title="View Details"><i class="fas fa-eye"></i></button>'
+            + '</div></td>'
+            + '</tr>';
+    }
+
+    function applyStats(stats) {
+        if (!stats) return;
+        const tu = document.getElementById('statTotalUnits');
+        const au = document.getElementById('statAvailableUnits');
+        const ou = document.getElementById('statOccupiedUnits');
+        const mr = document.getElementById('statMonthlyRevenue');
+        if (tu) tu.textContent = stats.total_units;
+        if (au) au.textContent = stats.available_units;
+        if (ou) ou.textContent = stats.occupied_units;
+        if (mr) mr.textContent = '₱' + Number(stats.monthly_revenue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
+
+    btnSubmit.addEventListener('click', async () => {
+        showError('');
+        const pid = parseInt(document.getElementById('addUnitPropertyId').value, 10);
+        const scope = statsScopePropertyId();
+        const body = { stats_scope_property_id: scope || null };
+        let url = urls.single;
+        if (mode === 'single') {
+            url = urls.single;
+            Object.assign(body, {
+                property_id: pid,
+                unit_number: document.getElementById('addUnitNameSingle').value.trim(),
+                rent_amount: document.getElementById('addUnitPriceSingle').value,
+                status: document.getElementById('addUnitStatusSingle').value,
+            });
+        } else {
+            url = urls.bulk;
+            Object.assign(body, {
+                property_id: pid,
+                unit_count: parseInt(document.getElementById('addUnitCountBulk').value, 10),
+                naming_pattern: document.getElementById('addUnitPatternBulk').value.trim(),
+                default_rent: document.getElementById('addUnitPriceBulk').value,
+                default_status: document.getElementById('addUnitStatusBulk').value,
+            });
+        }
+
+        btnSubmit.disabled = true;
+        btnSubmit.querySelector('.add-unit-submit-label')?.classList.add('d-none');
+        btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.remove('d-none');
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(body),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                let msg = data.message || 'Could not create units.';
+                if (data.errors) {
+                    const first = Object.values(data.errors)[0];
+                    if (Array.isArray(first) && first[0]) msg = first[0];
+                }
+                showError(msg);
+                return;
+            }
+
+            const tbody = document.getElementById('unitsTableBody');
+            if (!tbody) {
+                window.location.reload();
+                return;
+            }
+            const rows = (data.units || []).map(rowHtml).join('');
+            tbody.insertAdjacentHTML('afterbegin', rows);
+            applyStats(data.stats);
+
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal?.hide();
+        } catch (e) {
+            console.error(e);
+            showError('Something went wrong. Please try again.');
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.querySelector('.add-unit-submit-label')?.classList.remove('d-none');
+            btnSubmit.querySelector('.add-unit-submit-spinner')?.classList.add('d-none');
+        }
+    });
+
+    syncStepUi();
+})();
+</script>
+@endpush

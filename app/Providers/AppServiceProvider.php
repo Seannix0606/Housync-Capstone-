@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\Landlord\LandlordUnitCreationServiceContract;
 use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Contracts\StorageServiceInterface;
 use App\Models\Unit;
 use App\Observers\PropertyUnitCountObserver;
+use App\Services\Landlord\LandlordUnitCreationService;
 use App\Services\Landlord\PropertyTypeUnitRules;
 use App\Services\SupabaseService;
 use Illuminate\Support\Facades\Gate;
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(StorageServiceInterface::class, SupabaseService::class);
 
         $this->app->singleton(PropertyTypeUnitRulesContract::class, PropertyTypeUnitRules::class);
+
+        $this->app->bind(LandlordUnitCreationServiceContract::class, LandlordUnitCreationService::class);
     }
 
     /**

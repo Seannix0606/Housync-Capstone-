@@ -8,6 +8,7 @@ use App\Http\Requests\Landlord\StoreUnitRequest;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\Landlord\LandlordUnitStatsService;
 use App\Services\Media\UnitMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
 {
-    public function units(Request $request, $propertyId = null)
+    public function units(Request $request, LandlordUnitStatsService $unitStats, $propertyId = null)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
@@ -28,30 +29,27 @@ class UnitController extends Controller
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
             $query = $property->units()->with('property');
-            $statsQuery = $property->units();
         } else {
             $query = Unit::whereHas('property', function ($query) use ($landlord) {
                 $query->where('landlord_id', $landlord->id);
             })->with('property');
-            $statsQuery = Unit::whereHas('property', function ($query) use ($landlord) {
-                $query->where('landlord_id', $landlord->id);
-            });
         }
 
         // Filter by property from dropdown
         if ($request->filled('apartment') || $request->filled('property')) {
             $selectedPropertyId = (int) ($request->get('property') ?? $request->get('apartment'));
             $query->where('property_id', $selectedPropertyId);
-            $statsQuery->where('property_id', $selectedPropertyId);
             $propertyId = $selectedPropertyId;
         }
 
-        $stats = [
-            'total_units' => $statsQuery->count(),
-            'available_units' => (clone $statsQuery)->where('status', 'available')->count(),
-            'occupied_units' => (clone $statsQuery)->where('status', 'occupied')->count(),
-            'monthly_revenue' => (clone $statsQuery)->where('status', 'occupied')->sum('rent_amount') ?? 0,
-        ];
+        $statsScopePropertyId = null;
+        if ($request->filled('apartment') || $request->filled('property')) {
+            $statsScopePropertyId = (int) ($request->get('property') ?? $request->get('apartment'));
+        } elseif ($propertyId) {
+            $statsScopePropertyId = (int) $propertyId;
+        }
+
+        $stats = $unitStats->statsForLandlord($landlord, $statsScopePropertyId);
 
         switch ($sortBy) {
             case 'property_unit':
