@@ -47,6 +47,9 @@ class StorePropertyRequest extends FormRequest
                 Rule::in(['apartment', 'condominium', 'townhouse', 'house', 'duplex', 'others']),
             ],
             'address' => 'required|string|max:500',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
             'description' => 'nullable|string|max:1000',
             'contact_person' => 'nullable|string|max:255',
             'contact_phone' => 'nullable|regex:/^[0-9]+$/|max:20',
@@ -74,6 +77,8 @@ class StorePropertyRequest extends FormRequest
             'unit_stories' => 'nullable|array',
             'unit_stories.*' => 'nullable|integer|min:1|max:50',
             'dwelling_stories' => 'nullable|integer|min:1|max:50',
+            'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
+            'parking_spaces' => 'nullable|integer|min:0',
         ];
     }
 

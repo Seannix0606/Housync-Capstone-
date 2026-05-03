@@ -7,6 +7,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\Landlord\PropertyTypeUnitRules;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -64,7 +65,9 @@ class PropertyTypeUnitRulesTest extends TestCase
         Unit::factory()->create(['property_id' => $property->id]);
 
         $this->expectException(ValidationException::class);
-        $this->rules->assertMayAddUnits($property->fresh(), 1);
+        DB::transaction(function () use ($property) {
+            $this->rules->assertMayAddUnits($property->fresh(), 1);
+        });
     }
 
     public function test_cannot_add_unit_when_house_at_cap(): void
@@ -77,7 +80,9 @@ class PropertyTypeUnitRulesTest extends TestCase
         Unit::factory()->create(['property_id' => $property->id]);
 
         $this->expectException(ValidationException::class);
-        $this->rules->assertMayAddUnits($property->fresh(), 1);
+        DB::transaction(function () use ($property) {
+            $this->rules->assertMayAddUnits($property->fresh(), 1);
+        });
     }
 
     public function test_cannot_delete_sole_unit_on_house(): void
@@ -118,7 +123,9 @@ class PropertyTypeUnitRulesTest extends TestCase
         Unit::factory()->create(['property_id' => $property->id, 'unit_number' => 'U2']);
 
         $this->expectException(ValidationException::class);
-        $this->rules->assertMayAddUnits($property->fresh(), 1);
+        DB::transaction(function () use ($property) {
+            $this->rules->assertMayAddUnits($property->fresh(), 1);
+        });
     }
 
     public function test_cannot_delete_unit_on_duplex(): void

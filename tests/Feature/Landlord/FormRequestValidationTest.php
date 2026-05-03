@@ -158,7 +158,12 @@ class FormRequestValidationTest extends TestCase
             $response = $this->actingAs($landlord)
                 ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload($payload));
 
-            $response->assertSessionHasNoErrors("Failed for property type: {$type}");
+            $response->assertSessionHasNoErrors();
+            $errors = session('errors');
+            $this->assertTrue(
+                $errors === null || $errors->isEmpty(),
+                "Failed for property type: {$type}"
+            );
         }
     }
 

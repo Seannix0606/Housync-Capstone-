@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->foreignId('property_id')
                     ->constrained('properties')
                     ->cascadeOnDelete();
-                $table->string('name');
+                $table->string('name')->nullable();
                 $table->decimal('price', 10, 2)->nullable();
                 $table->string('status')->default('available');
                 $table->timestamps();
