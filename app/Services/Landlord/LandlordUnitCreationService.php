@@ -17,9 +17,10 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
 
     public function createSingleUnit(Property $property, array $payload): Unit
     {
-        $this->unitRules->assertMayAddUnits($property, 1);
-
         return DB::transaction(function () use ($property, $payload) {
+            $locked = Property::query()->whereKey($property->getKey())->lockForUpdate()->firstOrFail();
+            $this->unitRules->assertMayAddUnits($locked, 1);
+
             $attrs = array_merge($this->minimalDefaultAttributes(), [
                 'unit_number' => $payload['unit_number'],
                 'name' => $payload['unit_number'],
@@ -28,7 +29,7 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
                 'status' => $payload['status'],
             ]);
 
-            return $property->units()->create($attrs);
+            return $locked->units()->create($attrs);
         });
     }
 
@@ -53,20 +54,22 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
             ]);
         }
 
-        $this->unitRules->assertMayAddUnits($property, $count);
-
         $labels = $this->generateSequentialLabels($payload['naming_pattern'], $count);
-        $existing = $property->units()->pluck('unit_number')->all();
 
-        foreach ($labels as $label) {
-            if (in_array($label, $existing, true)) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'naming_pattern' => ["The generated unit name \"{$label}\" already exists for this property."],
-                ]);
+        return DB::transaction(function () use ($property, $payload, $count, $labels, $floorForIndex) {
+            $locked = Property::query()->whereKey($property->getKey())->lockForUpdate()->firstOrFail();
+            $this->unitRules->assertMayAddUnits($locked, $count);
+
+            $existing = $locked->units()->pluck('unit_number')->all();
+
+            foreach ($labels as $label) {
+                if (in_array($label, $existing, true)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'naming_pattern' => ["The generated unit name \"{$label}\" already exists for this property."],
+                    ]);
+                }
             }
-        }
 
-        return DB::transaction(function () use ($property, $labels, $payload, $floorForIndex) {
             $created = collect();
 
             foreach ($labels as $idx => $label) {
@@ -79,7 +82,7 @@ class LandlordUnitCreationService implements LandlordUnitCreationServiceContract
                     'status' => $payload['default_status'],
                     'floor_number' => $floorNumber,
                 ]);
-                $created->push($property->units()->create($attrs));
+                $created->push($locked->units()->create($attrs));
             }
 
             return $created;
