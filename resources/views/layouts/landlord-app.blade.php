@@ -1769,7 +1769,6 @@
             </a>
             <a class="nav-link{{ request()->routeIs('landlord.maintenance*') ? ' active' : '' }}" href="{{ route('landlord.maintenance.index') }}"><span class="nav-icon"><i class="fas fa-wrench"></i></span> <span class="nav-label">Maintenance</span></a>
             <a class="nav-link{{ request()->routeIs('landlord.announcements*') ? ' active' : '' }}" href="{{ route('landlord.announcements.index') }}"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span> <span class="nav-label">Announcements</span></a>
-            <a class="nav-link{{ request()->routeIs('landlord.reports*') ? ' active' : '' }}" href="{{ route('landlord.reports.index') }}"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> <span class="nav-label">Reports</span></a>
         </nav>
         <div class="sidebar-footer mt-auto"></div>
     </aside>

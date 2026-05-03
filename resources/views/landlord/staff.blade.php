@@ -3,7 +3,7 @@
 @section('title', 'Staff Management')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid staff-landlord-page">
     <div class="row">
         <div class="col-12">
             <div class="page-title-box">
@@ -30,7 +30,7 @@
     @endif
 
     <!-- Statistics Cards -->
-    <div class="row">
+    <div class="row g-3 staff-stats-row">
         <div class="col-xl-3 col-md-6">
             <div class="card">
                 <div class="card-body">
@@ -38,6 +38,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Total Staff">Total Staff</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['total'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-primary rounded">
@@ -56,6 +57,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Active Staff">Active Staff</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['active'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-success rounded">
@@ -74,6 +76,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Inactive Staff">Inactive Staff</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['inactive'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-warning rounded">
@@ -92,6 +95,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Staff Types">Staff Types</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['staff_types'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-info rounded">
@@ -340,6 +344,48 @@
         </div>
     </div>
 </div>
+
+<style>
+    .staff-landlord-page .card {
+        border: none;
+        box-shadow: 0 0 35px 0 rgba(154, 161, 171, 0.15);
+        margin-bottom: 24px;
+    }
+
+    .staff-landlord-page .avatar-sm {
+        width: 48px;
+        height: 48px;
+    }
+
+    .staff-landlord-page .avatar-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .staff-landlord-page .bg-soft-primary {
+        background-color: rgba(114, 124, 245, 0.18);
+    }
+
+    .staff-landlord-page .bg-soft-success {
+        background-color: rgba(10, 207, 151, 0.18);
+    }
+
+    .staff-landlord-page .bg-soft-warning {
+        background-color: rgba(255, 193, 7, 0.18);
+    }
+
+    .staff-landlord-page .bg-soft-info {
+        background-color: rgba(57, 175, 209, 0.18);
+    }
+
+    .staff-landlord-page .stat-spacer {
+        min-height: 1rem;
+        line-height: 1;
+    }
+</style>
 
 <!-- Status Update Form -->
 <form id="staffStatusForm" method="POST" style="display: none;">

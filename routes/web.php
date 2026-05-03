@@ -11,7 +11,6 @@ use App\Http\Controllers\Landlord\SettingsController as LandlordSettingsControll
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RfidController;
 use App\Http\Controllers\Staff\ProfileController as StaffProfileController;
 use App\Http\Controllers\SuperAdmin\LandlordVerificationController as SuperAdminLandlordVerificationController;
@@ -271,12 +270,6 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
 
     // Billing: verify tenant payment proof
     Route::post('/billing/payments/{paymentId}/verify', [BillingController::class, 'verifyPayment'])->name('billing.verify-payment');
-
-    // Reports & Analytics
-    Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/export-financial', 'exportFinancial')->name('export-financial');
-    });
 });
 
 /*

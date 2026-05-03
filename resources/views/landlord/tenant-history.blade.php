@@ -27,6 +27,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Total Assignments">Total Assignments</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['total_assignments'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-primary rounded">
@@ -45,6 +46,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Active Tenants">Active Tenants</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['active_assignments'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-success rounded">
@@ -63,6 +65,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Terminated">Terminated</h5>
                             <h3 class="mt-3 mb-3">{{ $stats['terminated_assignments'] }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-danger rounded">
@@ -81,6 +84,7 @@
                         <div>
                             <h5 class="text-muted fw-normal mt-0" title="Total Revenue">Total Revenue</h5>
                             <h3 class="mt-3 mb-3">₱{{ number_format($stats['total_revenue'], 2) }}</h3>
+                            <p class="mb-0 stat-spacer">&nbsp;</p>
                         </div>
                         <div class="avatar-sm">
                             <span class="avatar-title bg-soft-info rounded">
@@ -413,6 +417,11 @@
         padding: 0.35rem 0.65rem;
         font-size: 0.75rem;
         font-weight: 500;
+    }
+
+    .stat-spacer {
+        min-height: 1rem;
+        line-height: 1;
     }
 
     /* Responsive Enhancements */

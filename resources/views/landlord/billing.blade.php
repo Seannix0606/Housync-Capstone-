@@ -38,6 +38,15 @@
         .status.unpaid { background: #fee2e2; color: #991b1b; }
         .status.partially_paid { background: #fef3c7; color: #92400e; }
         .status.overdue { background: #fecaca; color: #7f1d1d; }
+        .billing-filter-bar {
+            padding-left: 2.0rem;
+        }
+
+        @media (max-width: 768px) {
+            .billing-filter-bar {
+                padding-left: 0;
+            }
+        }
     </style>
 @endpush
 
@@ -114,7 +123,7 @@
         </div>
 
         <!-- Filter Bar -->
-        <div class="mb-3 d-flex gap-2 flex-wrap">
+        <div class="mb-3 d-flex gap-2 flex-wrap billing-filter-bar">
             <a href="{{ route('landlord.payments') }}" class="btn btn-sm {{ !$status && !$type ? 'btn-primary' : 'btn-outline-secondary' }}">All</a>
             <a href="{{ route('landlord.payments', ['status' => 'unpaid']) }}" class="btn btn-sm {{ $status === 'unpaid' ? 'btn-danger' : 'btn-outline-danger' }}">Unpaid</a>
             <a href="{{ route('landlord.payments', ['status' => 'partially_paid']) }}" class="btn btn-sm {{ $status === 'partially_paid' ? 'btn-warning' : 'btn-outline-warning' }}">Partial</a>
