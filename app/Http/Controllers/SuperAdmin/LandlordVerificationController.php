@@ -13,10 +13,12 @@ class LandlordVerificationController extends Controller
 {
     public function pendingLandlords()
     {
+        // INTENTIONAL BUG DEMO: missing pending filter — restores with:
+        // ->whereHas('landlordProfile', fn ($q) => $q->where('status', 'pending'))
+        // and constrained eager load on landlordProfile (status pending) below.
         $pendingLandlords = User::where('role', 'landlord')
-            ->whereHas('landlordProfile', fn ($query) => $query->where('status', 'pending'))
             ->with([
-                'landlordProfile' => fn ($q) => $q->where('status', 'pending'),
+                'landlordProfile',
                 'approvedBy',
                 'landlordDocuments',
             ])

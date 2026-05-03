@@ -578,7 +578,8 @@
                                                 <button class="btn btn-primary btn-sm" onclick="showDocumentsModal({{ $landlord->id }}, '{{ $landlord->name }}')">
                                                     <i class="fas fa-file-alt"></i> View Docs
                                                 </button>
-                                                @if($landlord->landlordProfile && $landlord->landlordProfile->status === 'pending')
+                                                {{-- INTENTIONAL BUG DEMO: restore pending-only actions with: landlordProfile->status === 'pending' --}}
+                                                @if($landlord->landlordProfile)
                                                     <form method="POST" action="{{ route('super-admin.approve-landlord', $landlord->id) }}" style="display: inline;">
                                                         @csrf
                                                         <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve this landlord?')">
