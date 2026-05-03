@@ -121,41 +121,42 @@ class UnitController extends Controller
         $property = $landlord->properties()->findOrFail($propertyId);
 
         try {
-            $unitRules->assertMayAddUnits($property, 1);
+            $unit = DB::transaction(function () use ($request, $property, $unitMediaService, $unitRules) {
+                $locked = Property::query()->whereKey($property->id)->lockForUpdate()->firstOrFail();
+                $unitRules->assertMayAddUnits($locked, 1);
+
+                $unit = $property->units()->create([
+                    'unit_number' => $request->unit_number,
+                    'unit_type' => $request->unit_type,
+                    'rent_amount' => $request->rent_amount,
+                    'status' => $request->status,
+                    'leasing_type' => $request->leasing_type,
+                    'description' => $request->description,
+                    'floor_area' => $request->floor_area,
+                    'floor_number' => $request->floor_number ?? 1,
+                    'unit_stories' => $request->filled('unit_stories') ? (int) $request->input('unit_stories') : null,
+                    'bedrooms' => $request->bedrooms,
+                    'bathrooms' => $request->bathrooms,
+                    'is_furnished' => $request->boolean('is_furnished'),
+                    'amenities' => $request->amenities ?? [],
+                    'notes' => $request->notes,
+                ]);
+
+                $mediaPayload = $unitMediaService->uploadForUnit(
+                    $unit->id,
+                    $request->file('unit_cover_image'),
+                    $request->file('unit_gallery', [])
+                );
+
+                if (! empty($mediaPayload)) {
+                    $unit->update($mediaPayload);
+                }
+
+                return $unit;
+            });
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         }
-
-        $unit = DB::transaction(function () use ($request, $property, $unitMediaService) {
-            $unit = $property->units()->create([
-                'unit_number' => $request->unit_number,
-                'unit_type' => $request->unit_type,
-                'rent_amount' => $request->rent_amount,
-                'status' => $request->status,
-                'leasing_type' => $request->leasing_type,
-                'description' => $request->description,
-                'floor_area' => $request->floor_area,
-                'floor_number' => $request->floor_number ?? 1,
-                'unit_stories' => $request->filled('unit_stories') ? (int) $request->input('unit_stories') : null,
-                'bedrooms' => $request->bedrooms,
-                'bathrooms' => $request->bathrooms,
-                'is_furnished' => $request->boolean('is_furnished'),
-                'amenities' => $request->amenities ?? [],
-                'notes' => $request->notes,
-            ]);
-
-            $mediaPayload = $unitMediaService->uploadForUnit(
-                $unit->id,
-                $request->file('unit_cover_image'),
-                $request->file('unit_gallery', [])
-            );
-
-            if (! empty($mediaPayload)) {
-                $unit->update($mediaPayload);
-            }
-
-            return $unit;
-        });
 
         return redirect()->route('landlord.units', $propertyId)->with('success', 'Unit created successfully.');
     }
@@ -321,22 +322,23 @@ class UnitController extends Controller
             }
 
             try {
-                $unitRules->assertMayAddUnits($property, count($unitsToInsert));
+                DB::transaction(function () use ($unitsToInsert, $propertyId, $unitRules) {
+                    $locked = Property::query()->whereKey($propertyId)->lockForUpdate()->firstOrFail();
+                    $unitRules->assertMayAddUnits($locked, count($unitsToInsert));
+
+                    if (! empty($unitsToInsert)) {
+                        $chunks = array_chunk($unitsToInsert, 100);
+                        foreach ($chunks as $chunk) {
+                            DB::table('units')->insert($chunk);
+                        }
+                    }
+
+                    $locked->update(['total_units' => $locked->units()->count()]);
+                    session()->forget('bulk_creation_params');
+                });
             } catch (ValidationException $exception) {
                 return back()->withInput()->withErrors($exception->errors());
             }
-
-            \Illuminate\Support\Facades\DB::transaction(function () use ($unitsToInsert, $property) {
-                if (! empty($unitsToInsert)) {
-                    $chunks = array_chunk($unitsToInsert, 100);
-                    foreach ($chunks as $chunk) {
-                        \DB::table('units')->insert($chunk);
-                    }
-                }
-
-                $property->update(['total_units' => $property->units()->count()]);
-                session()->forget('bulk_creation_params');
-            });
 
             // Build success message with skipped unit info
             $message = "Successfully created {$unitsCreated} units!";
@@ -522,12 +524,6 @@ class UnitController extends Controller
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
-        try {
-            $unitRules->assertMayAddUnits($property, 1);
-        } catch (ValidationException $exception) {
-            return response()->json(['success' => false, 'message' => collect($exception->errors())->flatten()->first()], 422);
-        }
-
         $request->validate([
             'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
             'unit_type' => 'required|string|max:100',
@@ -542,7 +538,10 @@ class UnitController extends Controller
         ]);
 
         try {
-            $unit = DB::transaction(function () use ($property, $request) {
+            $unit = DB::transaction(function () use ($property, $request, $unitRules) {
+                $locked = Property::query()->whereKey($property->id)->lockForUpdate()->firstOrFail();
+                $unitRules->assertMayAddUnits($locked, 1);
+
                 return $property->units()->create([
                     'unit_number' => $request->unit_number,
                     'unit_type' => $request->unit_type,
@@ -562,6 +561,8 @@ class UnitController extends Controller
             });
 
             return response()->json(['success' => true, 'message' => 'Unit created successfully.', 'unit' => $unit]);
+        } catch (ValidationException $exception) {
+            return response()->json(['success' => false, 'message' => collect($exception->errors())->flatten()->first()], 422);
         } catch (\Exception $exception) {
             Log::error('Error creating unit: '.$exception->getMessage());
 

@@ -50,7 +50,8 @@ class PropertyTypeUnitRules implements PropertyTypeUnitRulesContract
             return;
         }
 
-        $current = $property->units()->count();
+        $locked = Property::query()->whereKey($property->getKey())->lockForUpdate()->firstOrFail();
+        $current = $locked->units()->count();
         if ($current + $unitsToAdd > $max) {
             throw ValidationException::withMessages([
                 'unit_number' => [

@@ -19,7 +19,11 @@ return new class extends Migration
             return;
         }
 
-        DB::table('bookings')->whereNull('unit_id')->delete();
+        if (DB::table('bookings')->whereNull('unit_id')->exists()) {
+            throw new \RuntimeException(
+                'Found bookings with null unit_id. Backfill or archive them before altering the unit_id foreign key.'
+            );
+        }
 
         Schema::table('bookings', function (Blueprint $table) {
             $table->dropForeign(['unit_id']);
