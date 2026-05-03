@@ -504,6 +504,44 @@
                     <div class="form-group">
                         <label class="form-label">Property Gallery (up to 8)</label>
                         <input type="file" name="property_gallery[]" accept="image/*" multiple class="form-control">
+                        <div id="previewContainer" style="display: none; gap: 10px; flex-wrap: wrap; margin-top: 20px;"></div>
+                        <script>
+                            const propertyGalleryInput = document.querySelector('input[name="property_gallery[]"]');
+                            const container = document.getElementById('previewContainer');
+
+                            container.innerHTML = '';
+
+                            propertyGalleryInput.addEventListener('change', function(event) {
+                                container.innerHTML = '';
+                                container.style.display = 'flex';
+                                const files = event.target.files;
+
+                                Array.from(files).forEach(file => {
+                                    const reader = new FileReader();
+
+                                    reader.onload = (e) => {
+                                    // Create a wrapper for the thumbnail and text
+                                    const fileWrapper = document.createElement('div');
+                                    fileWrapper.style.textAlign = 'center';
+                                    fileWrapper.style.width = '100px';
+
+                                    const img = document.createElement('img');
+                                    img.src = e.target.result;
+                                    img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:8px;';
+                                    const p = document.createElement('p');
+                                    p.style.cssText = 'font-size:12px;word-break:break-all;margin-top:5px;';
+                                    p.textContent = file.name;
+
+                                    fileWrapper.appendChild(img);
+                                    fileWrapper.appendChild(p);
+
+                                    container.appendChild(fileWrapper);
+                                    };
+
+                                    // Read the file as a data URL to show the image preview
+                                    reader.readAsDataURL(file);
+                            })});
+                        </script>
                         <p class="form-help">Additional building/common-area photos for property listings</p>
                     </div>
                 </div>
