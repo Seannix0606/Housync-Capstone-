@@ -381,16 +381,6 @@
                         <small class="form-text text-muted" id="building_floors_hint">Above-grade levels for the whole structure. For a duplex this is optional listing context (for example a stacked building); it does not set each unit’s interior stories.</small>
                     </div>
 
-                    <div class="form-group" id="dwelling_stories_group" style="display: none;">
-                        <label class="form-label" for="dwelling_stories">Stories inside this dwelling <span class="text-muted">(optional)</span></label>
-                        <input type="number" name="dwelling_stories" id="dwelling_stories" class="form-control @error('dwelling_stories') error @enderror"
-                               value="{{ old('dwelling_stories') }}" min="1" max="50" placeholder="e.g., 2">
-                        @error('dwelling_stories')
-                            <div class="form-error">{{ $message }}</div>
-                        @enderror
-                        <small class="form-text text-muted">Interior levels of the rented dwelling. Can differ from total building stories when helpful for tenants.</small>
-                    </div>
-
                     <div class="form-group" id="bedrooms_group" style="display: none;">
                         <label class="form-label required">Bedrooms (typical per dwelling)</label>
                         <input type="number" name="bedrooms" id="bedrooms" class="form-control @error('bedrooms') error @enderror"
@@ -913,8 +903,6 @@
         const buildingFloorsInput = document.getElementById('building_floors');
         const buildingFloorsLabel = document.getElementById('building_floors_label');
         const buildingFloorsHint = document.getElementById('building_floors_hint');
-        const dwellingStoriesGroup = document.getElementById('dwelling_stories_group');
-        const dwellingStoriesInput = document.getElementById('dwelling_stories');
         const floorsLabel = document.getElementById('floors_label');
         const floorsHint = document.getElementById('floors_hint');
         const duplexUnitCountInput = document.getElementById('duplex_unit_count_input');
@@ -956,24 +944,10 @@
                 unitStories1.setAttribute('disabled', 'disabled');
                 unitStories1.removeAttribute('required');
             }
-            if (dwellingStoriesGroup) {
-                dwellingStoriesGroup.style.display = 'none';
-            }
-            if (dwellingStoriesInput) {
-                dwellingStoriesInput.setAttribute('disabled', 'disabled');
-                dwellingStoriesInput.removeAttribute('required');
-            }
-
             if (propertyType === 'house') {
                 floorsGroup.style.display = 'none';
                 bedroomsGroup.style.display = 'block';
                 buildingFloorsGroup.style.display = 'block';
-                if (dwellingStoriesGroup) {
-                    dwellingStoriesGroup.style.display = 'block';
-                }
-                if (dwellingStoriesInput) {
-                    dwellingStoriesInput.removeAttribute('disabled');
-                }
                 floorsInput.removeAttribute('required');
                 floorsInput.setAttribute('disabled', 'disabled');
                 bedroomsInput.removeAttribute('disabled');
@@ -1031,12 +1005,6 @@
                 floorsGroup.style.display = 'none';
                 bedroomsGroup.style.display = 'block';
                 buildingFloorsGroup.style.display = 'block';
-                if (dwellingStoriesGroup) {
-                    dwellingStoriesGroup.style.display = 'block';
-                }
-                if (dwellingStoriesInput) {
-                    dwellingStoriesInput.removeAttribute('disabled');
-                }
                 floorsInput.removeAttribute('required');
                 floorsInput.setAttribute('disabled', 'disabled');
                 bedroomsInput.removeAttribute('disabled');

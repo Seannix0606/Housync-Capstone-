@@ -76,7 +76,6 @@ class StorePropertyRequest extends FormRequest
             'unit_bedrooms.*' => 'nullable|integer|min:0|max:50',
             'unit_stories' => 'nullable|array',
             'unit_stories.*' => 'nullable|integer|min:1|max:50',
-            'dwelling_stories' => 'nullable|integer|min:1|max:50',
             'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
             'parking_spaces' => 'nullable|integer|min:0',
         ];
@@ -179,13 +178,6 @@ class StorePropertyRequest extends FormRequest
                     break;
                 }
             }
-        }
-
-        if (! in_array($type, ['house', 'townhouse'], true) && $this->filled('dwelling_stories')) {
-            $validator->errors()->add(
-                'dwelling_stories',
-                'Dwelling-level interior stories apply only to a single-family house or townhouse.'
-            );
         }
 
         if ($type !== 'duplex' && ! $this->filled('building_floors')) {

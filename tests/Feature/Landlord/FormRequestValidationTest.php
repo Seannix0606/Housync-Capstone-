@@ -441,44 +441,6 @@ class FormRequestValidationTest extends TestCase
         $response->assertSessionHasErrors('unit_stories');
     }
 
-    public function test_store_property_house_optional_dwelling_stories_seeds_unit_row(): void
-    {
-        $landlord = $this->createLandlord();
-
-        $response = $this->actingAs($landlord)
-            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
-                'property_type' => 'house',
-                'floors' => null,
-                'bedrooms' => 2,
-                'building_floors' => 2,
-                'dwelling_stories' => 3,
-            ]));
-
-        $response->assertSessionHasNoErrors();
-
-        $property = \App\Models\Property::query()->where('landlord_id', $landlord->id)->latest('id')->first();
-        $unit = $property->units()->first();
-        $this->assertNotNull($unit);
-        $this->assertSame(3, (int) $unit->unit_stories);
-    }
-
-    public function test_store_property_duplex_rejects_dwelling_stories_field(): void
-    {
-        $landlord = $this->createLandlord();
-
-        $response = $this->actingAs($landlord)
-            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
-                'property_type' => 'duplex',
-                'floors' => null,
-                'building_floors' => 2,
-                'unit_bedrooms' => [0 => 2, 1 => 2],
-                'unit_stories' => [0 => 1, 1 => 1],
-                'dwelling_stories' => 2,
-            ]));
-
-        $response->assertSessionHasErrors('dwelling_stories');
-    }
-
     public function test_store_property_apartment_requires_at_least_two_units(): void
     {
         $landlord = $this->createLandlord();

@@ -145,12 +145,6 @@ class PropertyService
                 if (array_key_exists($idx, $data['unit_stories']) && $data['unit_stories'][$idx] !== null && $data['unit_stories'][$idx] !== '') {
                     $interiorStoriesForUnit = max(1, (int) $data['unit_stories'][$idx]);
                 }
-            } elseif (in_array($propertyType, ['house', 'townhouse'], true)
-                && $i === 1
-                && array_key_exists('dwelling_stories', $data)
-                && $data['dwelling_stories'] !== null
-                && $data['dwelling_stories'] !== '') {
-                $interiorStoriesForUnit = max(1, (int) $data['dwelling_stories']);
             }
 
             $units[] = [
