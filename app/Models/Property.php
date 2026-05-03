@@ -162,6 +162,11 @@ class Property extends Model
 
     /**
      * Get the cover image URL
+     *
+     * Supabase URLs (http/https) are returned as-is.
+     * Paths stored on the public disk (properties/...) are served directly
+     * via Laravel's asset helper so guest users can view them without auth.
+     * All other paths are routed through the authenticated /api/storage/ endpoint.
      */
     public function getCoverImageUrlAttribute(): ?string
     {
@@ -169,17 +174,25 @@ class Property extends Model
             return null;
         }
 
-        // If already a full URL, return as-is
+        // Already a full URL (e.g. Supabase) — return as-is
         if (str_starts_with($this->cover_image, 'http')) {
             return $this->cover_image;
         }
 
-        // Return the API URL with storage path
+        // Public disk path — serve directly without authentication
+        if (str_starts_with($this->cover_image, 'properties/')) {
+            return asset('storage/'.$this->cover_image);
+        }
+
+        // Private path — route through the authenticated storage endpoint
         return url('api/storage/'.$this->cover_image);
     }
 
     /**
      * Get gallery image URLs
+     *
+     * Applies the same three-way routing as getCoverImageUrlAttribute():
+     * Supabase URLs → as-is, public disk paths → asset(), private paths → /api/storage/.
      */
     public function getGalleryUrlsAttribute(): array
     {
@@ -190,6 +203,10 @@ class Property extends Model
         return array_map(function ($path) {
             if (str_starts_with($path, 'http')) {
                 return $path;
+            }
+
+            if (str_starts_with($path, 'properties/')) {
+                return asset('storage/'.$path);
             }
 
             return url('api/storage/'.$path);
