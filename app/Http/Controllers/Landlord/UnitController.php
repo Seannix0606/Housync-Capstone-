@@ -10,11 +10,13 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\Landlord\LandlordUnitStatsService;
 use App\Services\Media\UnitMediaService;
+use App\Support\UnitTypeBedroomMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
@@ -206,7 +208,7 @@ class UnitController extends Controller
             // Note: very large numbers may impact performance, but we intentionally do not cap it.
             'units_per_floor' => 'nullable|integer|min:1',
             'create_all_bedrooms' => 'nullable|boolean',
-            'default_unit_type' => 'required|string|max:100',
+            'default_unit_type' => ['required', 'string', 'max:100', Rule::in(UnitTypeBedroomMapping::allowedUnitTypeKeys())],
             'default_rent' => 'required|numeric|min:0',
             'default_bedrooms' => 'required|integer|min:0',
             'default_bathrooms' => 'required|integer|min:1',
@@ -570,7 +572,7 @@ class UnitController extends Controller
 
         $request->validate([
             'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
-            'unit_type' => 'required|string|max:100',
+            'unit_type' => ['required', 'string', 'max:100', Rule::in(UnitTypeBedroomMapping::allowedUnitTypeKeys())],
             'rent_amount' => 'required|numeric|min:0',
             'bedrooms' => 'required|integer|min:0',
             'bathrooms' => 'required|integer|min:1',

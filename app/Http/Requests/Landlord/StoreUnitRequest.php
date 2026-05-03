@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Support\UnitTypeBedroomMapping;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUnitRequest extends FormRequest
 {
@@ -27,7 +29,7 @@ class StoreUnitRequest extends FormRequest
 
         return [
             'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
-            'unit_type' => 'required|string|max:100',
+            'unit_type' => ['required', 'string', 'max:100', Rule::in(UnitTypeBedroomMapping::allowedUnitTypeKeys())],
             'rent_amount' => 'required|numeric|min:0',
             'status' => 'required|in:available,maintenance',
             'leasing_type' => 'required|in:separate,inclusive',

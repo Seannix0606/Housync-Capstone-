@@ -1,5 +1,9 @@
 @extends('layouts.landlord-app')
 
+@prepend('scripts')
+    @include('partials.unit-type-bedroom-autofill')
+@endprepend
+
 @section('title', 'Create Multiple Units')
 
 @push('styles')

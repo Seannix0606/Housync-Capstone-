@@ -32,7 +32,7 @@ class DuplexPropertyRulesTest extends TestCase
         $response = $this->actingAs($landlord)
             ->post(route('landlord.store-unit', $property->id), [
                 'unit_number' => 'Unit 3',
-                'unit_type' => 'Duplex',
+                'unit_type' => 'studio',
                 'rent_amount' => 1000,
                 'status' => 'available',
                 'leasing_type' => 'separate',
