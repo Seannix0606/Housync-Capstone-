@@ -1027,6 +1027,8 @@ function editUnit(unitId) {
         const opt = sel.selectedOptions[0];
         if (sel.value && opt && opt.value) {
             inp.value = opt.textContent.trim();
+        } else {
+            inp.value = '';
         }
     }
 
@@ -1056,28 +1058,18 @@ function editUnit(unitId) {
             row.className = 'dropdown-item w-100 text-start py-2 px-3 border-0 bg-transparent';
             row.setAttribute('role', 'option');
             row.textContent = opt.textContent.trim();
-            row.disabled = opt.disabled;
-
-            if (!opt.disabled) {
-                row.addEventListener('mousedown', function (e) {
-                    e.preventDefault();
-                });
-                row.addEventListener('click', function () {
-                    sel.value = opt.value;
-                    inp.value = opt.textContent.trim();
-                    hideAddUnitPropertyDropdown();
-                    if (mode === 'bulk') {
-                        updateBulkFloorUi();
-                        updateFlooredTotalPreview();
-                    }
-                });
-            } else {
-                row.classList.add('text-muted');
-                row.title = 'At unit limit for this property type.';
-                row.addEventListener('mousedown', function (e) {
-                    e.preventDefault();
-                });
-            }
+            row.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+            });
+            row.addEventListener('click', function () {
+                sel.value = opt.value;
+                inp.value = opt.textContent.trim();
+                hideAddUnitPropertyDropdown();
+                if (mode === 'bulk') {
+                    updateBulkFloorUi();
+                    updateFlooredTotalPreview();
+                }
+            });
             panel.appendChild(row);
         });
 
@@ -1275,6 +1267,15 @@ function editUnit(unitId) {
             }
         });
     }
+
+    document.getElementById('addUnitPropertyId')?.addEventListener('change', function () {
+        syncAddUnitPropertySearchFromSelect();
+        hideAddUnitPropertyDropdown();
+        if (mode === 'bulk') {
+            updateBulkFloorUi();
+            updateFlooredTotalPreview();
+        }
+    });
 
     btnNext.addEventListener('click', () => {
         showError('');

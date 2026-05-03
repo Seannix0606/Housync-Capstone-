@@ -113,11 +113,11 @@
                 <div class="add-unit-panel d-none" data-add-unit-panel="2">
                     <div class="mb-3">
                         <label class="form-label" for="addUnitPropertySearch">Property</label>
-                        <div class="add-unit-property-combobox position-relative">
+                        <div class="add-unit-property-combobox position-relative mb-2">
                             <input type="text"
                                 class="form-control"
                                 id="addUnitPropertySearch"
-                                placeholder="Type to search — matching properties appear below"
+                                placeholder="Type to search — matches appear below"
                                 autocomplete="off"
                                 role="combobox"
                                 aria-expanded="false"
@@ -127,8 +127,9 @@
                                 class="add-unit-property-dropdown d-none"
                                 role="listbox"
                                 aria-label="Matching properties"></div>
-                            {{-- Hidden select keeps existing wizard JS (selectedPropertyOption, submit payloads). --}}
-                            <select id="addUnitPropertyId" class="visually-hidden" tabindex="-1" aria-hidden="true">
+                        </div>
+                        <label class="form-label small text-muted mb-1" for="addUnitPropertyId">Or select a property</label>
+                        <select id="addUnitPropertyId" class="form-select" aria-describedby="addUnitPropertyHint">
                             <option value="">Select a property</option>
                             @foreach(($properties ?? $apartments ?? collect()) as $prop)
                                 @php
@@ -146,6 +147,11 @@
                                     $unitCount = (int) ($prop->units_count ?? 0);
                                     $maxUnits = isset($unitRules) ? $unitRules->maximumUnitsForType($ptype) : null;
                                     $atCap = $maxUnits !== null && $unitCount >= $maxUnits;
+                                @endphp
+                                @if($atCap)
+                                    @continue
+                                @endif
+                                @php
                                     $slug = (string) ($prop->slug ?? '');
                                     $searchBlob = strtolower(trim($prop->name.' '.$ptypeDisplay.' '.$ptype.' '.$slug));
                                 @endphp
@@ -157,12 +163,10 @@
                                     data-units-count="{{ $unitCount }}"
                                     data-max-units="{{ $maxUnits ?? '' }}"
                                     title="{{ e($prop->name.' — '.$ptypeDisplay) }}"
-                                    @disabled($atCap)
-                                >{{ $prop->name }} ({{ $ptypeDisplay }})@if($atCap) — at unit limit @endif</option>
+                                >{{ $prop->name }} ({{ $ptypeDisplay }})</option>
                             @endforeach
                         </select>
-                        </div>
-                        <div class="form-text mt-1">Filter by name or type, then click a row in the list below.</div>
+                        <div class="form-text mt-1" id="addUnitPropertyHint">Only properties that can accept new units are listed. Use search or the dropdown — both stay in sync.</div>
                     </div>
 
                     <div id="addUnitFieldsSingle">
