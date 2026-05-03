@@ -38,6 +38,26 @@
         border-color: #ea580c;
         box-shadow: 0 0 0 1px #ea580c;
     }
+    /* Searchable property picker (combobox) — native <select> does not open from a separate search field */
+    .add-unit-property-combobox .add-unit-property-dropdown {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        z-index: 1080;
+        max-height: 260px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        background: #fff;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+        margin-top: 0.25rem;
+    }
+    .add-unit-property-combobox .add-unit-property-dropdown .dropdown-item:disabled,
+    .add-unit-property-combobox .add-unit-property-dropdown .dropdown-item.disabled {
+        cursor: not-allowed;
+        pointer-events: none;
+    }
 </style>
 @endpush
 
@@ -92,9 +112,23 @@
                 {{-- Step 2 --}}
                 <div class="add-unit-panel d-none" data-add-unit-panel="2">
                     <div class="mb-3">
-                        <label class="form-label">Property</label>
-                        <input type="text" class="form-control mb-2" id="addUnitPropertySearch" placeholder="Search properties by name…" autocomplete="off">
-                        <select class="form-select" id="addUnitPropertyId" required>
+                        <label class="form-label" for="addUnitPropertySearch">Property</label>
+                        <div class="add-unit-property-combobox position-relative">
+                            <input type="text"
+                                class="form-control"
+                                id="addUnitPropertySearch"
+                                placeholder="Type to search — matching properties appear below"
+                                autocomplete="off"
+                                role="combobox"
+                                aria-expanded="false"
+                                aria-controls="addUnitPropertyDropdown"
+                                aria-autocomplete="list">
+                            <div id="addUnitPropertyDropdown"
+                                class="add-unit-property-dropdown d-none"
+                                role="listbox"
+                                aria-label="Matching properties"></div>
+                            {{-- Hidden select keeps existing wizard JS (selectedPropertyOption, submit payloads). --}}
+                            <select id="addUnitPropertyId" class="visually-hidden" tabindex="-1" aria-hidden="true">
                             <option value="">Select a property</option>
                             @foreach(($properties ?? $apartments ?? collect()) as $prop)
                                 @php
@@ -127,6 +161,8 @@
                                 >{{ $prop->name }} ({{ $ptypeDisplay }})@if($atCap) — at unit limit @endif</option>
                             @endforeach
                         </select>
+                        </div>
+                        <div class="form-text mt-1">Filter by name or type, then click a row in the list below.</div>
                     </div>
 
                     <div id="addUnitFieldsSingle">

@@ -1006,36 +1006,112 @@ function editUnit(unitId) {
         errBox.classList.toggle('d-none', !msg);
     }
 
+    function hideAddUnitPropertyDropdown() {
+        const panel = document.getElementById('addUnitPropertyDropdown');
+        const inp = document.getElementById('addUnitPropertySearch');
+        if (panel) {
+            panel.classList.add('d-none');
+            panel.innerHTML = '';
+        }
+        if (inp) {
+            inp.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function syncAddUnitPropertySearchFromSelect() {
+        const sel = document.getElementById('addUnitPropertyId');
+        const inp = document.getElementById('addUnitPropertySearch');
+        if (!sel || !inp) {
+            return;
+        }
+        const opt = sel.selectedOptions[0];
+        if (sel.value && opt && opt.value) {
+            inp.value = opt.textContent.trim();
+        }
+    }
+
+    function renderAddUnitPropertyDropdown(showPanel) {
+        const inp = document.getElementById('addUnitPropertySearch');
+        const panel = document.getElementById('addUnitPropertyDropdown');
+        const sel = document.getElementById('addUnitPropertyId');
+        if (!inp || !panel || !sel || step !== 2) {
+            return;
+        }
+
+        const q = inp.value.trim().toLowerCase();
+        const opts = Array.from(sel.querySelectorAll('option')).filter((o) => o.value);
+
+        panel.innerHTML = '';
+        let matches = 0;
+
+        opts.forEach((opt) => {
+            const blob = (opt.getAttribute('data-search-label') || '').toLowerCase();
+            if (q !== '' && !blob.includes(q)) {
+                return;
+            }
+            matches++;
+
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'dropdown-item w-100 text-start py-2 px-3 border-0 bg-transparent';
+            row.setAttribute('role', 'option');
+            row.textContent = opt.textContent.trim();
+            row.disabled = opt.disabled;
+
+            if (!opt.disabled) {
+                row.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                });
+                row.addEventListener('click', function () {
+                    sel.value = opt.value;
+                    inp.value = opt.textContent.trim();
+                    hideAddUnitPropertyDropdown();
+                    if (mode === 'bulk') {
+                        updateBulkFloorUi();
+                        updateFlooredTotalPreview();
+                    }
+                });
+            } else {
+                row.classList.add('text-muted');
+                row.title = 'At unit limit for this property type.';
+                row.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                });
+            }
+            panel.appendChild(row);
+        });
+
+        if (matches === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'text-muted small px-3 py-2';
+            empty.textContent = q === '' ? 'No properties available.' : 'No properties match your search.';
+            empty.setAttribute('role', 'status');
+            panel.appendChild(empty);
+        }
+
+        const open = showPanel !== false;
+        if (open) {
+            panel.classList.remove('d-none');
+            inp.setAttribute('aria-expanded', 'true');
+        } else {
+            panel.classList.add('d-none');
+            inp.setAttribute('aria-expanded', 'false');
+        }
+    }
+
     function clearAddUnitPropertySearchFilter() {
         const inp = document.getElementById('addUnitPropertySearch');
         if (inp) {
             inp.value = '';
         }
+        const sel = document.getElementById('addUnitPropertyId');
+        if (sel) {
+            sel.value = '';
+        }
+        hideAddUnitPropertyDropdown();
         document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
             opt.hidden = false;
         });
-    }
-
-    function applyAddUnitPropertySearchFilter() {
-        const inp = document.getElementById('addUnitPropertySearch');
-        const sel = document.getElementById('addUnitPropertyId');
-        if (!inp || !sel) {
-            return;
-        }
-        const q = inp.value.trim().toLowerCase();
-        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
-            if (!opt.value) {
-                opt.hidden = false;
-                return;
-            }
-            const label = (opt.getAttribute('data-search-label') || '').toLowerCase();
-            const match = q === '' || label.includes(q);
-            opt.hidden = !match;
-        });
-        const cur = sel.selectedOptions[0];
-        if (cur && cur.hidden) {
-            sel.value = '';
-        }
     }
 
     function syncStepUi() {
@@ -1107,6 +1183,7 @@ function editUnit(unitId) {
         modalEl.querySelectorAll('.add-unit-mode-card').forEach((c) => c.classList.remove('is-selected'));
         document.getElementById('addUnitPropertySearch').value = '';
         document.getElementById('addUnitPropertyId').value = '';
+        hideAddUnitPropertyDropdown();
         document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => { opt.hidden = false; });
         document.getElementById('addUnitNameSingle').value = '';
         document.getElementById('addUnitPriceSingle').value = '';
@@ -1166,9 +1243,38 @@ function editUnit(unitId) {
         });
     });
 
-    document.getElementById('addUnitPropertySearch')?.addEventListener('input', function () {
-        applyAddUnitPropertySearchFilter();
-    });
+    const addUnitPropertySearchEl = document.getElementById('addUnitPropertySearch');
+    if (addUnitPropertySearchEl) {
+        addUnitPropertySearchEl.addEventListener('focus', function () {
+            renderAddUnitPropertyDropdown(true);
+        });
+        addUnitPropertySearchEl.addEventListener('input', function () {
+            const sel = document.getElementById('addUnitPropertyId');
+            if (sel) {
+                if (this.value.trim() === '') {
+                    sel.value = '';
+                } else if (sel.value) {
+                    const chosen = sel.options[sel.selectedIndex];
+                    const chosenLabel = chosen && chosen.value ? chosen.textContent.trim() : '';
+                    if (chosenLabel !== this.value.trim()) {
+                        sel.value = '';
+                    }
+                }
+            }
+            renderAddUnitPropertyDropdown(true);
+        });
+        addUnitPropertySearchEl.addEventListener('blur', function () {
+            window.setTimeout(function () {
+                hideAddUnitPropertyDropdown();
+                syncAddUnitPropertySearchFromSelect();
+            }, 200);
+        });
+        addUnitPropertySearchEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                hideAddUnitPropertyDropdown();
+            }
+        });
+    }
 
     btnNext.addEventListener('click', () => {
         showError('');
