@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BillPaymentMethod;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Payment;
@@ -11,6 +12,7 @@ use App\Http\Requests\Landlord\StoreBillRequest;
 use App\Notifications\BillCreated;
 use App\Notifications\PaymentProofSubmitted;
 use App\Notifications\PaymentRecorded;
+use App\Services\Billing\PaymentVerificationImageStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -40,6 +42,12 @@ class BillingController extends Controller
         if ($type) {
             $query->where('type', $type);
         }
+
+        $query->withCount([
+            'payments as tenant_proof_count' => function ($q) {
+                $q->whereNotNull('proof_image')->where('proof_image', '!=', '');
+            },
+        ]);
 
         $bills = $query->orderByDesc('due_date')->orderByDesc('created_at')->paginate(10);
 
@@ -201,7 +209,7 @@ class BillingController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'method' => 'required|in:cash,bank_transfer,gcash,other',
+            'method' => ['required', Rule::enum(BillPaymentMethod::class)],
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
             'paid_at' => 'nullable|date|before_or_equal:today',
@@ -388,7 +396,7 @@ class BillingController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'method' => 'required|in:cash,bank_transfer,gcash,other',
+            'method' => ['required', Rule::enum(BillPaymentMethod::class)],
             'reference_number' => 'nullable|string|max:100',
             'proof_image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'notes' => 'nullable|string|max:500',
@@ -408,7 +416,13 @@ class BillingController extends Controller
         try {
             $proofPath = null;
             if ($request->hasFile('proof_image')) {
-                $proofPath = $request->file('proof_image')->store('payment-proofs', 'public');
+                /** @var PaymentVerificationImageStorageService $paymentVerificationImageStorage */
+                $paymentVerificationImageStorage = app(PaymentVerificationImageStorageService::class);
+                $proofPath = $paymentVerificationImageStorage->persistPaymentProofFromTenant(
+                    $request->file('proof_image'),
+                    (int) $bill->id,
+                    (int) $tenantId,
+                );
             }
 
             $payment = Payment::create([
@@ -418,7 +432,7 @@ class BillingController extends Controller
                 'method' => $request->method,
                 'reference_number' => $request->reference_number,
                 'proof_image' => $proofPath,
-                'status' => 'pending',
+                'status' => 'pending_verification',
                 'notes' => $request->notes,
                 'paid_at' => now(),
             ]);
@@ -456,6 +470,10 @@ class BillingController extends Controller
         })->findOrFail($paymentId);
 
         $bill = $payment->bill;
+
+        if (! in_array($payment->status, ['pending', 'pending_verification'], true)) {
+            return back()->with('error', 'This payment has already been processed.');
+        }
 
         if ($request->action === 'verify') {
             DB::transaction(function () use ($payment, $bill, $landlordId) {

@@ -214,7 +214,7 @@
                     <div class="payment-details">
                         <span class="payment-date">{{ $payment->paid_at->format('M d, Y h:i A') }}</span>
                         <span class="payment-method">
-                            {{ ucfirst(str_replace('_', ' ', $payment->method)) }}
+                            {{ $payment->payment_method_label }}
                             @if($payment->reference_number)
                                 • Ref: {{ $payment->reference_number }}
                             @endif

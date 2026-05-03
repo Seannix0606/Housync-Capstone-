@@ -47,13 +47,18 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
 // Private storage serving route.
 //
 // Files are resolved from:
-//   payment-proofs/     — storage/app/private (guarded via Payment ownership)
-//   tenant-documents/     — storage/app/public (guarded via TenantDocument)
-//   chat-attachments/     — storage/app/public (guarded via conversation membership)
-//   anything else         — 404 (unlisted directories are never served)
+//   payment-proofs/                          — private (guarded via Payment ownership)
+//   landlord-instapay-quick-response-codes/ — private (guarded: landlord owner or their tenants)
+//   tenant-documents/                        — public disk (guarded via TenantDocument)
+//   chat-attachments/                        — public disk (guarded via conversation membership)
+//   anything else                            — 404 (unlisted directories are never served)
 //
 // Cache-Control is set to "private, no-store" to prevent shared caches (CDNs,
 // reverse proxies) from storing or serving one user's files to another.
+//
+// `web` middleware is required so session cookies authenticate `<img src="/api/storage/...">`
+// requests from logged-in landlords and tenants.
+Route::middleware(['web'])->group(function () {
 Route::get('/storage/{path}', function (Request $request, $path) {
 
     // ── 1. Path traversal guard ───────────────────────────────────────────
@@ -63,17 +68,36 @@ Route::get('/storage/{path}', function (Request $request, $path) {
     $privateBase = realpath(storage_path('app/private'));
     $publicBase = realpath(storage_path('app/public'));
 
-    $usePrivateDisk = str_starts_with($relativeFromRoute, 'payment-proofs/');
-    $basePath = $usePrivateDisk ? $privateBase : $publicBase;
-
-    abort_if($basePath === false, 404);
-
     $segmentPath = str_replace('/', DIRECTORY_SEPARATOR, $relativeFromRoute);
-    $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
-    $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
 
-    if ($fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath)) {
-        abort(404);
+    $fullPath = false;
+    $basePath = null;
+
+    if (str_starts_with($relativeFromRoute, 'payment-proofs/')
+        || str_starts_with($relativeFromRoute, 'landlord-instapay-quick-response-codes/')) {
+        // Private disk first; payment proofs may fall back to public (legacy store).
+        foreach ([$privateBase, $publicBase] as $tryBase) {
+            if ($tryBase === false) {
+                continue;
+            }
+            $candidate = realpath($tryBase.DIRECTORY_SEPARATOR.$segmentPath);
+            $prefix = rtrim($tryBase, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+            if ($candidate !== false && str_starts_with($candidate, $prefix) && is_file($candidate)) {
+                $fullPath = $candidate;
+                $basePath = $tryBase;
+                break;
+            }
+        }
+        abort_if($fullPath === false || $basePath === null, 404);
+    } else {
+        $basePath = $publicBase;
+        abort_if($basePath === false, 404);
+        $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
+        $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+        abort_if(
+            $fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath),
+            404
+        );
     }
 
     // Relative path (forward slashes) used in DB columns and authorization lookups.
@@ -111,6 +135,23 @@ Route::get('/storage/{path}', function (Request $request, $path) {
 
         abort_unless($isOwner || $isLandlord || $user->isSuperAdmin(), 403);
 
+    } elseif (str_starts_with($relativePath, 'landlord-instapay-quick-response-codes/')) {
+        abort_if(! $user, 401);
+
+        $landlordOwningCode = \App\Models\User::query()
+            ->where('role', 'landlord')
+            ->where('landlord_instapay_quick_response_code_image_path', $relativePath)
+            ->first();
+        abort_if(! $landlordOwningCode, 404);
+
+        $isLandlordOwner = $landlordOwningCode->id === $user->id;
+        $tenantHasBillFromLandlord = \App\Models\Bill::query()
+            ->where('landlord_id', $landlordOwningCode->id)
+            ->where('tenant_id', $user->id)
+            ->exists();
+
+        abort_unless($isLandlordOwner || $tenantHasBillFromLandlord || $user->isSuperAdmin(), 403);
+
     } elseif (str_starts_with($relativePath, 'chat-attachments/')) {
         // Chat attachments: private — only participants of the conversation.
         abort_if(! $user, 401);
@@ -139,3 +180,4 @@ Route::get('/storage/{path}', function (Request $request, $path) {
     ]);
 
 })->where('path', '.*')->name('api.storage.fallback');
+});

@@ -89,7 +89,7 @@ class MaintenanceController extends Controller
 
         if ($units->isEmpty()) {
             return redirect()
-                ->route('landlord.maintenance')
+                ->route('landlord.maintenance.index')
                 ->with('error', 'You need to create units before creating maintenance requests.');
         }
 
@@ -356,7 +356,7 @@ class MaintenanceController extends Controller
         ]);
 
         return redirect()
-            ->route('landlord.maintenance')
+            ->route('landlord.maintenance.index')
             ->with('success', 'Maintenance request cancelled successfully!');
     }
 
@@ -373,8 +373,203 @@ class MaintenanceController extends Controller
         $maintenanceRequest->delete();
 
         return redirect()
-            ->route('landlord.maintenance')
+            ->route('landlord.maintenance.index')
             ->with('success', 'Maintenance request deleted successfully!');
+    }
+
+    // ==================== TENANT METHODS ====================
+
+    /**
+     * Display maintenance requests for tenant
+     */
+    public function tenantIndex(Request $request)
+    {
+        $tenantId = Auth::id();
+
+        // Get tenant's active assignment to find landlord
+        $activeAssignment = \App\Models\TenantAssignment::where('tenant_id', $tenantId)
+            ->where('status', 'active')
+            ->first();
+
+        if (! $activeAssignment) {
+            return view('tenant.maintenance.no-assignment');
+        }
+
+        // Base query
+        $query = MaintenanceRequest::with(['unit.apartment', 'assignedStaff.staffProfile', 'landlord'])
+            ->where('tenant_id', $tenantId);
+
+        // Filter by status
+        if ($request->has('status') && $request->status != 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Sort
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Get maintenance requests with pagination
+        $maintenanceRequests = $query->paginate(10);
+
+        // Get statistics
+        $stats = [
+            'total' => MaintenanceRequest::where('tenant_id', $tenantId)->count(),
+            'pending' => MaintenanceRequest::where('tenant_id', $tenantId)->where('status', 'pending')->count(),
+            'in_progress' => MaintenanceRequest::where('tenant_id', $tenantId)->whereIn('status', ['assigned', 'in_progress'])->count(),
+            'completed' => MaintenanceRequest::where('tenant_id', $tenantId)->where('status', 'completed')->count(),
+        ];
+
+        return view('tenant.maintenance.index', compact('maintenanceRequests', 'stats', 'activeAssignment'));
+    }
+
+    /**
+     * Show form for creating a new maintenance request
+     */
+    public function tenantCreate()
+    {
+        $tenantId = Auth::id();
+
+        // Get tenant's active assignment
+        $activeAssignment = \App\Models\TenantAssignment::where('tenant_id', $tenantId)
+            ->where('status', 'active')
+            ->with(['unit.apartment', 'landlord'])
+            ->first();
+
+        if (! $activeAssignment) {
+            return redirect()
+                ->route('tenant.dashboard')
+                ->with('error', 'You need an active unit assignment to create a maintenance request.');
+        }
+
+        return view('tenant.maintenance.create', compact('activeAssignment'));
+    }
+
+    /**
+     * Store a newly created maintenance request
+     */
+    public function tenantStore(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'category' => 'required|in:plumbing,electrical,hvac,appliance,structural,cleaning,other',
+            'tenant_notes' => 'nullable|string',
+        ]);
+
+        $tenantId = Auth::id();
+
+        // Get tenant's active assignment
+        $activeAssignment = \App\Models\TenantAssignment::where('tenant_id', $tenantId)
+            ->where('status', 'active')
+            ->first();
+
+        if (! $activeAssignment) {
+            return redirect()
+                ->route('tenant.dashboard')
+                ->with('error', 'You need an active unit assignment to create a maintenance request.');
+        }
+
+        $maintenanceRequest = MaintenanceRequest::create([
+            'unit_id' => $activeAssignment->unit_id,
+            'tenant_id' => $tenantId,
+            'landlord_id' => $activeAssignment->landlord_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'priority' => $request->priority,
+            'category' => $request->category,
+            'status' => 'pending',
+            'requested_date' => now(),
+            'tenant_notes' => $request->tenant_notes,
+        ]);
+
+        // Notify landlord
+        $landlord = User::find($activeAssignment->landlord_id);
+        if ($landlord) {
+            $landlord->notify(new NewMaintenanceRequest($maintenanceRequest));
+        }
+
+        ActivityLog::log('maintenance_created', "Tenant submitted maintenance request: {$maintenanceRequest->title}", $maintenanceRequest);
+
+        return redirect()
+            ->route('tenant.maintenance.index')
+            ->with('success', 'Maintenance request submitted successfully! Your landlord will be notified.');
+    }
+
+    /**
+     * Display the specified maintenance request for tenant
+     */
+    public function tenantShow($id)
+    {
+        $tenantId = Auth::id();
+
+        $maintenanceRequest = MaintenanceRequest::with([
+            'unit.apartment',
+            'landlord',
+            'assignedStaff.staffProfile',
+            'comments.user',
+        ])
+            ->where('tenant_id', $tenantId)
+            ->findOrFail($id);
+
+        return view('tenant.maintenance.show', compact('maintenanceRequest'));
+    }
+
+    /**
+     * Update tenant notes on a maintenance request
+     */
+    public function tenantUpdateNotes(Request $request, $id)
+    {
+        $request->validate([
+            'tenant_notes' => 'required|string',
+        ]);
+
+        $tenantId = Auth::id();
+
+        $maintenanceRequest = MaintenanceRequest::where('tenant_id', $tenantId)
+            ->findOrFail($id);
+
+        // Only allow updates if request is not completed or cancelled
+        if (in_array($maintenanceRequest->status, ['completed', 'cancelled'])) {
+            return redirect()
+                ->route('tenant.maintenance.show', $id)
+                ->with('error', 'Cannot update notes on a completed or cancelled request.');
+        }
+
+        $maintenanceRequest->update([
+            'tenant_notes' => $request->tenant_notes,
+        ]);
+
+        return redirect()
+            ->route('tenant.maintenance.show', $id)
+            ->with('success', 'Notes updated successfully!');
+    }
+
+    /**
+     * Cancel a maintenance request (tenant side)
+     */
+    public function tenantCancel($id)
+    {
+        $tenantId = Auth::id();
+
+        $maintenanceRequest = MaintenanceRequest::where('tenant_id', $tenantId)
+            ->findOrFail($id);
+
+        // Only allow cancellation if not yet completed
+        if ($maintenanceRequest->status === 'completed') {
+            return redirect()
+                ->route('tenant.maintenance.index')
+                ->with('error', 'Cannot cancel a completed request.');
+        }
+
+        $maintenanceRequest->update([
+            'status' => 'cancelled',
+        ]);
+
+        return redirect()
+            ->route('tenant.maintenance.index')
+            ->with('success', 'Maintenance request cancelled successfully!');
     }
 
     // ==================== STAFF METHODS ====================

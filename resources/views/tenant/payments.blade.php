@@ -58,6 +58,20 @@
         }
         .bill-balance.has-balance { color: #ef4444; }
         .bill-balance.paid { color: #10b981; }
+        .instapay-quick-response-code-trigger {
+            font-weight: 700;
+            color: #0d6efd;
+            text-decoration: underline;
+            vertical-align: baseline;
+            padding: 0;
+            border: none;
+            background: none;
+            font-size: inherit;
+            line-height: inherit;
+        }
+        .instapay-quick-response-code-trigger:hover {
+            color: #0a58ca;
+        }
     </style>
 @endpush
 
@@ -208,7 +222,7 @@
                                                 <tr>
                                                     <td>{{ $payment->paid_at->format('M d, Y') }}</td>
                                                     <td class="text-success">₱{{ number_format($payment->amount, 2) }}</td>
-                                                    <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
+                                                    <td>{{ $payment->payment_method_label }}</td>
                                                     <td>{{ $payment->reference_number ?? '—' }}</td>
                                                     <td>
                                                         @if($payment->status === 'verified')
@@ -259,11 +273,11 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label">Payment method <span class="text-danger">*</span></label>
                                                         <select name="method" class="form-select" required>
-                                                            @php $m = old('proof_bill_id') == $bill->id ? old('method') : null; @endphp
-                                                            <option value="cash" {{ $m === 'cash' ? 'selected' : '' }}>Cash</option>
-                                                            <option value="bank_transfer" {{ $m === 'bank_transfer' ? 'selected' : '' }}>Bank transfer</option>
-                                                            <option value="gcash" {{ ($m === 'gcash' || $m === null) ? 'selected' : '' }}>GCash</option>
-                                                            <option value="other" {{ $m === 'other' ? 'selected' : '' }}>Other</option>
+                                                            @php
+                                                                $selectedPaymentMethod = old('proof_bill_id') == $bill->id ? old('method') : 'instapay';
+                                                            @endphp
+                                                            <option value="cash" {{ $selectedPaymentMethod === 'cash' ? 'selected' : '' }}>Cash</option>
+                                                            <option value="instapay" {{ $selectedPaymentMethod === 'instapay' ? 'selected' : '' }}>InstaPay</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-12">
@@ -304,26 +318,72 @@
             </div>
 
             <aside class="billing-sidebar">
+                @php
+                    $landlordsWithInstapayQuickResponseCode = $bills
+                        ->pluck('landlord')
+                        ->filter()
+                        ->unique('id')
+                        ->values()
+                        ->filter(fn ($landlordUser) => filled($landlordUser->landlord_instapay_quick_response_code_image_public_url));
+                @endphp
                 <div class="quick-actions">
                     <h4>Payment Information</h4>
                     <div class="action-buttons">
                         <p style="font-size: 0.9rem; color: #64748b; margin: 0;">
-                            Pay through your agreed channel, then use <strong>Upload proof of payment</strong> on any bill with a balance so your landlord can verify and record it.
+                            Pay through your agreed channel, then use the <strong>Upload proof of payment</strong> button on any bill with a balance so your landlord can verify and record it.
                         </p>
                     </div>
                 </div>
                 <div class="mt-4">
-                    <h4>Payment Methods</h4>
+                    <h4>Payment methods</h4>
                     <ul class="list-unstyled" style="font-size: 0.875rem; color: #64748b;">
                         <li class="mb-2"><i class="fas fa-money-bill-wave me-2 text-success"></i> Cash</li>
-                        <li class="mb-2"><i class="fas fa-university me-2 text-primary"></i> Bank Transfer</li>
-                        <li class="mb-2"><i class="fas fa-mobile-alt me-2 text-info"></i> GCash</li>
+                        <li class="mb-2">
+                            <i class="fas fa-mobile-alt me-2 text-info"></i>
+                            InstaPay (scan your landlord&rsquo;s code — tap
+                            <button type="button"
+                                    class="instapay-quick-response-code-trigger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#tenantLandlordInstapayQuickResponseCodeModal">
+                                Upload proof of payment
+                            </button>)
+                        </li>
                     </ul>
                     <p style="font-size: 0.8rem; color: #94a3b8;">
-                        Contact your landlord for specific payment instructions and account details.
+                        The quick response code is not shown inside the upload form; open it here before or after paying with InstaPay.
                     </p>
                 </div>
             </aside>
+
+            <div class="modal fade" id="tenantLandlordInstapayQuickResponseCodeModal" tabindex="-1" aria-labelledby="tenantLandlordInstapayQuickResponseCodeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="tenantLandlordInstapayQuickResponseCodeModalLabel">
+                                <i class="fas fa-qrcode me-2"></i>Landlord InstaPay quick response code
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            @forelse($landlordsWithInstapayQuickResponseCode as $landlordUser)
+                                <div class="@if(!$loop->last) mb-4 pb-4 border-bottom @endif text-center">
+                                    <p class="small text-muted mb-2 fw-semibold">{{ $landlordUser->name }}</p>
+                                    <img src="{{ $landlordUser->landlord_instapay_quick_response_code_image_public_url }}"
+                                         alt="InstaPay quick response code for {{ $landlordUser->name }}"
+                                         class="img-fluid rounded border shadow-sm"
+                                         style="max-height: 320px;"
+                                         loading="lazy">
+                                </div>
+                            @empty
+                                <p class="text-muted text-center mb-0">Your landlord has not uploaded an InstaPay quick response code yet. You can pay in cash and still submit proof from the bill card, or contact your landlord.</p>
+                            @endforelse
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -142,6 +142,7 @@
                                 <th>Balance</th>
                                 <th>Status</th>
                                 <th>Due Date</th>
+                                <th>Receipt</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -166,6 +167,15 @@
                                     </span>
                                 </td>
                                 <td>{{ $bill->due_date ? $bill->due_date->format('M d, Y') : '—' }}</td>
+                                <td>
+                                    @if(($bill->tenant_proof_count ?? 0) > 0)
+                                        <a href="{{ route('landlord.billing.show', $bill->id) }}#payment-history" class="btn btn-sm btn-outline-secondary" title="View tenant payment receipt">
+                                            <i class="fas fa-receipt"></i> View
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
                                 <td class="action-buttons">
                                     <a href="{{ route('landlord.billing.show', $bill->id) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                                         <i class="fas fa-eye"></i>
@@ -200,7 +210,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="padding: 1.5rem; vertical-align: middle;">
+                                <td colspan="10" style="padding: 1.5rem; vertical-align: middle;">
                                     <x-empty-state-card
                                         class="empty-state-card--wide"
                                         icon="fas fa-file-invoice-dollar"
@@ -236,6 +246,35 @@
                         </button>
                     </div>
                 </div>
+                @auth
+                    @php
+                        $currentLandlordUser = auth()->user();
+                        $instapayCodePublicUrl = $currentLandlordUser->landlord_instapay_quick_response_code_image_public_url;
+                    @endphp
+                    <div class="mt-4 p-3 border rounded bg-white shadow-sm">
+                        <h4 class="h6 mb-2"><i class="fas fa-qrcode me-2 text-primary"></i>InstaPay quick response code</h4>
+                        <p class="small text-muted mb-3">Tenants see this on their Payments page when paying online. Same storage as payment proof images (Supabase when configured, otherwise private app storage).</p>
+                        @if($instapayCodePublicUrl)
+                            <div class="text-center my-3">
+                                <img src="{{ $instapayCodePublicUrl }}" alt="Your InstaPay quick response code for tenants" class="img-fluid rounded border" style="max-height: 220px;" loading="lazy">
+                            </div>
+                            <form action="{{ route('landlord.payments.instapay-code.destroy') }}" method="POST" class="mb-3" onsubmit="return confirm('Remove this image? Tenants will no longer see it.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">Remove image</button>
+                            </form>
+                        @endif
+                        <form action="{{ route('landlord.payments.instapay-code.update') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <label class="form-label small">{{ $instapayCodePublicUrl ? 'Replace image' : 'Upload image' }} <span class="text-danger">*</span></label>
+                            <input type="file" name="instapay_quick_response_code_image" class="form-control form-control-sm" accept="image/jpeg,image/png,image/jpg" required>
+                            <div class="form-text small">JPEG or PNG, up to 5 MB.</div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100 mt-2">
+                                <i class="fas fa-save me-1"></i>{{ $instapayCodePublicUrl ? 'Save new image' : 'Save' }}
+                            </button>
+                        </form>
+                    </div>
+                @endauth
                 <div class="mt-4">
                     <h4>Bill Types</h4>
                     <ul class="list-unstyled" style="font-size: 0.9rem; color: #64748b;">
@@ -346,9 +385,7 @@
                             <label class="form-label">Payment Method <span class="text-danger">*</span></label>
                             <select name="method" class="form-select" required>
                                 <option value="cash">Cash</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="gcash">GCash</option>
-                                <option value="other">Other</option>
+                                <option value="instapay">InstaPay</option>
                             </select>
                         </div>
                         <div class="mb-3">
