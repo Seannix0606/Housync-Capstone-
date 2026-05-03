@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\SuperAdminProfile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class SuperAdminSeeder extends Seeder
 {
@@ -14,11 +13,11 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create super admin user
+        // Plain password: User model uses the `hashed` cast (same as AuthController registration).
         $user = User::updateOrCreate(
             ['email' => 'admin@housesync.com'],
             [
-                'password' => Hash::make('admin123'),
+                'password' => 'admin123',
                 'role' => 'super_admin',
             ]
         );
