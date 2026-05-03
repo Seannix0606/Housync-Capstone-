@@ -15,6 +15,8 @@ use Illuminate\Notifications\Notifiable;
  * @property string $name
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ * @property string|null $landlord_instapay_quick_response_code_image_path
+ * @property-read string|null $landlord_instapay_quick_response_code_image_public_url
  *
  * Delegated to Profile:
  * @property string $status (via profile)
@@ -295,6 +297,22 @@ class User extends Authenticatable
     public function getTotalUnreadMessagesAttribute(): int
     {
         return $this->conversationParticipants()->sum('unread_count');
+    }
+
+    /**
+     * Browser-safe URL for the landlord's InstaPay quick response image (Supabase or same guarded storage as payment proofs).
+     */
+    public function getLandlordInstapayQuickResponseCodeImagePublicUrlAttribute(): ?string
+    {
+        $storedPathOrPublicUrl = $this->landlord_instapay_quick_response_code_image_path ?? null;
+        if ($storedPathOrPublicUrl === null || $storedPathOrPublicUrl === '') {
+            return null;
+        }
+        if (str_starts_with($storedPathOrPublicUrl, 'http')) {
+            return $storedPathOrPublicUrl;
+        }
+
+        return url('api/storage/'.$storedPathOrPublicUrl);
     }
 
     // Role helper methods

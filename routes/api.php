@@ -47,10 +47,11 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
 // Private storage serving route.
 //
 // Files are resolved from:
-//   payment-proofs/     — storage/app/private (guarded via Payment ownership)
-//   tenant-documents/     — storage/app/public (guarded via TenantDocument)
-//   chat-attachments/     — storage/app/public (guarded via conversation membership)
-//   anything else         — 404 (unlisted directories are never served)
+//   payment-proofs/                          — private (guarded via Payment ownership)
+//   landlord-instapay-quick-response-codes/ — private (guarded: landlord owner or their tenants)
+//   tenant-documents/                        — public disk (guarded via TenantDocument)
+//   chat-attachments/                        — public disk (guarded via conversation membership)
+//   anything else                            — 404 (unlisted directories are never served)
 //
 // Cache-Control is set to "private, no-store" to prevent shared caches (CDNs,
 // reverse proxies) from storing or serving one user's files to another.
@@ -72,8 +73,9 @@ Route::get('/storage/{path}', function (Request $request, $path) {
     $fullPath = false;
     $basePath = null;
 
-    if (str_starts_with($relativeFromRoute, 'payment-proofs/')) {
-        // Private disk (tenant upload via Tenant\\BillingController); fall back to public (legacy store).
+    if (str_starts_with($relativeFromRoute, 'payment-proofs/')
+        || str_starts_with($relativeFromRoute, 'landlord-instapay-quick-response-codes/')) {
+        // Private disk first; payment proofs may fall back to public (legacy store).
         foreach ([$privateBase, $publicBase] as $tryBase) {
             if ($tryBase === false) {
                 continue;
@@ -132,6 +134,23 @@ Route::get('/storage/{path}', function (Request $request, $path) {
         $isLandlord = $payment->bill?->landlord_id === $user->id;
 
         abort_unless($isOwner || $isLandlord || $user->isSuperAdmin(), 403);
+
+    } elseif (str_starts_with($relativePath, 'landlord-instapay-quick-response-codes/')) {
+        abort_if(! $user, 401);
+
+        $landlordOwningCode = \App\Models\User::query()
+            ->where('role', 'landlord')
+            ->where('landlord_instapay_quick_response_code_image_path', $relativePath)
+            ->first();
+        abort_if(! $landlordOwningCode, 404);
+
+        $isLandlordOwner = $landlordOwningCode->id === $user->id;
+        $tenantHasBillFromLandlord = \App\Models\Bill::query()
+            ->where('landlord_id', $landlordOwningCode->id)
+            ->where('tenant_id', $user->id)
+            ->exists();
+
+        abort_unless($isLandlordOwner || $tenantHasBillFromLandlord || $user->isSuperAdmin(), 403);
 
     } elseif (str_starts_with($relativePath, 'chat-attachments/')) {
         // Chat attachments: private — only participants of the conversation.

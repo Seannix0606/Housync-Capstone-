@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BillPaymentMethod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $proof_path
  * @property string $status
  * @property string|null $notes
+ * @property-read string $payment_method_label
  */
 class Payment extends Model
 {
@@ -68,6 +70,13 @@ class Payment extends Model
         }
 
         return url('api/storage/'.$this->proof_image);
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        $method = BillPaymentMethod::tryFrom((string) $this->method);
+
+        return $method?->label() ?? ucfirst(str_replace('_', ' ', (string) $this->method));
     }
 
     // Helpers
