@@ -20,6 +20,7 @@ use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsCont
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Controllers\Tenant\AnnouncementController as TenantAnnouncementController;
 use App\Http\Controllers\Tenant\ApplicationController as TenantApplicationController;
+use App\Http\Controllers\Landlord\LandlordInstapayQuickResponseCodeController;
 use App\Http\Controllers\Tenant\BillingController as TenantBillingController;
 use App\Http\Controllers\Tenant\ChatController as TenantChatController;
 use App\Http\Controllers\Tenant\LeaseController as TenantLeaseController;
@@ -206,6 +207,11 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
         Route::post('/billing/{id}/payment', 'recordPayment')->name('billing.record-payment');
         Route::post('/billing/{id}/mark-paid', 'markAsPaid')->name('billing.mark-paid');
         Route::delete('/billing/{id}', 'destroy')->name('billing.destroy');
+    });
+
+    Route::controller(LandlordInstapayQuickResponseCodeController::class)->group(function () {
+        Route::post('/payments/instapay-quick-response-code', 'update')->name('payments.instapay-code.update');
+        Route::delete('/payments/instapay-quick-response-code', 'destroy')->name('payments.instapay-code.destroy');
     });
 
     // RFID Security

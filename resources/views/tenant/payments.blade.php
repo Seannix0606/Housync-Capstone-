@@ -208,7 +208,7 @@
                                                 <tr>
                                                     <td>{{ $payment->paid_at->format('M d, Y') }}</td>
                                                     <td class="text-success">₱{{ number_format($payment->amount, 2) }}</td>
-                                                    <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
+                                                    <td>{{ $payment->payment_method_label }}</td>
                                                     <td>{{ $payment->reference_number ?? '—' }}</td>
                                                     <td>
                                                         @if($payment->status === 'verified')
@@ -250,6 +250,16 @@
                                             <input type="hidden" name="proof_bill_id" value="{{ $bill->id }}">
                                             <div class="modal-body">
                                                 <p class="text-muted small mb-3">Outstanding balance for this bill: <strong>₱{{ number_format($bill->balance, 2) }}</strong></p>
+                                                @if($bill->landlord && $bill->landlord->landlord_instapay_quick_response_code_image_public_url)
+                                                    <div class="alert alert-light border text-center mb-3">
+                                                        <p class="small fw-semibold mb-2">Pay with InstaPay using your landlord&rsquo;s quick response code</p>
+                                                        <img src="{{ $bill->landlord->landlord_instapay_quick_response_code_image_public_url }}" alt="Landlord InstaPay quick response code" class="img-fluid rounded border" style="max-height: 240px;" loading="lazy">
+                                                    </div>
+                                                @else
+                                                    <div class="alert alert-secondary small mb-3 mb-0">
+                                                        Your landlord has not uploaded an InstaPay quick response code yet. You can still pay in cash and upload proof below, or contact your landlord.
+                                                    </div>
+                                                @endif
                                                 <div class="row g-3">
                                                     <div class="col-md-6">
                                                         <label class="form-label">Amount paid (₱) <span class="text-danger">*</span></label>
@@ -259,11 +269,11 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label">Payment method <span class="text-danger">*</span></label>
                                                         <select name="method" class="form-select" required>
-                                                            @php $m = old('proof_bill_id') == $bill->id ? old('method') : null; @endphp
-                                                            <option value="cash" {{ $m === 'cash' ? 'selected' : '' }}>Cash</option>
-                                                            <option value="bank_transfer" {{ $m === 'bank_transfer' ? 'selected' : '' }}>Bank transfer</option>
-                                                            <option value="gcash" {{ ($m === 'gcash' || $m === null) ? 'selected' : '' }}>GCash</option>
-                                                            <option value="other" {{ $m === 'other' ? 'selected' : '' }}>Other</option>
+                                                            @php
+                                                                $selectedPaymentMethod = old('proof_bill_id') == $bill->id ? old('method') : 'instapay';
+                                                            @endphp
+                                                            <option value="cash" {{ $selectedPaymentMethod === 'cash' ? 'selected' : '' }}>Cash</option>
+                                                            <option value="instapay" {{ $selectedPaymentMethod === 'instapay' ? 'selected' : '' }}>InstaPay</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-12">
@@ -313,14 +323,13 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <h4>Payment Methods</h4>
+                    <h4>Payment methods</h4>
                     <ul class="list-unstyled" style="font-size: 0.875rem; color: #64748b;">
                         <li class="mb-2"><i class="fas fa-money-bill-wave me-2 text-success"></i> Cash</li>
-                        <li class="mb-2"><i class="fas fa-university me-2 text-primary"></i> Bank Transfer</li>
-                        <li class="mb-2"><i class="fas fa-mobile-alt me-2 text-info"></i> GCash</li>
+                        <li class="mb-2"><i class="fas fa-mobile-alt me-2 text-info"></i> InstaPay (scan your landlord&rsquo;s code when you open <strong>Upload proof of payment</strong>)</li>
                     </ul>
                     <p style="font-size: 0.8rem; color: #94a3b8;">
-                        Contact your landlord for specific payment instructions and account details.
+                        Your landlord may upload an InstaPay quick response image on their Payments page so you can scan it when paying.
                     </p>
                 </div>
             </aside>

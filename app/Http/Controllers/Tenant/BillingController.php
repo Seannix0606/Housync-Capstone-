@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Payment;
+use App\Enums\BillPaymentMethod;
 use App\Models\User;
 use App\Notifications\PaymentProofSubmitted;
-use App\Services\SupabaseService;
+use App\Services\Billing\PaymentVerificationImageStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class BillingController extends Controller
 {
@@ -60,7 +61,7 @@ class BillingController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'method' => 'required|in:cash,bank_transfer,gcash,other',
+            'method' => ['required', Rule::enum(BillPaymentMethod::class)],
             'reference_number' => 'nullable|string|max:100',
             'proof_image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'notes' => 'nullable|string|max:500',
@@ -80,41 +81,14 @@ class BillingController extends Controller
         try {
             $proofStored = null;
             if ($request->hasFile('proof_image')) {
-                $file = $request->file('proof_image');
-                $extension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->guessExtension()));
-                $extension = preg_replace('/[^a-z0-9]/', '', $extension);
-                if ($extension === '') {
-                    $extension = 'jpg';
-                }
-                $safeName = sprintf(
-                    'bill-%d-tenant-%d-%s.%s',
-                    $bill->id,
-                    $tenantId,
-                    Str::uuid()->toString(),
-                    $extension
+                /** @var PaymentVerificationImageStorageService $paymentVerificationImageStorage */
+                $paymentVerificationImageStorage = app(PaymentVerificationImageStorageService::class);
+                $proofImage = $request->file('proof_image');
+                $proofStored = $paymentVerificationImageStorage->persistPaymentProofFromTenant(
+                    $proofImage,
+                    (int) $bill->id,
+                    (int) $tenantId,
                 );
-                $objectPath = 'payment-proofs/'.$safeName;
-
-                /** @var SupabaseService $supabase */
-                $supabase = app(SupabaseService::class);
-                $uploadResult = $supabase->uploadFile(
-                    config('services.supabase.bucket'),
-                    $objectPath,
-                    $file->getRealPath(),
-                );
-
-                if (! empty($uploadResult['success'])) {
-                    $proofStored = $uploadResult['url'] ?? null;
-                }
-
-                if (! $proofStored) {
-                    Log::warning('Payment proof Supabase upload unavailable or failed; using local storage', [
-                        'bill_id' => $bill->id,
-                        'tenant_id' => $tenantId,
-                        'message' => $uploadResult['message'] ?? null,
-                    ]);
-                    $proofStored = $file->storeAs('payment-proofs', $safeName, 'private');
-                }
             }
 
             $payment = Payment::create([

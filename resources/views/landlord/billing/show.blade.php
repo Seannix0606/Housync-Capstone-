@@ -291,7 +291,7 @@
                     <tr>
                         <td>{{ $payment->paid_at->format('M d, Y h:i A') }}</td>
                         <td class="fw-bold text-success">₱{{ number_format($payment->amount, 2) }}</td>
-                        <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
+                        <td>{{ $payment->payment_method_label }}</td>
                         <td>{{ $payment->reference_number ?? '—' }}</td>
                         <td class="align-middle">
                             @if($payment->proof_image_url)
@@ -387,9 +387,7 @@
                         <label class="form-label">Payment Method <span class="text-danger">*</span></label>
                         <select name="method" class="form-select" required>
                             <option value="cash">Cash</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="gcash">GCash</option>
-                            <option value="other">Other</option>
+                            <option value="instapay">InstaPay</option>
                         </select>
                     </div>
                     <div class="mb-3">
