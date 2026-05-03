@@ -175,9 +175,10 @@ class Property extends Model
      * Get the cover image URL
      *
      * Supabase URLs (http/https) are returned as-is.
-     * Paths stored on the public disk (properties/...) are served directly
-     * via Laravel's asset helper so guest users can view them without auth.
-     * All other paths are routed through the authenticated /api/storage/ endpoint.
+     * Paths stored on the public disk (properties/...) are routed through
+     * /api/storage/ rather than the ephemeral public symlink, so they survive
+     * Railway deployments that wipe storage/app/public and public/storage.
+     * All other paths are routed through the same persistent endpoint.
      */
     public function getCoverImageUrlAttribute(): ?string
     {
@@ -190,20 +191,17 @@ class Property extends Model
             return $this->cover_image;
         }
 
-        // Public disk path — serve directly without authentication
-        if (str_starts_with($this->cover_image, 'properties/')) {
-            return asset('storage/'.$this->cover_image);
-        }
-
-        // Private path — route through the authenticated storage endpoint
+        // Route all local paths (public disk or private) through /api/storage/.
+        // The endpoint serves properties/ without authentication and handles
+        // path traversal guards internally.
         return url('api/storage/'.$this->cover_image);
     }
 
     /**
      * Get gallery image URLs
      *
-     * Applies the same three-way routing as getCoverImageUrlAttribute():
-     * Supabase URLs → as-is, public disk paths → asset(), private paths → /api/storage/.
+     * Applies the same routing as getCoverImageUrlAttribute():
+     * Supabase URLs → as-is, all local paths → /api/storage/ (persistent on Railway).
      */
     public function getGalleryUrlsAttribute(): array
     {
@@ -216,10 +214,9 @@ class Property extends Model
                 return $path;
             }
 
-            if (str_starts_with($path, 'properties/')) {
-                return asset('storage/'.$path);
-            }
-
+            // Route all local paths through /api/storage/ — works on Railway's
+            // ephemeral filesystem because the endpoint reads directly from
+            // storage/app/public without relying on the public symlink.
             return url('api/storage/'.$path);
         }, $this->gallery);
     }
