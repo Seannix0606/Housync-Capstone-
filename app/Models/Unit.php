@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Unit Model - Represents a rentable space within a Property
@@ -85,7 +86,7 @@ class Unit extends Model
             return $this->cover_image;
         }
 
-        return url('api/storage/'.$this->cover_image);
+        return Storage::disk('public')->url($this->cover_image);
     }
 
     /**
@@ -102,7 +103,7 @@ class Unit extends Model
                 return $path;
             }
 
-            return url('api/storage/'.$path);
+            return Storage::disk('public')->url($path);
         }, $this->gallery);
     }
 

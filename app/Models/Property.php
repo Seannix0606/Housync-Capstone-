@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -174,8 +175,8 @@ class Property extends Model
             return $this->cover_image;
         }
 
-        // Return the API URL with storage path
-        return url('api/storage/'.$this->cover_image);
+        // Public disk: served via /storage symlink (explore is unauthenticated; /api/storage rejects this path).
+        return Storage::disk('public')->url($this->cover_image);
     }
 
     /**
@@ -192,7 +193,7 @@ class Property extends Model
                 return $path;
             }
 
-            return url('api/storage/'.$path);
+            return Storage::disk('public')->url($path);
         }, $this->gallery);
     }
 
