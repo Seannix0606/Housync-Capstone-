@@ -67,9 +67,15 @@ class UpdatePropertyRequest extends FormRequest
             'contact_email' => 'nullable|email|max:255',
             'amenities' => 'nullable|array',
             'status' => 'required|in:active,inactive,maintenance',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'gallery' => 'nullable|array|max:12',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'property_cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'property_gallery' => 'nullable|array|max:12',
+            'property_gallery.*' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
+            'unit_cover_image' => 'prohibited',
+            'unit_gallery' => 'prohibited',
+            'unit_gallery.*' => 'prohibited',
+            'cover_image' => 'prohibited',
+            'gallery' => 'prohibited',
+            'gallery.*' => 'prohibited',
         ];
     }
 }

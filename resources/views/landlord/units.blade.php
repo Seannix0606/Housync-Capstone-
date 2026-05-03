@@ -314,21 +314,21 @@
                         <hr class="my-4">
                         
                         <div class="mb-3">
-                            <label for="edit_cover_image" class="form-label">Cover Image</label>
+                            <label for="edit_cover_image" class="form-label">Unit Cover Image</label>
                             ${data.cover_image_url ? `
                                 <div class="mb-2">
                                     <img src="${data.cover_image_url}" alt="Current Cover" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e2e8f0;">
                                 </div>
                             ` : ''}
-                            <input type="file" class="form-control" id="edit_cover_image" name="cover_image" accept="image/*" onchange="previewEditCoverImage(this)">
+                            <input type="file" class="form-control" id="edit_cover_image" name="unit_cover_image" accept="image/*" onchange="previewEditCoverImage(this)">
                             <div id="edit_cover_preview" class="mt-2" style="display: none;">
                                 <img id="edit_cover_preview_img" src="" alt="Cover Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e2e8f0;">
                             </div>
-                            <small class="form-text text-muted">Upload a new cover image (JPEG/PNG, max 5MB)</small>
+                            <small class="form-text text-muted">Shown in unit card and unit details (JPEG/PNG, max 5MB)</small>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Gallery Images (up to 12)</label>
+                            <label class="form-label">Unit Gallery (up to 12)</label>
                             ${data.gallery_urls && data.gallery_urls.length > 0 ? `
                                 <div class="mb-2">
                                     <p class="text-muted small">Current gallery images (${data.gallery_urls.length}):</p>
@@ -341,11 +341,11 @@
                                     </div>
                                 </div>
                             ` : '<p class="text-muted small mb-2">No gallery images yet. Add images below.</p>'}
-                            <input type="file" class="form-control" id="edit_gallery_input" name="gallery[]" accept="image/*" multiple style="display: none;" onchange="handleEditGalleryUpload(this, ${data.gallery_urls ? data.gallery_urls.length : 0})">
+                            <input type="file" class="form-control" id="edit_gallery_input" name="unit_gallery[]" accept="image/*" multiple style="display: none;" onchange="handleEditGalleryUpload(this, ${data.gallery_urls ? data.gallery_urls.length : 0})">
                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('edit_gallery_input').click()">
                                 <i class="fas fa-plus-circle me-2"></i>Add Images to Gallery
                             </button>
-                            <small class="form-text text-muted d-block mt-1">Add more images to showcase the unit (JPEG/PNG, max 5MB each)</small>
+                            <small class="form-text text-muted d-block mt-1">Additional room/unit photos for unit listing presentation</small>
                             <div id="edit_gallery_preview" class="mt-3" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;">
                                 <!-- New gallery previews will be added here -->
                             </div>

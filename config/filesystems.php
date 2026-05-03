@@ -38,6 +38,18 @@ return [
             'report' => false,
         ],
 
+        /*
+        | Private disk — not exposed via the public/storage symlink; serve via api/storage only.
+        | Used for payment proof images (fallback when Supabase upload is unavailable).
+        */
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

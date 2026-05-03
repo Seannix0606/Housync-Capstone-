@@ -200,8 +200,19 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="text-align:center; padding: 24px;">
-                                    No bills created yet. Click "Create Bill" to add your first bill.
+                                <td colspan="9" style="padding: 1.5rem; vertical-align: middle;">
+                                    <x-empty-state-card
+                                        class="empty-state-card--wide"
+                                        icon="fas fa-file-invoice-dollar"
+                                        title="No bills yet"
+                                        description="Create a bill to start tracking rent and utilities."
+                                    >
+                                        <x-slot:action>
+                                            <button type="button" class="btn btn-create-bill" data-bs-toggle="modal" data-bs-target="#createBillModal">
+                                                <i class="fas fa-plus me-2"></i>Create bill
+                                            </button>
+                                        </x-slot:action>
+                                    </x-empty-state-card>
                                 </td>
                             </tr>
                         @endforelse
