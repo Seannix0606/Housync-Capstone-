@@ -176,6 +176,8 @@ class ExploreController extends Controller
             ->limit(4)
             ->get();
 
-        return view('property-details', compact('property', 'relatedProperties'));
+        $minAvailableRent = $property->units->min('rent_amount');
+
+        return view('property-details', compact('property', 'relatedProperties', 'minAvailableRent'));
     }
 }

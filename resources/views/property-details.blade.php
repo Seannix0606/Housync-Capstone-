@@ -277,8 +277,13 @@
                             <div class="modal-body">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Application for:</strong> {{ $property->title }} <br>
-                                    <strong>Monthly Rent:</strong> ₱{{ number_format($property->price, 2) }}
+                                    <strong>Application for:</strong> {{ $property->name }} <br>
+                                    <strong>Monthly Rent:</strong>
+                                    @if(!is_null($minAvailableRent))
+                                        ₱{{ number_format($minAvailableRent, 2) }}
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
                                 </div>
 
                                 <!-- Personal Information -->
