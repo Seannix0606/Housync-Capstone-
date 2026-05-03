@@ -8,7 +8,6 @@ use App\Models\MaintenanceRequest;
 use App\Models\Unit;
 use App\Models\User;
 use App\Notifications\MaintenanceStatusUpdated;
-use App\Notifications\NewMaintenanceRequest;
 use App\Notifications\StaffAssignedToMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

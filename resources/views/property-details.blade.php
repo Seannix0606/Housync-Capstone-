@@ -190,11 +190,48 @@
                         <form method="POST" action="{{ route('tenant.apply', $property->id) }}">
                             @csrf
                             <div class="modal-body">
-                                <input type="text" class="form-control mb-2" name="name" value="{{ Auth::user()->name }}" required>
-                                <input type="text" class="form-control mb-2" name="phone" value="{{ Auth::user()->phone }}" required>
-                                <input type="text" class="form-control mb-2" name="address" value="{{ Auth::user()->address }}" required>
-                                <input type="text" class="form-control mb-2" name="occupation" placeholder="Occupation" required>
-                                <textarea class="form-control" name="notes" rows="3" placeholder="Optional note"></textarea>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Application for:</strong> {{ $property->name }} <br>
+                                    <strong>Monthly Rent:</strong>
+                                    @if(!is_null($minAvailableRent))
+                                        ₱{{ number_format($minAvailableRent, 2) }}
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </div>
+
+                                <!-- Personal Information -->
+                                <h6 class="mb-3 fw-bold text-primary">
+                                    <i class="fas fa-user me-2"></i>Personal Information
+                                </h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="applicant_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="applicant_name" name="name" value="{{ Auth::user()->name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="applicant_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="applicant_phone" name="phone" value="{{ Auth::user()->phone }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="applicant_address" class="form-label">Current Address <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="applicant_address" name="address" value="{{ Auth::user()->address }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="applicant_occupation" class="form-label">Occupation <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="applicant_occupation" name="occupation" placeholder="e.g., Software Engineer" required>
+                                </div>
+
+                                <!-- Additional Notes -->
+                                <div class="mb-3">
+                                    <label for="applicant_notes" class="form-label">Message to Landlord (Optional)</label>
+                                    <textarea class="form-control" id="applicant_notes" name="notes" rows="3" placeholder="Tell the landlord why you're interested in this property..."></textarea>
+                                </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
