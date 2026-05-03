@@ -1291,7 +1291,7 @@ function editUnit(unitId) {
                 return;
             }
             if (!selectedPropertyMayAddUnits()) {
-                showError('This property already has the maximum number of units for its type (single-family house and townhouse: one unit; duplex: two). Edit those units or add another property if you need more rentals.');
+                showError('This property is already at its unit limit for its type. Edit existing units or create another property.');
                 return;
             }
             if (mode === 'single') {

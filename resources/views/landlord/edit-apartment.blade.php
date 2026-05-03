@@ -538,9 +538,9 @@
                                 <small class="form-text text-muted">
                                     Current actual units: {{ $apartment->units()->count() }}
                                     @if(in_array($editPropertyType, ['house', 'townhouse'], true))
-                                        — single-family and townhouse listings are always <strong>1 unit</strong> (one dwelling).
+                                        Single-family and townhouse listings are always <strong>1 unit</strong>.
                                     @elseif($editPropertyType === 'duplex')
-                                        — duplex is always <strong>2 units</strong>.
+                                        Duplex listings are always <strong>2 units</strong>.
                                     @elseif($apartment->units()->count() < $apartment->total_units)
                                         ({{ $apartment->total_units - $apartment->units()->count() }} units need to be created)
                                     @endif

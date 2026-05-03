@@ -52,7 +52,7 @@ class StoreModalBulkUnitsRequest extends FormRequest
             $hasFlatCount = $this->filled('unit_count');
 
             if ($hasPerFloor === $hasFlatCount) {
-                $validator->errors()->add('unit_count', 'Provide either a number of units or units per floor—not both, and not neither.');
+                $validator->errors()->add('unit_count', 'Provide either a number of units or units per floor, not both and not neither.');
 
                 return;
             }
@@ -61,7 +61,7 @@ class StoreModalBulkUnitsRequest extends FormRequest
                 if (in_array($property->property_type, self::FIXED_DWELLING_TYPES, true)) {
                     $validator->errors()->add(
                         'units_per_floor',
-                        'Floor-based bulk creation applies to multi-unit buildings (e.g. apartment, condominium). For houses, townhouses, and duplexes, units are defined on the property—use a flat unit count or single-unit mode.'
+                        'Floor-based bulk creation applies to multi-unit buildings (e.g. apartment, condominium). For houses, townhouses, and duplexes, use a flat unit count or single-unit mode instead.'
                     );
 
                     return;

@@ -1,4 +1,3 @@
-{{-- Large modal: step-driven Add New Unit (single / bulk). Requires Bootstrap 5 JS. --}}
 @push('styles')
 <style>
     .add-unit-step-circle {
@@ -38,7 +37,7 @@
         border-color: #ea580c;
         box-shadow: 0 0 0 1px #ea580c;
     }
-    /* Searchable property picker (combobox) — native <select> does not open from a separate search field */
+    /* Property search + suggestion list */
     .add-unit-property-combobox .add-unit-property-dropdown {
         position: absolute;
         left: 0;
@@ -76,7 +75,6 @@
 
                 <div id="addUnitModalError" class="alert alert-danger py-2 small d-none" role="alert"></div>
 
-                {{-- Step 1 --}}
                 <div class="add-unit-panel" data-add-unit-panel="1">
                     <p class="text-muted small mb-3">Choose how you want to create units for your portfolio.</p>
                     <div class="row g-3">
@@ -109,7 +107,6 @@
                     </div>
                 </div>
 
-                {{-- Step 2 --}}
                 <div class="add-unit-panel d-none" data-add-unit-panel="2">
                     <div class="mb-3">
                         <label class="form-label" for="addUnitPropertySearch">Property</label>
@@ -117,7 +114,7 @@
                             <input type="text"
                                 class="form-control"
                                 id="addUnitPropertySearch"
-                                placeholder="Type to search — matches appear below"
+                                placeholder="Search by name or property type"
                                 autocomplete="off"
                                 role="combobox"
                                 aria-expanded="false"
@@ -162,11 +159,11 @@
                                     data-building-stories="{{ $stories }}"
                                     data-units-count="{{ $unitCount }}"
                                     data-max-units="{{ $maxUnits ?? '' }}"
-                                    title="{{ e($prop->name.' — '.$ptypeDisplay) }}"
+                                    title="{{ e($prop->name.' ('.$ptypeDisplay.')') }}"
                                 >{{ $prop->name }} ({{ $ptypeDisplay }})</option>
                             @endforeach
                         </select>
-                        <div class="form-text mt-1" id="addUnitPropertyHint">Only properties that can accept new units are listed. Use search or the dropdown — both stay in sync.</div>
+                        <div class="form-text mt-1" id="addUnitPropertyHint">Properties that cannot accept another unit are omitted. Search and the dropdown show the same choices.</div>
                     </div>
 
                     <div id="addUnitFieldsSingle">
@@ -193,16 +190,15 @@
                     </div>
 
                     <div id="addUnitFieldsBulk" class="d-none">
-                        {{-- Multi-unit buildings (not house / townhouse / duplex): units per floor × stories from property --}}
                         <div id="addUnitBulkFlooredWrap" class="d-none">
                             <div class="alert alert-light border small py-2 mb-3 mb-md-3">
-                                <strong>Building stories</strong> come from this property (set when you created it): <span id="addUnitBuildingStoriesDisplay">—</span>.
+                                <strong>Building stories</strong> from this property (saved when you added it): <span id="addUnitBuildingStoriesDisplay" class="text-muted">…</span>.
                                 Total units = units per floor × stories (same idea as <em>Create Multiple Units</em>).
                             </div>
                             <div class="mb-3">
                                 <label class="form-label" for="addUnitUnitsPerFloor">Units per floor</label>
                                 <input type="number" class="form-control" id="addUnitUnitsPerFloor" min="1" max="200" value="4">
-                                <div class="form-text">Total new units: <strong id="addUnitFlooredTotalPreview">—</strong></div>
+                                <div class="form-text">Total new units: <strong id="addUnitFlooredTotalPreview" class="text-muted">…</strong></div>
                             </div>
                         </div>
                         <div id="addUnitBulkHouseWrap" class="d-none mb-3">
@@ -215,7 +211,7 @@
                         <div id="addUnitBulkFlatWrap" class="mb-3">
                             <label class="form-label" for="addUnitCountBulk" id="addUnitBulkFlatLabel">Number of units</label>
                             <input type="number" class="form-control" id="addUnitCountBulk" min="1" max="200" value="2">
-                            <div class="form-text">For apartments and similar multi-unit buildings without a per-floor grid (total = this × building stories when stories &gt; 1). Single-family homes, townhouses, and duplexes have fixed unit counts—those properties only appear above if they still have room.</div>
+                            <div class="form-text">For apartments and similar buildings without a per-floor grid. Total is this count × building stories when stories &gt; 1. Fixed types (house, townhouse, duplex) only show here if they still have room.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="addUnitBulkDefaultUnitType">Default unit type</label>
@@ -248,7 +244,6 @@
                     </div>
                 </div>
 
-                {{-- Step 3 --}}
                 <div class="add-unit-panel d-none" data-add-unit-panel="3">
                     <p class="fw-semibold mb-2" id="addUnitStep3Title">Review your entries</p>
                     <div id="addUnitReviewBody" class="border rounded p-3 bg-light small"></div>

@@ -116,7 +116,7 @@ class PropertySeeder extends Seeder
                 'slug' => 'demo-others-pine',
                 'property_type' => 'others',
                 'address' => '7 Pine Road, Mandaluyong',
-                'description' => 'Other / mixed layout — sample multi-room rental with three units.',
+                'description' => 'Other / mixed layout: sample multi-room rental with three units.',
                 'total_units' => 3,
                 'floors' => 2,
                 'building_floors' => 2,

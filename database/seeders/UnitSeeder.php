@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 class UnitSeeder extends Seeder
 {
     /**
-     * Keep in sync with {@see PropertySeeder} slugs — only these get auto-generated units.
+     * Keep slugs aligned with {@see PropertySeeder}; only these rows get generated units.
      *
      * @var list<string>
      */
@@ -138,9 +138,9 @@ class UnitSeeder extends Seeder
             'tenant_count' => 0,
             'max_occupants' => $maxOccupants,
             'description' => match ($type) {
-                'duplex' => 'Duplex side '.$index.' — demo seed.',
-                'house', 'townhouse' => 'Primary dwelling — demo seed.',
-                default => "Unit on floor {$floorNumber} — demo seed.",
+                'duplex' => 'Duplex side '.$index.' (demo).',
+                'house', 'townhouse' => 'Primary dwelling (demo).',
+                default => "Unit on floor {$floorNumber} (demo).",
             },
             'floor_area' => 28.0 + ($index * 4.5),
             'bedrooms' => $bedrooms,

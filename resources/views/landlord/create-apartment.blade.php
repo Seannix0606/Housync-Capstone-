@@ -455,7 +455,7 @@
                 </h3>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
-                    <strong>Note:</strong> Units are created automatically from the type and count above. Add <strong>property</strong> and <strong>per-unit</strong> photos in the sections below—you do not need to visit My Units just to add images.
+                    <strong>Note:</strong> Units are created automatically from the type and count above. Add <strong>property</strong> and <strong>per-unit</strong> photos in the sections below (no need to open My Units just for images).
                 </div>
             </div>
 

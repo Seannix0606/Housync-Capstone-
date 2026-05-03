@@ -1,4 +1,3 @@
-{{-- Step indicator for Add Unit modal (not breadcrumbs). IDs used by landlord.units add-unit script. --}}
 <div class="add-unit-steps d-flex justify-content-between align-items-start gap-2 mb-4" role="group" aria-label="Add unit steps">
     <div class="add-unit-step text-center flex-fill" data-add-unit-step="1">
         <div class="add-unit-step-circle mx-auto mb-1">1</div>
