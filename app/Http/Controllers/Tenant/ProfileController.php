@@ -99,7 +99,7 @@ class ProfileController extends Controller
 
         try {
             $request->validate([
-                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:25120600',
+                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:25,600',
                 'document_types.*' => ['required', 'string', Rule::in(TenantDocument::uploadableDocumentTypes())],
             ], [
                 'documents.*.required' => 'Please select at least one document to upload',
@@ -124,8 +124,9 @@ class ProfileController extends Controller
         try {
             $uploadedDocuments = [];
 
-            $useSupabase = config('app.env') == 'local';
-            //  && config('services.supabase.key');
+            $useSupabase = filled(config('services.supabase.url'))
+                && filled(config('services.supabase.key'))
+                && filled(config('services.supabase.service_key'));
 
             if ($useSupabase) {
                 $supabase = new \App\Services\SupabaseService;

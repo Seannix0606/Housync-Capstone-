@@ -511,7 +511,8 @@
 
                             container.innerHTML = '';
 
-                            propertyGalleryInput.addEventListener('change', function() {
+                            propertyGalleryInput.addEventListener('change', function(event) {
+                                container.innerHTML = '';
                                 container.style.display = 'flex';
                                 const files = event.target.files;
 
@@ -524,10 +525,15 @@
                                     fileWrapper.style.textAlign = 'center';
                                     fileWrapper.style.width = '100px';
 
-                                    fileWrapper.innerHTML = `
-                                        <img src="${e.target.result}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">
-                                        <p style="font-size: 12px; word-break: break-all; margin-top: 5px;">${file.name}</p>
-                                    `;
+                                    const img = document.createElement('img');
+                                    img.src = e.target.result;
+                                    img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:8px;';
+                                    const p = document.createElement('p');
+                                    p.style.cssText = 'font-size:12px;word-break:break-all;margin-top:5px;';
+                                    p.textContent = file.name;
+
+                                    fileWrapper.appendChild(img);
+                                    fileWrapper.appendChild(p);
 
                                     container.appendChild(fileWrapper);
                                     };
