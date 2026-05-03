@@ -53,8 +53,22 @@ class RfidController extends Controller
         // Get access statistics
         $stats = AccessLog::getAccessStats($propertyId, 30);
 
+        // Distinct reader locations (from ESP32 reader_location) seen in the last 30 days
+        $readerLocationsSummary = AccessLog::query()
+            ->whereIn('property_id', $user->properties->pluck('id'))
+            ->when($propertyId, function ($query) use ($propertyId) {
+                return $query->where('property_id', $propertyId);
+            })
+            ->where('access_time', '>=', now()->subDays(30))
+            ->whereNotNull('reader_location')
+            ->where('reader_location', '!=', '')
+            ->selectRaw('reader_location, MAX(access_time) as last_seen_at')
+            ->groupBy('reader_location')
+            ->orderBy('reader_location')
+            ->get();
+
         return view('landlord.security.index', compact(
-            'cards', 'apartments', 'propertyId', 'recentLogs', 'stats'
+            'cards', 'apartments', 'propertyId', 'recentLogs', 'stats', 'readerLocationsSummary'
         ));
     }
 
@@ -700,6 +714,8 @@ class RfidController extends Controller
                 'access_time_human' => $log->access_time?->format('M j, g:i A'),
                 'card_uid' => $log->card_uid,
                 'tenant_name' => $log->tenant_name,
+                'reader_location' => $log->reader_location,
+                'reader_location_display' => $log->reader_location_display,
                 'result_badge_class' => $log->display_badge_class ?? $log->result_badge_class,
                 'result_text' => $log->display_result ?? ucfirst($log->access_result),
                 'denial_reason' => $log->denial_reason_display,

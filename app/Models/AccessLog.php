@@ -184,6 +184,18 @@ class AccessLog extends Model
         return $this->tenantAssignment?->tenant?->name ?? 'Unknown';
     }
 
+    /**
+     * Human-readable label from hardware reader_location (e.g. ESP32 READER_LOCATION).
+     */
+    public function getReaderLocationDisplayAttribute(): string
+    {
+        if ($this->reader_location === null || $this->reader_location === '') {
+            return '—';
+        }
+
+        return ucfirst(str_replace('_', ' ', $this->reader_location));
+    }
+
     public function getApartmentNameAttribute()
     {
         return $this->apartment?->name ?? 'Unknown';
