@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Contracts\StorageServiceInterface;
+use App\Models\Unit;
+use App\Observers\PropertyUnitCountObserver;
+use App\Services\Landlord\PropertyTypeUnitRules;
 use App\Services\SupabaseService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -17,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind storage abstraction to Supabase implementation
         $this->app->bind(StorageServiceInterface::class, SupabaseService::class);
+
+        $this->app->singleton(PropertyTypeUnitRulesContract::class, PropertyTypeUnitRules::class);
     }
 
     /**
@@ -37,5 +43,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\MaintenanceRequest::class, \App\Policies\MaintenanceRequestPolicy::class);
         Gate::policy(\App\Models\Bill::class, \App\Policies\BillPolicy::class);
         Gate::policy(\App\Models\Announcement::class, \App\Policies\AnnouncementPolicy::class);
+
+        Unit::observe(PropertyUnitCountObserver::class);
     }
 }

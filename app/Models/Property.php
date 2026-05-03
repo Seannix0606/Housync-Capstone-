@@ -24,6 +24,7 @@ use Illuminate\Support\Str;
  * @property int $landlord_id
  * @property int $total_units
  * @property int|null $floors
+ * @property int|null $building_floors
  * @property int|null $bedrooms
  * @property int|null $year_built
  * @property int|null $parking_spaces
@@ -54,6 +55,7 @@ class Property extends Model
         'landlord_id',
         'total_units',
         'floors',
+        'building_floors',
         'bedrooms',
         'year_built',
         'parking_spaces',
@@ -72,6 +74,7 @@ class Property extends Model
         'gallery' => 'array',
         'total_units' => 'integer',
         'floors' => 'integer',
+        'building_floors' => 'integer',
         'bedrooms' => 'integer',
         'year_built' => 'integer',
         'parking_spaces' => 'integer',
@@ -116,6 +119,14 @@ class Property extends Model
     public function units()
     {
         return $this->hasMany(Unit::class);
+    }
+
+    /**
+     * Bookings tied to this property (via property_id on bookings).
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 
     /**

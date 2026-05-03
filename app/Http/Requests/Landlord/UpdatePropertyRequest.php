@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
+use App\Models\Property;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdatePropertyRequest extends FormRequest
 {
@@ -45,6 +48,16 @@ class UpdatePropertyRequest extends FormRequest
             }
         }
 
+        $type = $this->input('property_type');
+        $totalUnitsRules = ['required', 'integer'];
+        if (in_array($type, ['house', 'townhouse'], true)) {
+            $totalUnitsRules[] = 'in:1';
+        } elseif ($type === 'duplex') {
+            $totalUnitsRules[] = 'in:2';
+        } else {
+            $totalUnitsRules[] = 'min:'.max(1, $currentUnitCount);
+        }
+
         return [
             'name' => 'required|string|max:255',
             'property_type' => 'required|string|in:apartment,condominium,townhouse,house,duplex,others',
@@ -53,13 +66,10 @@ class UpdatePropertyRequest extends FormRequest
             'state' => 'nullable|string|max:255',
             'postal_code' => 'nullable|string|max:20',
             'description' => 'nullable|string|max:1000',
-            'total_units' => [
-                'required',
-                'integer',
-                'min:'.max(1, $currentUnitCount),
-            ],
+            'total_units' => $totalUnitsRules,
             'floors' => 'nullable|integer|min:1',
             'bedrooms' => 'nullable|integer|min:1',
+            'building_floors' => 'nullable|integer|min:1|max:200',
             'year_built' => 'nullable|integer|min:1900|max:'.date('Y'),
             'parking_spaces' => 'nullable|integer|min:0',
             'contact_person' => 'nullable|string|max:255',
@@ -77,5 +87,40 @@ class UpdatePropertyRequest extends FormRequest
             'gallery' => 'prohibited',
             'gallery.*' => 'prohibited',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $propertyId = $this->route('id');
+            if (! $propertyId) {
+                return;
+            }
+
+            $property = Property::query()->find($propertyId);
+            if (! $property) {
+                return;
+            }
+
+            $rules = app(PropertyTypeUnitRulesContract::class);
+
+            try {
+                $rules->assertUpdateCompatibleWithExistingUnits(
+                    $property,
+                    (string) $this->input('property_type'),
+                    (int) $this->input('total_units')
+                );
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                foreach ($exception->errors() as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $validator->errors()->add($field, $message);
+                    }
+                }
+            }
+        });
     }
 }
