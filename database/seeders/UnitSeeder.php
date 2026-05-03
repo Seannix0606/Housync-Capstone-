@@ -104,7 +104,13 @@ class UnitSeeder extends Seeder
         ];
 
         foreach ($units as $unitData) {
-            Unit::create($unitData);
+            Unit::updateOrCreate(
+                [
+                    'property_id' => $unitData['property_id'],
+                    'unit_number' => $unitData['unit_number'],
+                ],
+                $unitData
+            );
         }
 
         $this->command->info('Created '.count($units).' sample units.');
