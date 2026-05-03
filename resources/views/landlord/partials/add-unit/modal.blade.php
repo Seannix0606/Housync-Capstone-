@@ -99,20 +99,32 @@
                             @foreach(($properties ?? $apartments ?? collect()) as $prop)
                                 @php
                                     $ptype = $prop->property_type ?? '';
+                                    $ptypeDisplay = match ($ptype) {
+                                        'apartment' => 'Apartment',
+                                        'condominium' => 'Condominium',
+                                        'townhouse' => 'Townhouse',
+                                        'house' => 'Single family house',
+                                        'duplex' => 'Duplex',
+                                        'others' => 'Other',
+                                        default => $ptype !== '' ? ucfirst(str_replace('_', ' ', $ptype)) : 'Property',
+                                    };
                                     $stories = max(1, (int) ($prop->building_floors ?? $prop->floors ?? 1));
                                     $unitCount = (int) ($prop->units_count ?? 0);
                                     $maxUnits = isset($unitRules) ? $unitRules->maximumUnitsForType($ptype) : null;
                                     $atCap = $maxUnits !== null && $unitCount >= $maxUnits;
+                                    $slug = (string) ($prop->slug ?? '');
+                                    $searchBlob = strtolower(trim($prop->name.' '.$ptypeDisplay.' '.$ptype.' '.$slug));
                                 @endphp
                                 <option
                                     value="{{ $prop->id }}"
-                                    data-search-label="{{ strtolower($prop->name) }}"
+                                    data-search-label="{{ $searchBlob }}"
                                     data-property-type="{{ $ptype }}"
                                     data-building-stories="{{ $stories }}"
                                     data-units-count="{{ $unitCount }}"
                                     data-max-units="{{ $maxUnits ?? '' }}"
+                                    title="{{ e($prop->name.' — '.$ptypeDisplay) }}"
                                     @disabled($atCap)
-                                >{{ $prop->name }}@if($atCap) — at unit limit @endif</option>
+                                >{{ $prop->name }} ({{ $ptypeDisplay }})@if($atCap) — at unit limit @endif</option>
                             @endforeach
                         </select>
                     </div>

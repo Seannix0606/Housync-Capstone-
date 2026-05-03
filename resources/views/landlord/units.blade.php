@@ -1006,6 +1006,38 @@ function editUnit(unitId) {
         errBox.classList.toggle('d-none', !msg);
     }
 
+    function clearAddUnitPropertySearchFilter() {
+        const inp = document.getElementById('addUnitPropertySearch');
+        if (inp) {
+            inp.value = '';
+        }
+        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
+            opt.hidden = false;
+        });
+    }
+
+    function applyAddUnitPropertySearchFilter() {
+        const inp = document.getElementById('addUnitPropertySearch');
+        const sel = document.getElementById('addUnitPropertyId');
+        if (!inp || !sel) {
+            return;
+        }
+        const q = inp.value.trim().toLowerCase();
+        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
+            if (!opt.value) {
+                opt.hidden = false;
+                return;
+            }
+            const label = (opt.getAttribute('data-search-label') || '').toLowerCase();
+            const match = q === '' || label.includes(q);
+            opt.hidden = !match;
+        });
+        const cur = sel.selectedOptions[0];
+        if (cur && cur.hidden) {
+            sel.value = '';
+        }
+    }
+
     function syncStepUi() {
         stepEls().forEach((el) => {
             const n = parseInt(el.getAttribute('data-add-unit-step'), 10);
@@ -1135,19 +1167,12 @@ function editUnit(unitId) {
     });
 
     document.getElementById('addUnitPropertySearch')?.addEventListener('input', function () {
-        const q = this.value.trim().toLowerCase();
-        document.querySelectorAll('#addUnitPropertyId option').forEach((opt) => {
-            if (!opt.value) {
-                opt.hidden = false;
-                return;
-            }
-            const label = opt.getAttribute('data-search-label') || '';
-            opt.hidden = q !== '' && !label.includes(q);
-        });
+        applyAddUnitPropertySearchFilter();
     });
 
     btnNext.addEventListener('click', () => {
         showError('');
+        const prevStep = step;
         if (step === 1 && !mode) {
             showError('Please choose single or bulk creation.');
             return;
@@ -1230,12 +1255,19 @@ function editUnit(unitId) {
             renderReview();
         }
         step = Math.min(3, step + 1);
+        if (step === 2 && prevStep === 1) {
+            clearAddUnitPropertySearchFilter();
+        }
         syncStepUi();
     });
 
     btnBack.addEventListener('click', () => {
         showError('');
+        const prevStep = step;
         step = Math.max(1, step - 1);
+        if ((prevStep === 2 && step === 1) || (prevStep === 3 && step === 2)) {
+            clearAddUnitPropertySearchFilter();
+        }
         syncStepUi();
     });
 
