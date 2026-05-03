@@ -80,10 +80,15 @@ class PaymentVerificationImageStorageService
         string $relativePathIncludingDirectory,
     ): string {
         $bucketName = config('services.supabase.bucket');
+        $uploadedFilePath = $uploadedFile->getRealPath();
+        if ($uploadedFilePath === false || $uploadedFilePath === '') {
+            $uploadedFilePath = $uploadedFile->getPathname();
+        }
+
         $uploadResult = $this->supabaseService->uploadFile(
             $bucketName,
             $relativePathIncludingDirectory,
-            $uploadedFile->getRealPath(),
+            $uploadedFilePath,
         );
 
         if (! empty($uploadResult['success'])) {
