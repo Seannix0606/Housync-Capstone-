@@ -264,6 +264,11 @@ class ExploreController extends Controller
             ->limit(4)
             ->get();
 
+<<<<<<< HEAD
+        $minAvailableRent = $property->units->min('rent_amount');
+
+        return view('property-details', compact('property', 'relatedProperties', 'minAvailableRent'));
+=======
         $heroPresentation = $propertyHeroPresentationService->build($property);
         $unitPresentation = $propertyUnitPresentationService->build($property);
 
@@ -274,5 +279,6 @@ class ExploreController extends Controller
             'displayTerm' => $unitPresentation['displayTerm'],
             'floorGroups' => $unitPresentation['floorGroups'],
         ]);
+>>>>>>> b937f937b871c764ee9ae4ee9feb1da70c4a862a
     }
 }

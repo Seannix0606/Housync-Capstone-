@@ -87,12 +87,6 @@
                                     <td>{{ $assignment->occupation }}</td>
                                 </tr>
                                 @endif
-                                @if($assignment->monthly_income)
-                                <tr>
-                                    <td><strong>Monthly Income:</strong></td>
-                                    <td>₱{{ number_format($assignment->monthly_income, 2) }}</td>
-                                </tr>
-                                @endif
                                 <tr>
                                     <td><strong>Expected Rent:</strong></td>
                                     <td>₱{{ number_format($assignment->rent_amount, 2) }}/month</td>

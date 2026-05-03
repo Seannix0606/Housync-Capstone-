@@ -259,7 +259,7 @@
                                             </h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <form action="{{ route('tenant.payments.submit-proof', $bill->id) }}" method="POST" enctype="multipart/form-data">
+                                        <form class="tenant-proof-upload-form" action="{{ route('tenant.payments.submit-proof', $bill->id) }}" method="POST" enctype="multipart/form-data">
                                             @csrf
                                             <input type="hidden" name="proof_bill_id" value="{{ $bill->id }}">
                                             <div class="modal-body">
@@ -287,7 +287,7 @@
                                                     </div>
                                                     <div class="col-12">
                                                         <label class="form-label">Proof image <span class="text-danger">*</span></label>
-                                                        <input type="file" name="proof_image" class="form-control" accept="image/jpeg,image/png,image/jpg" required>
+                                                        <input type="file" name="proof_image" class="form-control tenant-proof-image-input" accept="image/jpeg,image/png,image/jpg" required>
                                                         <div class="form-text">JPEG or PNG, up to 5 MB.</div>
                                                     </div>
                                                     <div class="col-12">
@@ -401,3 +401,52 @@
         @endpush
     @endif
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const proofForms = document.querySelectorAll('.tenant-proof-upload-form');
+
+            proofForms.forEach(function (form) {
+                const fileInput = form.querySelector('.tenant-proof-image-input');
+                if (!fileInput) {
+                    return;
+                }
+
+                fileInput.addEventListener('change', function () {
+                    const selectedFile = fileInput.files && fileInput.files[0];
+                    if (!selectedFile) {
+                        console.warn('[Tenant Proof Upload] No file selected.');
+                        return;
+                    }
+
+                    console.log('[Tenant Proof Upload] File selected', {
+                        action: form.action,
+                        name: selectedFile.name,
+                        type: selectedFile.type,
+                        size_bytes: selectedFile.size,
+                        size_mb: (selectedFile.size / (1024 * 1024)).toFixed(2),
+                    });
+                });
+
+                form.addEventListener('submit', function (event) {
+                    const selectedFile = fileInput.files && fileInput.files[0];
+
+                    console.log('[Tenant Proof Upload] Submitting form', {
+                        action: form.action,
+                        method: form.method,
+                        enctype: form.enctype,
+                        has_file: Boolean(selectedFile),
+                    });
+
+                    if (!selectedFile) {
+                        event.preventDefault();
+                        console.error('[Tenant Proof Upload] Submit blocked because no proof image is attached.');
+                    }
+                });
+            });
+        });
+    })();
+</script>
+@endpush

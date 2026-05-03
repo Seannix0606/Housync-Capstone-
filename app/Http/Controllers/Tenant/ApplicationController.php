@@ -103,7 +103,6 @@ class ApplicationController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => null,
                     'notes' => $request->notes,
                 ]);
             });
@@ -201,7 +200,6 @@ class ApplicationController extends Controller
                     'rent_amount' => $unit->rent_amount ?? 0,
                     'security_deposit' => 0,
                     'occupation' => $request->occupation,
-                    'monthly_income' => null,
                     'notes' => $request->notes,
                 ]);
             });

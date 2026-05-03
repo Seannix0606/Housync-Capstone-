@@ -99,13 +99,13 @@ class ProfileController extends Controller
 
         try {
             $request->validate([
-                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:25,600',
                 'document_types.*' => ['required', 'string', Rule::in(TenantDocument::uploadableDocumentTypes())],
             ], [
                 'documents.*.required' => 'Please select at least one document to upload',
                 'documents.*.file' => 'The uploaded file is not valid',
                 'documents.*.mimes' => 'Only PDF, JPG, JPEG, and PNG files are allowed',
-                'documents.*.max' => 'Each file must not exceed 5MB',
+                'documents.*.max' => 'Each file must not exceed 25MB',
                 'document_types.*.required' => 'Please select a document type for each file',
                 'document_types.*.in' => 'Invalid document type selected',
             ]);
@@ -124,7 +124,9 @@ class ProfileController extends Controller
         try {
             $uploadedDocuments = [];
 
-            $useSupabase = config('app.env') !== 'local' && config('services.supabase.key');
+            $useSupabase = filled(config('services.supabase.url'))
+                && filled(config('services.supabase.key'))
+                && filled(config('services.supabase.service_key'));
 
             if ($useSupabase) {
                 $supabase = new \App\Services\SupabaseService;
@@ -286,7 +288,7 @@ class ProfileController extends Controller
                 return "Authentication error with upload service. Please refresh the page and try again. {$baseMessage}";
             }
             if (str_contains($uploadError, '413') || str_contains($uploadError, 'too large')) {
-                return "File too large. Please ensure each file is under 5MB. {$baseMessage}";
+                return "File too large. Please ensure each file is under 25MB. {$baseMessage}";
             }
             if (str_contains($uploadError, '415') || str_contains($uploadError, 'Unsupported Media Type')) {
                 return "File format not supported. Please use PDF, JPG, or PNG files only. {$baseMessage}";
@@ -295,11 +297,11 @@ class ProfileController extends Controller
                 return "Server error occurred. Please try again in a few minutes. {$baseMessage}";
             }
 
-            return "File upload failed. Please check your file size (max 5MB) and format (PDF, JPG, PNG). {$baseMessage}";
+            return "File upload failed. Please check your file size (max 25MB) and format (PDF, JPG, PNG). {$baseMessage}";
         }
 
         if (str_contains($exception->getMessage(), 'validation')) {
-            return "File validation failed. Please ensure files are PDF, JPG, or PNG format and under 5MB. {$baseMessage}";
+            return "File validation failed. Please ensure files are PDF, JPG, or PNG format and under 25MB. {$baseMessage}";
         }
 
         if (str_contains($exception->getMessage(), 'database')) {

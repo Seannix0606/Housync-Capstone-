@@ -8,7 +8,6 @@ use App\Models\MaintenanceRequest;
 use App\Models\Unit;
 use App\Models\User;
 use App\Notifications\MaintenanceStatusUpdated;
-use App\Notifications\NewMaintenanceRequest;
 use App\Notifications\StaffAssignedToMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,7 +89,7 @@ class MaintenanceController extends Controller
 
         if ($units->isEmpty()) {
             return redirect()
-                ->route('landlord.maintenance')
+                ->route('landlord.maintenance.index')
                 ->with('error', 'You need to create units before creating maintenance requests.');
         }
 
@@ -357,7 +356,7 @@ class MaintenanceController extends Controller
         ]);
 
         return redirect()
-            ->route('landlord.maintenance')
+            ->route('landlord.maintenance.index')
             ->with('success', 'Maintenance request cancelled successfully!');
     }
 
@@ -374,7 +373,7 @@ class MaintenanceController extends Controller
         $maintenanceRequest->delete();
 
         return redirect()
-            ->route('landlord.maintenance')
+            ->route('landlord.maintenance.index')
             ->with('success', 'Maintenance request deleted successfully!');
     }
 
@@ -560,7 +559,7 @@ class MaintenanceController extends Controller
         // Only allow cancellation if not yet completed
         if ($maintenanceRequest->status === 'completed') {
             return redirect()
-                ->route('tenant.maintenance')
+                ->route('tenant.maintenance.index')
                 ->with('error', 'Cannot cancel a completed request.');
         }
 
@@ -569,7 +568,7 @@ class MaintenanceController extends Controller
         ]);
 
         return redirect()
-            ->route('tenant.maintenance')
+            ->route('tenant.maintenance.index')
             ->with('success', 'Maintenance request cancelled successfully!');
     }
 

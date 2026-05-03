@@ -264,10 +264,10 @@
                                 <button type="submit" class="btn btn-outline-danger btn-sm w-100">Remove image</button>
                             </form>
                         @endif
-                        <form action="{{ route('landlord.payments.instapay-code.update') }}" method="POST" enctype="multipart/form-data">
+                        <form id="instapayCodeUploadForm" action="{{ route('landlord.payments.instapay-code.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <label class="form-label small">{{ $instapayCodePublicUrl ? 'Replace image' : 'Upload image' }} <span class="text-danger">*</span></label>
-                            <input type="file" name="instapay_quick_response_code_image" class="form-control form-control-sm" accept="image/jpeg,image/png,image/jpg" required>
+                            <input id="instapayCodeUploadInput" type="file" name="instapay_quick_response_code_image" class="form-control form-control-sm" accept="image/jpeg,image/png,image/jpg" required>
                             <div class="form-text small">JPEG or PNG, up to 5 MB.</div>
                             <button type="submit" class="btn btn-primary btn-sm w-100 mt-2">
                                 <i class="fas fa-save me-1"></i>{{ $instapayCodePublicUrl ? 'Save new image' : 'Save' }}
@@ -428,5 +428,45 @@
         document.getElementById('paymentAmount').max = billBalance;
         document.getElementById('paymentAmount').value = billBalance;
     });
+
+    (function () {
+        const uploadForm = document.getElementById('instapayCodeUploadForm');
+        const uploadInput = document.getElementById('instapayCodeUploadInput');
+
+        if (!uploadForm || !uploadInput) {
+            return;
+        }
+
+        uploadInput.addEventListener('change', function () {
+            const selectedFile = uploadInput.files && uploadInput.files[0];
+            if (!selectedFile) {
+                console.warn('[InstaPay QR Upload] No file selected yet.');
+                return;
+            }
+
+            console.log('[InstaPay QR Upload] File selected', {
+                name: selectedFile.name,
+                type: selectedFile.type,
+                size_bytes: selectedFile.size,
+                size_mb: (selectedFile.size / (1024 * 1024)).toFixed(2),
+            });
+        });
+
+        uploadForm.addEventListener('submit', function (event) {
+            const selectedFile = uploadInput.files && uploadInput.files[0];
+
+            console.log('[InstaPay QR Upload] Submitting form', {
+                action: uploadForm.action,
+                method: uploadForm.method,
+                enctype: uploadForm.enctype,
+                has_file: Boolean(selectedFile),
+            });
+
+            if (!selectedFile) {
+                event.preventDefault();
+                console.error('[InstaPay QR Upload] Submit blocked because no file is attached.');
+            }
+        });
+    })();
 </script>
 @endpush

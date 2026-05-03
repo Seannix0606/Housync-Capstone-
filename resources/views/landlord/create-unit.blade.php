@@ -317,7 +317,7 @@
                 </div>
                 @endif
 
-                <form method="POST" action="{{ isset($apartment) ? route('landlord.store-unit', $apartment->id) : route('landlord.create-unit') }}" enctype="multipart/form-data">
+                <form id="createUnitForm" method="POST" action="{{ isset($apartment) ? route('landlord.store-unit', $apartment->id) : route('landlord.create-unit') }}" enctype="multipart/form-data">
                     @csrf
                     
                     <!-- Creation Options -->
@@ -675,9 +675,44 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing...');
             
-            const form = document.querySelector('form');
+            const form = document.getElementById('createUnitForm');
             const rentInput = document.getElementById('rent_amount');
             const unitNumberInput = document.getElementById('unit_number');
+            const coverImageInput = document.getElementById('cover_image');
+            const galleryInput = document.getElementById('gallery_input');
+
+            if (coverImageInput) {
+                coverImageInput.addEventListener('change', function () {
+                    const selectedFile = this.files && this.files[0];
+                    if (!selectedFile) {
+                        console.warn('[Create Unit Upload] No cover image selected.');
+                        return;
+                    }
+
+                    console.log('[Create Unit Upload] Cover image selected', {
+                        name: selectedFile.name,
+                        type: selectedFile.type,
+                        size_bytes: selectedFile.size,
+                        size_mb: (selectedFile.size / (1024 * 1024)).toFixed(2),
+                    });
+                });
+            }
+
+            if (galleryInput) {
+                galleryInput.addEventListener('change', function () {
+                    const files = Array.from(this.files || []);
+                    console.log('[Create Unit Upload] Gallery files selected', {
+                        count: files.length,
+                        files: files.map(function (file) {
+                            return {
+                                name: file.name,
+                                type: file.type,
+                                size_bytes: file.size,
+                            };
+                        }),
+                    });
+                });
+            }
             
             
 
@@ -770,7 +805,16 @@
                 if (!isValid) {
                     e.preventDefault();
                     alert('Please fill in all required fields.');
+                    return;
                 }
+
+                console.log('[Create Unit Upload] Submitting form', {
+                    action: form.action,
+                    method: form.method,
+                    enctype: form.enctype,
+                    cover_selected: Boolean(coverImageInput && coverImageInput.files && coverImageInput.files[0]),
+                    gallery_count: galleryInput && galleryInput.files ? galleryInput.files.length : 0,
+                });
         });
     });
     
