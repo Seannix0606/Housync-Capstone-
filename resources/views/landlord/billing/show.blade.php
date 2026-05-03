@@ -143,6 +143,26 @@
         body.dark-mode .bill-details-card h4 {
             color: #f1f5f9 !important;
         }
+
+        .payment-proof-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 6px;
+            display: block;
+            vertical-align: middle;
+        }
+
+        .payment-proof-thumb-btn {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            line-height: 0;
+        }
+
+        body.dark-mode .payment-proof-thumb-btn {
+            background: #0f172a;
+            border-color: #334155;
+        }
     </style>
 @endpush
 
@@ -249,7 +269,7 @@
     </div>
 
     <!-- Payment History -->
-    <div class="bill-details-card">
+    <div class="bill-details-card" id="payment-history">
         <h4 class="mb-3"><i class="fas fa-history me-2"></i>Payment History</h4>
         
         @if($bill->payments->count() > 0)
@@ -260,8 +280,10 @@
                         <th>Amount</th>
                         <th>Method</th>
                         <th>Reference</th>
+                        <th>Receipt</th>
                         <th>Status</th>
                         <th>Notes</th>
+                        <th>Review</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -271,12 +293,47 @@
                         <td class="fw-bold text-success">₱{{ number_format($payment->amount, 2) }}</td>
                         <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
                         <td>{{ $payment->reference_number ?? '—' }}</td>
+                        <td class="align-middle">
+                            @if($payment->proof_image_url)
+                                <div class="d-flex flex-column gap-1 align-items-start">
+                                    <button type="button"
+                                            class="payment-proof-thumb-btn rounded"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#paymentProofModal"
+                                            data-proof-src="{{ $payment->proof_image_url }}"
+                                            title="View receipt">
+                                        <img src="{{ $payment->proof_image_url }}" alt="Tenant payment receipt thumbnail" class="payment-proof-thumb" loading="lazy">
+                                    </button>
+                                    <a href="{{ $payment->proof_image_url }}" target="_blank" rel="noopener noreferrer" class="small text-decoration-none">Open full size</a>
+                                </div>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td>
                             <span class="badge bg-{{ $payment->status === 'verified' ? 'success' : ($payment->status === 'rejected' ? 'danger' : 'warning') }}">
                                 {{ ucfirst(str_replace('_', ' ', $payment->status)) }}
                             </span>
                         </td>
                         <td>{{ $payment->notes ?? '—' }}</td>
+                        <td class="align-middle">
+                            @if(in_array($payment->status, ['pending', 'pending_verification'], true))
+                                <div class="d-flex flex-column gap-1">
+                                    <form method="POST" action="{{ route('landlord.billing.verify-payment', $payment->id) }}" class="m-0" onsubmit="return confirm('Verify this payment and apply ₱{{ number_format($payment->amount, 2) }} to this bill?');">
+                                        @csrf
+                                        <input type="hidden" name="action" value="verify">
+                                        <button type="submit" class="btn btn-success btn-sm">Verify</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('landlord.billing.verify-payment', $payment->id) }}" class="m-0" onsubmit="return confirm('Reject this payment proof? The tenant can submit again.');">
+                                        @csrf
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                                    </form>
+                                </div>
+                            @else
+                                <span class="text-muted small">—</span>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -287,6 +344,21 @@
                 <p>No payments recorded yet.</p>
             </div>
         @endif
+    </div>
+</div>
+
+<!-- Tenant receipt preview (full size) -->
+<div class="modal fade" id="paymentProofModal" tabindex="-1" aria-labelledby="paymentProofModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentProofModalLabel"><i class="fas fa-image me-2"></i>Payment receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center bg-light py-4">
+                <img src="" alt="Tenant payment receipt" id="paymentProofModalImg" class="img-fluid rounded shadow-sm" style="max-height: 75vh;">
+            </div>
+        </div>
     </div>
 </div>
 
@@ -344,4 +416,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalEl = document.getElementById('paymentProofModal');
+        if (!modalEl) return;
+        modalEl.addEventListener('show.bs.modal', function (event) {
+            var btn = event.relatedTarget;
+            var src = btn && btn.getAttribute ? btn.getAttribute('data-proof-src') : '';
+            var img = document.getElementById('paymentProofModalImg');
+            if (img) img.src = src || '';
+        });
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            var img = document.getElementById('paymentProofModalImg');
+            if (img) img.src = '';
+        });
+    });
+</script>
+@endpush
 

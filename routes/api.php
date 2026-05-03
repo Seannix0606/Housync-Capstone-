@@ -54,6 +54,10 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
 //
 // Cache-Control is set to "private, no-store" to prevent shared caches (CDNs,
 // reverse proxies) from storing or serving one user's files to another.
+//
+// `web` middleware is required so session cookies authenticate `<img src="/api/storage/...">`
+// requests from logged-in landlords and tenants.
+Route::middleware(['web'])->group(function () {
 Route::get('/storage/{path}', function (Request $request, $path) {
 
     // ── 1. Path traversal guard ───────────────────────────────────────────
@@ -63,17 +67,35 @@ Route::get('/storage/{path}', function (Request $request, $path) {
     $privateBase = realpath(storage_path('app/private'));
     $publicBase = realpath(storage_path('app/public'));
 
-    $usePrivateDisk = str_starts_with($relativeFromRoute, 'payment-proofs/');
-    $basePath = $usePrivateDisk ? $privateBase : $publicBase;
-
-    abort_if($basePath === false, 404);
-
     $segmentPath = str_replace('/', DIRECTORY_SEPARATOR, $relativeFromRoute);
-    $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
-    $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
 
-    if ($fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath)) {
-        abort(404);
+    $fullPath = false;
+    $basePath = null;
+
+    if (str_starts_with($relativeFromRoute, 'payment-proofs/')) {
+        // Private disk (tenant upload via Tenant\\BillingController); fall back to public (legacy store).
+        foreach ([$privateBase, $publicBase] as $tryBase) {
+            if ($tryBase === false) {
+                continue;
+            }
+            $candidate = realpath($tryBase.DIRECTORY_SEPARATOR.$segmentPath);
+            $prefix = rtrim($tryBase, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+            if ($candidate !== false && str_starts_with($candidate, $prefix) && is_file($candidate)) {
+                $fullPath = $candidate;
+                $basePath = $tryBase;
+                break;
+            }
+        }
+        abort_if($fullPath === false || $basePath === null, 404);
+    } else {
+        $basePath = $publicBase;
+        abort_if($basePath === false, 404);
+        $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
+        $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+        abort_if(
+            $fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath),
+            404
+        );
     }
 
     // Relative path (forward slashes) used in DB columns and authorization lookups.
@@ -139,3 +161,4 @@ Route::get('/storage/{path}', function (Request $request, $path) {
     ]);
 
 })->where('path', '.*')->name('api.storage.fallback');
+});

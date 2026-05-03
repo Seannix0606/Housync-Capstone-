@@ -142,6 +142,7 @@
                                 <th>Balance</th>
                                 <th>Status</th>
                                 <th>Due Date</th>
+                                <th>Receipt</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -166,6 +167,15 @@
                                     </span>
                                 </td>
                                 <td>{{ $bill->due_date ? $bill->due_date->format('M d, Y') : '—' }}</td>
+                                <td>
+                                    @if(($bill->tenant_proof_count ?? 0) > 0)
+                                        <a href="{{ route('landlord.billing.show', $bill->id) }}#payment-history" class="btn btn-sm btn-outline-secondary" title="View tenant payment receipt">
+                                            <i class="fas fa-receipt"></i> View
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
                                 <td class="action-buttons">
                                     <a href="{{ route('landlord.billing.show', $bill->id) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                                         <i class="fas fa-eye"></i>
@@ -200,7 +210,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="padding: 1.5rem; vertical-align: middle;">
+                                <td colspan="10" style="padding: 1.5rem; vertical-align: middle;">
                                     <x-empty-state-card
                                         class="empty-state-card--wide"
                                         icon="fas fa-file-invoice-dollar"
