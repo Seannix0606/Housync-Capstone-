@@ -137,9 +137,11 @@
                         </span>
                     </button>
                     <div class="floor-controls">
+                        @if(($bulkNewUnitsRemaining ?? null) === null || ($bulkNewUnitsRemaining ?? 0) > 0)
                         <button type="button" class="btn btn-sm btn-outline" onclick="addUnitToFloor({{ $floor }})" title="Add unit">
                             <i class="fas fa-plus" aria-hidden="true"></i><span class="floor-btn-label"> Add Unit</span>
                         </button>
+                        @endif
                         <button type="button" class="btn btn-sm btn-outline" onclick="removeFloor({{ $floor }})" style="color: #ef4444;" title="Remove floor">
                             <i class="fas fa-trash" aria-hidden="true"></i><span class="floor-btn-label"> Remove Floor</span>
                         </button>

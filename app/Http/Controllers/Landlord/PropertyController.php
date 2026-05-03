@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StorePropertyRequest;
 use App\Http\Requests\Landlord\UpdatePropertyRequest;
@@ -269,21 +270,26 @@ class PropertyController extends Controller
         }
     }
 
-    public function getApartmentDetails($id)
+    public function getApartmentDetails($id, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->with('units')->findOrFail($id);
 
+        $totalUnits = $property->units->count();
+        $maxUnits = $unitRules->maximumUnitsForType($property->property_type);
+
         return response()->json([
             'id' => $property->id,
             'name' => $property->name,
-            'total_units' => $property->units->count(),
+            'property_type' => $property->property_type,
+            'total_units' => $totalUnits,
             'occupied_units' => $property->getOccupiedUnitsCount(),
             'available_units' => $property->getAvailableUnitsCount(),
             'maintenance_units' => $property->getMaintenanceUnitsCount(),
             'occupancy_rate' => $property->getOccupancyRate(),
             'total_revenue' => $property->getTotalRevenue(),
+            'can_add_units' => $maxUnits === null || $totalUnits < $maxUnits,
         ]);
     }
 

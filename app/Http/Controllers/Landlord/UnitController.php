@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
 {
-    public function units(Request $request, LandlordUnitStatsService $unitStats, $propertyId = null)
+    public function units(Request $request, LandlordUnitStatsService $unitStats, PropertyTypeUnitRulesContract $unitRules, $propertyId = null)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
@@ -88,29 +88,57 @@ class UnitController extends Controller
         }
 
         $units = $query->paginate(20);
-        $properties = $landlord->properties()->orderBy('name')->get();
+        $properties = $landlord->properties()->withCount('units')->orderBy('name')->get();
 
         // Backward compatibility
         $apartments = $properties;
         $apartmentId = $propertyId;
 
-        return view('landlord.units', compact('units', 'apartments', 'properties', 'apartmentId', 'propertyId', 'stats'));
+        $filterPropertyId = (int) ($request->get('property') ?? $request->get('apartment') ?? 0);
+        if ($filterPropertyId === 0 && $propertyId !== null) {
+            $filterPropertyId = (int) $propertyId;
+        }
+
+        $addUnitBlockedMessage = null;
+        if ($filterPropertyId > 0) {
+            $filtered = $properties->firstWhere('id', $filterPropertyId);
+            if ($filtered !== null) {
+                $maxUnits = $unitRules->maximumUnitsForType($filtered->property_type);
+                if ($maxUnits !== null && $filtered->units_count >= $maxUnits) {
+                    $addUnitBlockedMessage = match ($filtered->property_type) {
+                        'duplex' => 'This duplex already has two units. Edit those units in My Units, or create another duplex property if you need an additional two-unit building.',
+                        'townhouse' => 'A townhouse is one dwelling with a single unit. Edit that unit here or change the property type if this listing should include more rentals.',
+                        'house' => 'A single family house has one unit. Edit that unit here or change the property type if this listing should include more rentals.',
+                        default => 'This property has reached the maximum number of units for its type.',
+                    };
+                }
+            }
+        }
+
+        return view('landlord.units', compact('units', 'apartments', 'properties', 'apartmentId', 'propertyId', 'stats', 'unitRules', 'addUnitBlockedMessage'));
     }
 
-    public function createUnit($propertyId = null)
+    public function createUnit(PropertyTypeUnitRulesContract $unitRules, $propertyId = null)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         if ($propertyId) {
             $property = $landlord->properties()->findOrFail($propertyId);
+            try {
+                $unitRules->assertMayAddUnits($property, 1);
+            } catch (ValidationException $exception) {
+                return redirect()
+                    ->route('landlord.units', ['apartment' => $property->id])
+                    ->withErrors($exception->errors());
+            }
             $apartment = $property; // Backward compatibility
 
             return view('landlord.create-unit', compact('apartment', 'property'));
         } else {
-            $properties = $landlord->properties()->get();
+            $properties = $landlord->properties()->withCount('units')->orderBy('name')->get();
             $apartments = $properties;
 
-            return view('landlord.select-property-for-unit', compact('apartments', 'properties'));
+            return view('landlord.select-property-for-unit', compact('apartments', 'properties', 'unitRules'));
         }
     }
 
@@ -160,11 +188,17 @@ class UnitController extends Controller
         return redirect()->route('landlord.units', $propertyId)->with('success', 'Unit created successfully.');
     }
 
-    public function storeBulkUnits(Request $request, $propertyId)
+    public function storeBulkUnits(Request $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
+
+        try {
+            $unitRules->assertMayAddUnits($property, 1);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
 
         $request->validate([
             // No hard max here; user can choose any number.
@@ -193,26 +227,36 @@ class UnitController extends Controller
         return redirect()->route('landlord.bulk-edit-units', $propertyId);
     }
 
-    public function createMultipleUnits($propertyId)
+    public function createMultipleUnits($propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
+        try {
+            $unitRules->assertMayAddUnits($property, 1);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('landlord.units', ['apartment' => $property->id])
+                ->withErrors($exception->errors());
+        }
         $apartment = $property; // Backward compatibility
 
         return view('landlord.create-multiple-units', compact('apartment', 'property'));
     }
 
-    public function bulkEditUnits($propertyId)
+    public function bulkEditUnits($propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
-        $property = $landlord->properties()->findOrFail($propertyId);
+        $property = $landlord->properties()->withCount('units')->findOrFail($propertyId);
         $apartment = $property;
         $bulkParams = session('bulk_creation_params', []);
-        $existingUnitsCount = $property->units()->count();
+        $existingUnitsCount = $property->units_count;
 
-        return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount'));
+        $maxUnits = $unitRules->maximumUnitsForType($property->property_type);
+        $bulkNewUnitsRemaining = $maxUnits === null ? null : max(0, $maxUnits - $existingUnitsCount);
+
+        return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount', 'bulkNewUnitsRemaining'));
     }
 
     public function finalizeBulkUnits(Request $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)

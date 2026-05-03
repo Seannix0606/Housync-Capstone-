@@ -70,8 +70,13 @@
                     <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
                 </select>
             </div>
-            <button type="button" class="btn btn-primary ms-2" id="openAddUnitModal" data-bs-toggle="modal" data-bs-target="#addUnitModal"><i class="fas fa-plus"></i> Add New Unit</button>
+            <button type="button" class="btn btn-primary ms-2" id="openAddUnitModal" data-bs-toggle="modal" data-bs-target="#addUnitModal"
+                @if(!empty($addUnitBlockedMessage)) disabled title="{{ $addUnitBlockedMessage }}" @endif
+            ><i class="fas fa-plus"></i> Add New Unit</button>
         </div>
+        @if(!empty($addUnitBlockedMessage))
+            <p class="small text-muted mt-2 mb-0 w-100 text-end">{{ $addUnitBlockedMessage }}</p>
+        @endif
     </div>
     @if($units->count() > 0)
         <div class="table-responsive">
@@ -901,6 +906,24 @@ function editUnit(unitId) {
         return sel.options[sel.selectedIndex];
     }
 
+    function selectedPropertyMayAddUnits() {
+        const opt = selectedPropertyOption();
+        if (!opt || !opt.value) {
+            return false;
+        }
+        const maxRaw = opt.getAttribute('data-max-units');
+        if (maxRaw === null || maxRaw === '') {
+            return true;
+        }
+        const max = parseInt(maxRaw, 10);
+        if (Number.isNaN(max)) {
+            return true;
+        }
+        const cur = parseInt(opt.getAttribute('data-units-count') || '0', 10) || 0;
+
+        return cur < max;
+    }
+
     function updateFlooredTotalPreview() {
         const wrapFloored = document.getElementById('addUnitBulkFlooredWrap');
         if (!wrapFloored || wrapFloored.classList.contains('d-none')) {
@@ -1133,6 +1156,10 @@ function editUnit(unitId) {
             const pid = document.getElementById('addUnitPropertyId').value;
             if (!pid) {
                 showError('Please select a property.');
+                return;
+            }
+            if (!selectedPropertyMayAddUnits()) {
+                showError('This property already has the maximum number of units for its type (single-family house and townhouse: one unit; duplex: two). Edit those units or add another property if you need more rentals.');
                 return;
             }
             if (mode === 'single') {

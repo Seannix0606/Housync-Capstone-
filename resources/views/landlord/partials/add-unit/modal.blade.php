@@ -100,13 +100,19 @@
                                 @php
                                     $ptype = $prop->property_type ?? '';
                                     $stories = max(1, (int) ($prop->building_floors ?? $prop->floors ?? 1));
+                                    $unitCount = (int) ($prop->units_count ?? 0);
+                                    $maxUnits = isset($unitRules) ? $unitRules->maximumUnitsForType($ptype) : null;
+                                    $atCap = $maxUnits !== null && $unitCount >= $maxUnits;
                                 @endphp
                                 <option
                                     value="{{ $prop->id }}"
                                     data-search-label="{{ strtolower($prop->name) }}"
                                     data-property-type="{{ $ptype }}"
                                     data-building-stories="{{ $stories }}"
-                                >{{ $prop->name }}</option>
+                                    data-units-count="{{ $unitCount }}"
+                                    data-max-units="{{ $maxUnits ?? '' }}"
+                                    @disabled($atCap)
+                                >{{ $prop->name }}@if($atCap) — at unit limit @endif</option>
                             @endforeach
                         </select>
                     </div>
@@ -157,7 +163,7 @@
                         <div id="addUnitBulkFlatWrap" class="mb-3">
                             <label class="form-label" for="addUnitCountBulk" id="addUnitBulkFlatLabel">Number of units</label>
                             <input type="number" class="form-control" id="addUnitCountBulk" min="1" max="200" value="2">
-                            <div class="form-text">Used for townhouses, duplexes, and other layouts without a per-floor grid (total = this × building stories when stories &gt; 1).</div>
+                            <div class="form-text">For apartments and similar multi-unit buildings without a per-floor grid (total = this × building stories when stories &gt; 1). Single-family homes, townhouses, and duplexes have fixed unit counts—those properties only appear above if they still have room.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="addUnitBulkDefaultUnitType">Default unit type</label>
