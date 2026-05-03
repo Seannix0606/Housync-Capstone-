@@ -41,6 +41,12 @@ class BillingController extends Controller
             $query->where('type', $type);
         }
 
+        $query->withCount([
+            'payments as tenant_proof_count' => function ($q) {
+                $q->whereNotNull('proof_image')->where('proof_image', '!=', '');
+            },
+        ]);
+
         $bills = $query->orderByDesc('due_date')->orderByDesc('created_at')->paginate(10);
 
         // Simple summary cards (use null coalescing to avoid errors on empty data)
@@ -456,6 +462,10 @@ class BillingController extends Controller
         })->findOrFail($paymentId);
 
         $bill = $payment->bill;
+
+        if (! in_array($payment->status, ['pending', 'pending_verification'], true)) {
+            return back()->with('error', 'This payment has already been processed.');
+        }
 
         if ($request->action === 'verify') {
             DB::transaction(function () use ($payment, $bill, $landlordId) {
