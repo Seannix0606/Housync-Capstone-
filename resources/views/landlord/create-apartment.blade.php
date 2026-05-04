@@ -286,8 +286,14 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-error" id="create-property-flash-error">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+    @endif
+
     @if($errors->any())
-        <div class="alert alert-error">
+        <div class="alert alert-error" id="create-property-validation-errors">
             <i class="fas fa-exclamation-circle"></i> Please fix the following errors:
             <ul style="margin-left: 1rem; margin-top: 0.5rem;">
                 @foreach($errors->all() as $error)
@@ -729,6 +735,12 @@
 <script>
     // Form validation and enhancement
     document.addEventListener('DOMContentLoaded', function() {
+        const validationBanner = document.getElementById('create-property-validation-errors')
+            || document.getElementById('create-property-flash-error');
+        if (validationBanner) {
+            validationBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         const form = document.getElementById('createApartmentForm');
         const inputs = form.querySelectorAll('input, select, textarea');
         const coverImageInput = document.getElementById('createApartmentCoverImageInput');
@@ -839,6 +851,10 @@
             // Only validate required fields strictly
             const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
             requiredFields.forEach(field => {
+                // Disabled inputs are not posted; skip them (property type toggles disable floors, bedrooms, etc.)
+                if (field.disabled) {
+                    return;
+                }
                 validateField(field);
                 if (field.classList.contains('error') || !field.value.trim()) {
                     isValid = false;
