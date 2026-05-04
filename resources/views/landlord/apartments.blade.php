@@ -189,6 +189,12 @@ body.dark-mode .badge[style*="background: #e0e7ff"] {
         </div>
     @endif
 
+    @if(session('warning'))
+        <div class="alert alert-warning" style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e;">
+            <i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}
+        </div>
+    @endif
+
     @if(session('error'))
         <div class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
