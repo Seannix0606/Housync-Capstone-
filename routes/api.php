@@ -35,6 +35,9 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
     Route::post('/rfid/scan/request', [RfidController::class, 'getCardUIDFromESP32Reader'])->name('api.rfid.scan.request');
     Route::get('/rfid/scan/status/{scanId}', [RfidController::class, 'checkScanRequestStatus'])->name('api.rfid.scan.status');
 
+    Route::post('/rfid/scan/esp32-request', [RfidController::class, 'getCardUIDFromESP32Reader']);
+    Route::get('/rfid/scan/esp32-status/{scanId}', [RfidController::class, 'checkScanRequestStatus']);
+
     // Latest scanned card UID (card-registration UI — landlord/security/create.blade.php)
     Route::get('/rfid/latest-uid', [RfidController::class, 'getLatestCardUID'])->name('api.rfid.latest-uid');
 

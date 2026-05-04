@@ -451,106 +451,65 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Web-triggered scan request (creates a scan request file and polls for status)
     function startWebScanFlow() {
-        if (isScanning) return;
-        isScanning = true;
-        updateScanState('scanning', 'Starting web scan... Please tap a new card.');
-        scanIcon.classList.add('scanning');
-        // Prepare dropdown UI
-        cardUidSelect.classList.add('d-none');
-        cardUidSelect.innerHTML = '';
-        // Hide text input so dropdown becomes primary UI; keep value in hidden input for submission
-        cardUidInput.classList.add('d-none');
-        
-        // 1) Immediately load the most recent UID from latest_card.json
-        fetch('/api/rfid/web/latest-uid', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(d => {
-            if (d && d.success && d.card_uid) {
-                addUidOption(d.card_uid, true);
-                updateScanState('info', `Loaded recent Card UID: ${d.card_uid}`);
-            }
-        })
-        .catch(() => {/* ignore if none yet */});
+    if (isScanning) return;
+    isScanning = true;
+    updateScanState('scanning', 'Starting web scan... Please tap a new card.');
+    scanIcon.classList.add('scanning');
+    cardUidSelect.classList.add('d-none');
+    cardUidSelect.innerHTML = '';
+    cardUidInput.classList.add('d-none');
 
-        // 2) Start a lightweight polling of latest-uid as a fallback in parallel (up to 20s)
-        const latestPollStartedAt = Date.now();
-        let latestPollTimer = setInterval(() => {
-            if (Date.now() - latestPollStartedAt > 20000) { // 20s
-                clearInterval(latestPollTimer);
-                return;
-            }
-            fetch('/api/rfid/web/latest-uid')
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(d => {
-                    if (d && d.success && d.card_uid) {
-                        // If dropdown is empty or value differs, update and select
-                        if (!cardUidSelect.value || cardUidSelect.value !== d.card_uid) {
-                            addUidOption(d.card_uid, true);
-                            updateScanState('success', `✅ Card detected: ${d.card_uid}`);
-                            clearInterval(latestPollTimer);
-                            isScanning = false;
-                            stopAutomaticScanning();
-                        }
-                    }
-                })
-                .catch(() => {});
-        }, 1000);
+    // Step 1: Register a scan request using the correct endpoint
+    fetch('/api/rfid/scan/esp32-request', {   // ← was /api/rfid/scan/request
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success || !data.scan_id) {
+            throw new Error(data.error || 'Failed to start scan');
+        }
+        const scanId = data.scan_id;
+        const timeoutMs = (data.timeout || 15) * 1000;
+        const startedAt = Date.now();
+        updateScanState('scanning', 'Listening for a new card...');
 
-        fetch('/api/rfid/scan/request', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (!data.success || !data.scan_id) {
-                throw new Error(data.error || 'Failed to start scan');
-            }
-            const scanId = data.scan_id;
-            const timeoutMs = (data.timeout || 15) * 1000;
-            const startedAt = Date.now();
-            updateScanState('scanning', 'Listening for a new card...');
-            
-            const poll = () => {
-                fetch(`/api/rfid/scan/status/${scanId}`)
-                    .then(r => r.json())
-                    .then(s => {
-                        if (s.success && s.status === 'completed' && s.card_uid) {
-                            // Add scanned UID to dropdown (deduped) and select it
-                            addUidOption(s.card_uid, true);
-                            updateScanState('success', `✅ Card detected: ${s.card_uid}`);
-                            cardUidInput.classList.add('border-success');
-                            isScanning = false;
-                            stopAutomaticScanning();
-                            // Stop fallback polling
-                            try { clearInterval(latestPollTimer); } catch {}
-                            return;
-                        }
-                        if (s.status === 'timeout' || Date.now() - startedAt > timeoutMs) {
-                            updateScanState('error', 'Scan timed out. Try again.');
-                            isScanning = false;
-                            return;
-                        }
-                        setTimeout(poll, 1000);
-                    })
-                    .catch(() => {
-                        updateScanState('error', 'Scan failed. Try again.');
+        // Step 2: Poll the correct status endpoint
+        const poll = () => {
+            fetch(`/api/rfid/scan/esp32-status/${scanId}`)  // ← was /api/rfid/scan/status/{scanId}
+                .then(r => r.json())
+                .then(s => {
+                    if (s.success && s.status === 'completed' && s.card_uid) {
+                        addUidOption(s.card_uid, true);
+                        updateScanState('success', `Card detected: ${s.card_uid}`);
+                        cardUidInput.classList.add('border-success');
                         isScanning = false;
-                    });
-            };
-            poll();
-        })
-        .catch(err => {
-            console.error('Web scan error:', err);
-            updateScanState('error', err.message || 'Failed to start scan');
-            isScanning = false;
-        });
-    }
+                        stopAutomaticScanning();
+                        return;
+                    }
+                    if (s.status === 'timeout' || Date.now() - startedAt > timeoutMs) {
+                        updateScanState('error', 'Scan timed out. Try again.');
+                        isScanning = false;
+                        return;
+                    }
+                    setTimeout(poll, 1000);
+                })
+                .catch(() => {
+                    updateScanState('error', 'Scan failed. Try again.');
+                    isScanning = false;
+                });
+        };
+        poll();
+    })
+    .catch(err => {
+        console.error('Web scan error:', err);
+        updateScanState('error', err.message || 'Failed to start scan');
+        isScanning = false;
+    });
+}
 
     // Helper: add UID to dropdown (dedupe) and optionally select
     function addUidOption(uid, selectIt = false) {
@@ -595,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cardUidInput.value = data.card_uid;
                 cardUidInput.classList.add('border-success');
                 
-                let message = `✅ Card detected: ${data.card_uid}`;
+                let message = `Card detected: ${data.card_uid}`;
                 if (data.age_seconds !== undefined && data.age_seconds < 600) {
                     updateScanState('success', message);
                     cardUidHelp.innerHTML = `Card UID detected: <strong>${data.card_uid}</strong>. You can now complete the assignment.`;
