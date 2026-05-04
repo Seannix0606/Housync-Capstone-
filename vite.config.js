@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/landlord/bulk-edit-units.css',
                 'resources/js/landlord/bulk-edit-units.js',
+                'resources/js/unit-type-bedroom-autofill.js',
             ],
             refresh: true,
         }),

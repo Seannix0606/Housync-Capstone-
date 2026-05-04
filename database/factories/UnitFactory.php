@@ -20,7 +20,7 @@ class UnitFactory extends Factory
         return [
             'unit_number' => fake()->unique()->bothify('###??'),
             'property_id' => Property::factory(),
-            'unit_type' => 'Studio',
+            'unit_type' => 'studio',
             'rent_amount' => fake()->randomFloat(2, 500, 5000),
             'status' => 'available',
             'leasing_type' => 'separate',

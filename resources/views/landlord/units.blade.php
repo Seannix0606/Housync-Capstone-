@@ -1,5 +1,9 @@
 @extends('layouts.landlord-app')
 
+@prepend('scripts')
+    @include('partials.unit-type-bedroom-autofill')
+@endprepend
+
 @section('title', 'My Units')
 
 @push('styles')
@@ -337,8 +341,8 @@ function editUnit(unitId) {
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="edit_bedrooms" class="form-label">Bedrooms *</label>
-                                    <input type="number" class="form-control" id="edit_bedrooms" name="bedrooms" value="${data.bedrooms}" min="0" required readonly>
-                                    <small class="form-text text-muted">Auto-filled based on unit type</small>
+                                    <input type="number" class="form-control" id="edit_bedrooms" name="bedrooms" value="${data.bedrooms}" min="0" required>
+                                    <small class="form-text text-muted">Filled when unit type changes; you may override.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -429,37 +433,10 @@ function editUnit(unitId) {
                     // Show save button
                     saveBtn.style.display = 'inline-block';
                     
-                    // Add event listener for unit type change to auto-populate bedrooms
                     const editUnitTypeSelect = document.getElementById('edit_unit_type');
                     const editBedroomsInput = document.getElementById('edit_bedrooms');
-                    
-                    if (editUnitTypeSelect && editBedroomsInput) {
-                        editUnitTypeSelect.addEventListener('change', function() {
-                            const unitType = this.value;
-                            let bedroomCount = 0;
-                            
-                            switch(unitType) {
-                                case 'studio':
-                                    bedroomCount = 0;
-                                    break;
-                                case 'one_bedroom':
-                                    bedroomCount = 1;
-                                    break;
-                                case 'two_bedroom':
-                                    bedroomCount = 2;
-                                    break;
-                                case 'three_bedroom':
-                                    bedroomCount = 3;
-                                    break;
-                                case 'penthouse':
-                                    bedroomCount = 3; // Default for penthouse
-                                    break;
-                                default:
-                                    bedroomCount = 0;
-                            }
-                            
-                            editBedroomsInput.value = bedroomCount;
-                        });
+                    if (editUnitTypeSelect && editBedroomsInput && typeof window.attachUnitTypeBedroomAutofill === 'function') {
+                        window.attachUnitTypeBedroomAutofill(editUnitTypeSelect, editBedroomsInput);
                     }
                 })
                 .catch(error => {
@@ -991,15 +968,6 @@ function editUnit(unitId) {
     document.getElementById('addUnitPropertyId')?.addEventListener('change', updateBulkFloorUi);
     document.getElementById('addUnitUnitsPerFloor')?.addEventListener('input', updateFlooredTotalPreview);
     document.getElementById('addUnitBulkCreateAllBedrooms')?.addEventListener('change', updateBulkFloorUi);
-    document.getElementById('addUnitBulkDefaultUnitType')?.addEventListener('change', function () {
-        const map = { studio: 0, one_bedroom: 1, two_bedroom: 2, three_bedroom: 3, penthouse: 3 };
-        const b = map[this.value];
-        const el = document.getElementById('addUnitBulkDefaultBedrooms');
-        if (el !== null && b !== undefined) {
-            el.value = String(b);
-        }
-    });
-
     function showError(msg) {
         if (!errBox) return;
         errBox.textContent = msg || '';

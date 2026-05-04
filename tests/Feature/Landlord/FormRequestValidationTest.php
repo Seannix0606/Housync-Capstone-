@@ -4,6 +4,7 @@ namespace Tests\Feature\Landlord;
 
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Property;
+use App\Support\UnitTypeBedroomMapping;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,7 +77,7 @@ class FormRequestValidationTest extends TestCase
             'rent_amount' => 8000,
             'status' => 'available',
             'leasing_type' => 'separate',
-            'bedrooms' => 1,
+            'bedrooms' => 0,
             'bathrooms' => 1,
         ], $overrides);
     }
@@ -860,6 +861,42 @@ class FormRequestValidationTest extends TestCase
             ->post(route('landlord.store-unit', $property->id), $this->validStoreUnitPayload(['bedrooms' => -1]));
 
         $response->assertSessionHasErrors('bedrooms');
+    }
+
+    public function test_store_unit_rejects_unknown_unit_type_slug(): void
+    {
+        $landlord = $this->createLandlord();
+        $property = $this->createProperty($landlord);
+
+        $response = $this->actingAs($landlord)
+            ->post(route('landlord.store-unit', $property->id), $this->validStoreUnitPayload([
+                'unit_type' => 'Duplex',
+            ]));
+
+        $response->assertSessionHasErrors('unit_type');
+    }
+
+    public function test_store_unit_accepts_all_allowed_unit_type_slugs(): void
+    {
+        $landlord = $this->createLandlord();
+        $property = $this->createProperty($landlord);
+        $defaultBedrooms = UnitTypeBedroomMapping::defaultBedroomsByType();
+
+        $this->assertNotEmpty(
+            $defaultBedrooms,
+            'No unit type slugs found in config — loop would be vacuous'
+        );
+
+        foreach (UnitTypeBedroomMapping::allowedUnitTypeKeys() as $index => $slug) {
+            $response = $this->actingAs($landlord)
+                ->post(route('landlord.store-unit', $property->id), $this->validStoreUnitPayload([
+                    'unit_type' => $slug,
+                    'unit_number' => "U{$index}-{$slug}",
+                    'bedrooms' => $defaultBedrooms[$slug],
+                ]));
+
+            $response->assertSessionHasNoErrors("Failed for unit_type slug: {$slug}");
+        }
     }
 
     public function test_store_unit_requires_bathrooms_min_one(): void
