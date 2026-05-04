@@ -8,6 +8,7 @@ use App\Models\RfidCard;
 use App\Models\TenantAssignment;
 use App\Models\TenantRfidAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -175,7 +176,7 @@ class RfidController extends Controller
     }
 
     /**
-     * Show access logs
+     * Show access logs (paired main_entrance → main_exit visits vs other events)
      */
     public function accessLogs(Request $request)
     {
@@ -190,7 +191,7 @@ class RfidController extends Controller
         $apartments = $user->properties;
 
         // Build query — restrict to this landlord's properties
-        $query = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
+        $query = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'tenantAssignment.unit', 'apartment'])
             ->whereIn('property_id', $apartments->pluck('id'));
 
         // Apply filters
@@ -214,15 +215,118 @@ class RfidController extends Controller
             $query->whereDate('access_time', '<=', $dateTo);
         }
 
-        $logs = $query->orderBy('access_time', 'desc')->paginate(20);
+        $maxForPairing = 5000;
+        $allLogsAsc = (clone $query)->orderBy('access_time', 'asc')->limit($maxForPairing + 1)->get();
+        $pairingTruncated = $allLogsAsc->count() > $maxForPairing;
+        if ($pairingTruncated) {
+            $allLogsAsc = $allLogsAsc->take($maxForPairing);
+        }
+
+        [$visits, $otherLogs] = $this->partitionAccessLogsIntoVisitsAndOther($allLogsAsc);
+
+        $visits = $visits->sortByDesc(fn ($v) => $v->out->access_time)->values();
+
+        $visitPage = max(1, (int) $request->get('visit_page', 1));
+        $otherPage = max(1, (int) $request->get('other_page', 1));
+        $perVisitPage = 15;
+        $perOtherPage = 20;
+
+        $visitLogs = new LengthAwarePaginator(
+            $visits->forPage($visitPage, $perVisitPage)->values(),
+            $visits->count(),
+            $perVisitPage,
+            $visitPage,
+            ['path' => $request->url(), 'pageName' => 'visit_page']
+        );
+        $visitLogs->appends($request->except('visit_page'));
+
+        $otherLogsPaginator = new LengthAwarePaginator(
+            $otherLogs->forPage($otherPage, $perOtherPage)->values(),
+            $otherLogs->count(),
+            $perOtherPage,
+            $otherPage,
+            ['path' => $request->url(), 'pageName' => 'other_page']
+        );
+        $otherLogsPaginator->appends($request->except('other_page'));
 
         // Get denied access reasons for stats
         $deniedReasons = AccessLog::getDeniedAccessReasons($propertyId);
 
         return view('landlord.security.access-logs', compact(
-            'logs', 'apartments', 'propertyId', 'cardUid', 'result',
-            'dateFrom', 'dateTo', 'deniedReasons'
+            'visitLogs',
+            'otherLogsPaginator',
+            'pairingTruncated',
+            'maxForPairing',
+            'apartments',
+            'propertyId',
+            'cardUid',
+            'result',
+            'dateFrom',
+            'dateTo',
+            'deniedReasons',
+            'allLogsAsc'
         ));
+    }
+
+    /**
+     * Pair granted taps: main_entrance then main_exit for the same card_uid in time order.
+     * Unmatched entrance, orphan exit, denied, and other locations stay in "other".
+     *
+     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection}
+     */
+    private function partitionAccessLogsIntoVisitsAndOther($allLogsAsc): array
+    {
+        $pendingEntranceByCard = [];
+        $visits = [];
+        $other = [];
+
+        foreach ($allLogsAsc as $log) {
+            $scanType = is_array($log->raw_data) ? ($log->raw_data['scan_type'] ?? 'access_attempt') : 'access_attempt';
+            if ($scanType !== 'access_attempt') {
+                $other[] = $log;
+
+                continue;
+            }
+
+            if ($log->access_result !== 'granted') {
+                $other[] = $log;
+
+                continue;
+            }
+
+            $loc = strtolower(trim((string) $log->reader_location));
+
+            if ($loc === 'main_entrance') {
+                if (isset($pendingEntranceByCard[$log->card_uid])) {
+                    $other[] = $pendingEntranceByCard[$log->card_uid];
+                }
+                $pendingEntranceByCard[$log->card_uid] = $log;
+
+                continue;
+            }
+
+            if ($loc === 'main_exit') {
+                if (isset($pendingEntranceByCard[$log->card_uid])) {
+                    $visits[] = (object) [
+                        'in' => $pendingEntranceByCard[$log->card_uid],
+                        'out' => $log,
+                    ];
+                    unset($pendingEntranceByCard[$log->card_uid]);
+                } else {
+                    $other[] = $log;
+                }
+
+                continue;
+            }
+
+            $other[] = $log;
+        }
+
+        foreach ($pendingEntranceByCard as $orphanIn) {
+            $other[] = $orphanIn;
+        }
+
+        return [collect($visits), collect($other)->sortByDesc('access_time')->values()];
     }
 
     /**
