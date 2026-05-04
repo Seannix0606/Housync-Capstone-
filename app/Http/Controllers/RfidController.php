@@ -625,9 +625,11 @@ class RfidController extends Controller
                 // Scope to all properties of the specified landlord
                 $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
             } elseif ($user = auth()->user()) {
-                // Authenticated web session — auto-scope to this landlord's properties
                 $ownedIds = $user->properties()->pluck('id');
-                $query->whereIn('property_id', $ownedIds);
+                $query->where(function ($q) use ($ownedIds) {
+                    $q->whereIn('property_id', $ownedIds)
+                        ->orWhereNull('property_id');
+                });
             } else {
                 // No scope and no auth — refuse rather than expose cross-tenant UIDs
                 return response()->json([
