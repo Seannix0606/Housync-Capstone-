@@ -99,7 +99,7 @@ class ProfileController extends Controller
 
         try {
             $request->validate([
-                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:25,600',
+                'documents.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:25600',
                 'document_types.*' => ['required', 'string', Rule::in(TenantDocument::uploadableDocumentTypes())],
             ], [
                 'documents.*.required' => 'Please select at least one document to upload',
