@@ -190,15 +190,18 @@
 @endsection
 
 @push('scripts')
-<script type="application/json" id="bulk-edit-config">
-{!! \Illuminate\Support\Js::from([
-    'totalFloors' => $structureStories,
-    'propertyType' => $apartment->property_type,
-    'bulkParams' => $bulkParams ?? [],
-    'apartmentBedrooms' => $apartment->bedrooms ?? 1,
-    'existingUnitNumbers' => ($apartment->units ? $apartment->units->pluck('unit_number')->toArray() : []),
-    'existingUnitsCount' => $existingUnitsCount ?? 0,
-]) !!}
-</script>
+@php
+    $bulkEditPageConfig = [
+        'totalFloors' => $structureStories,
+        'propertyType' => $apartment->property_type,
+        'bulkParams' => $bulkParams ?? [],
+        'apartmentBedrooms' => $apartment->bedrooms ?? 1,
+        'existingUnitNumbers' => $apartment->units
+            ? $apartment->units->pluck('unit_number')->values()->all()
+            : [],
+        'existingUnitsCount' => $existingUnitsCount ?? 0,
+    ];
+@endphp
+<script type="application/json" id="bulk-edit-config">@json($bulkEditPageConfig)</script>
 @vite(['resources/js/landlord/bulk-edit-units.js'])
 @endpush
