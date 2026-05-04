@@ -366,6 +366,9 @@ class RfidController extends Controller
             $result['denial_reason'] = $rfidCard->getAccessDenialReason();
         }
 
+        $readerLocation = $request->input('reader_location', 'main_entrance');
+        $entryState = $this->resolveEntryStateForScan((string) $readerLocation, $cardUid);
+
         // Log the access attempt
         AccessLog::create([
             'card_uid' => $cardUid,
@@ -375,8 +378,8 @@ class RfidController extends Controller
             'access_result' => $result['access_granted'] ? 'granted' : 'denied',
             'denial_reason' => $result['denial_reason'],
             'access_time' => now(),
-            'reader_location' => $request->input('reader_location', 'main_entrance'),
-            'raw_data' => $request->all(),
+            'reader_location' => $readerLocation,
+            'raw_data' => array_merge($request->all(), ['entry_state' => $entryState]),
         ]);
 
         return response()->json($result);
@@ -450,20 +453,7 @@ class RfidController extends Controller
                 ], 400);
             }
 
-            // Determine entry state (IN/OUT) for single-scanner toggle
-            // Rule: If last scan for this card was IN, next is OUT; otherwise IN
-            $lastLog = \App\Models\AccessLog::where('card_uid', $cardUID)
-                ->orderBy('access_time', 'desc')
-                ->first();
-            $lastEntryState = null;
-            if ($lastLog) {
-                // Try to read from explicit field first, then from raw_data JSON
-                $lastEntryState = $lastLog->entry_state ?? null;
-                if (! $lastEntryState && is_array($lastLog->raw_data ?? null)) {
-                    $lastEntryState = $lastLog->raw_data['entry_state'] ?? null;
-                }
-            }
-            $entryState = ($lastEntryState === 'in') ? 'out' : 'in';
+            $entryState = $this->resolveEntryStateForScan((string) $readerLocation, $cardUID);
 
             // Process the card
             $rfidCard = RfidCard::with(['activeTenantAssignment.tenantAssignment.tenant'])->where('card_uid', $cardUID)->first();
@@ -1118,6 +1108,37 @@ class RfidController extends Controller
         Cache::put($cacheKey, $scanData, now()->addSeconds(30));
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Resolve entry direction for a scan.
+     * main_entrance is always "in"; main_exit is always "out".
+     * Any other reader_location keeps the legacy toggle from the card's last log.
+     */
+    private function resolveEntryStateForScan(string $readerLocation, string $cardUid): string
+    {
+        $loc = strtolower(trim($readerLocation));
+
+        if ($loc === 'main_entrance') {
+            return 'in';
+        }
+
+        if ($loc === 'main_exit') {
+            return 'out';
+        }
+
+        $lastLog = AccessLog::where('card_uid', $cardUid)
+            ->orderBy('access_time', 'desc')
+            ->first();
+        $lastEntryState = null;
+        if ($lastLog) {
+            $lastEntryState = $lastLog->entry_state ?? null;
+            if (! $lastEntryState && is_array($lastLog->raw_data ?? null)) {
+                $lastEntryState = $lastLog->raw_data['entry_state'] ?? null;
+            }
+        }
+
+        return ($lastEntryState === 'in') ? 'out' : 'in';
     }
 
     /**
