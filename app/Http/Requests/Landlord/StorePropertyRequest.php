@@ -30,6 +30,32 @@ class StorePropertyRequest extends FormRequest
                 'contact_phone' => preg_replace('/[^0-9]/', '', $this->contact_phone),
             ]);
         }
+
+        $this->normalizePayloadForPropertyType();
+    }
+
+    /**
+     * Strip fields that belong to other property-type flows so stray POST keys
+     * (duplicate array keys from APIs, rare client bugs, or switching types before submit)
+     * cannot fail validation — e.g. townhouse blocked by leftover duplex `unit_bedrooms` / `unit_stories`.
+     *
+     * Does not clear `floors` / `unit_count`: those are still validated intentionally per type.
+     */
+    protected function normalizePayloadForPropertyType(): void
+    {
+        $type = $this->input('property_type');
+        if (! is_string($type) || $type === '') {
+            return;
+        }
+
+        $merge = [];
+
+        if ($type !== 'duplex') {
+            $merge['unit_bedrooms'] = null;
+            $merge['unit_stories'] = null;
+        }
+
+        $this->merge($merge);
     }
 
     /**
