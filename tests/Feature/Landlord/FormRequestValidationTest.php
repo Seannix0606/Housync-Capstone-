@@ -97,6 +97,32 @@ class FormRequestValidationTest extends TestCase
         $response->assertRedirect(route('landlord.apartments'));
     }
 
+    public function test_store_property_allows_duplicate_property_name_by_generating_unique_slugs(): void
+    {
+        $landlord = $this->createLandlord();
+        $name = 'Same Name Property';
+
+        $first = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'name' => $name,
+                'floors' => 2,
+            ]));
+        $first->assertSessionHasNoErrors();
+        $first->assertRedirect(route('landlord.apartments'));
+
+        $second = $this->actingAs($landlord)
+            ->post(route('landlord.store-apartment'), $this->validStorePropertyPayload([
+                'name' => $name,
+                'floors' => 2,
+            ]));
+        $second->assertSessionHasNoErrors();
+        $second->assertRedirect(route('landlord.apartments'));
+
+        $this->assertEquals(2, Property::query()->where('landlord_id', $landlord->id)->count());
+        $slugs = Property::query()->where('landlord_id', $landlord->id)->orderBy('id')->pluck('slug');
+        $this->assertNotSame($slugs[0], $slugs[1]);
+    }
+
     public function test_store_property_requires_name(): void
     {
         $landlord = $this->createLandlord();

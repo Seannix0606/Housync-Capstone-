@@ -3,10 +3,11 @@
 namespace App\Http\Requests\Landlord;
 
 use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Validator;
 
 class StorePropertyRequest extends FormRequest
 {
@@ -320,5 +321,15 @@ class StorePropertyRequest extends FormRequest
         }
 
         return null;
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        Log::warning('StorePropertyRequest validation failed', [
+            'errors' => $validator->errors()->toArray(),
+            'input_keys' => array_keys($this->all()),
+        ]);
+
+        parent::failedValidation($validator);
     }
 }
