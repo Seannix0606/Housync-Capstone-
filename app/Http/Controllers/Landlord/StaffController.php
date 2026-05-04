@@ -65,18 +65,19 @@ class StaffController extends Controller
                 'staff_type' => 'required|string|max:100',
             ]);
 
-            $baseEmail = strtolower(str_replace(' ', '.', $request->name)).'@staff.housesync.com';
-            $email = $baseEmail;
+            $slug = strtolower(str_replace(' ', '.', $request->name));
+            $username = $slug.'.housesync.staff';
             $counter = 1;
-            while (User::where('email', $email)->exists()) {
-                $email = str_replace('@staff.housesync.com', $counter.'@staff.housesync.com', $baseEmail);
+            while (User::where('username', $username)->exists()) {
+                $username = $slug.$counter.'.housesync.staff';
                 $counter++;
             }
 
             $password = Str::random(8);
 
             $staff = User::create([
-                'email' => $email,
+                'email' => $username.'@staff-login.local',
+                'username' => $username,
                 'password' => $password,
                 'role' => 'staff',
             ]);
@@ -100,7 +101,7 @@ class StaffController extends Controller
             return redirect()->route('landlord.staff')
                 ->with('success', 'Staff member added successfully!')
                 ->with('staff_credentials', [
-                    'email' => $email,
+                    'username' => $username,
                     'password' => $password,
                     'staff_name' => $request->name,
                     'staff_type' => $request->staff_type,
@@ -211,7 +212,7 @@ class StaffController extends Controller
             })
             ->with('staffProfile')
             ->get()
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'staff_type' => $u->staff_type]);
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'username' => $u->username, 'staff_type' => $u->staff_type]);
 
         return response()->json(['staff' => $staff]);
     }
@@ -223,7 +224,7 @@ class StaffController extends Controller
             ->findOrFail($id);
 
         return response()->json([
-            'email' => $assignment->staff->email,
+            'username' => $assignment->staff->username,
             'note' => 'Passwords are not stored in plain text. Use the password reset flow to send a new password to this staff member.',
         ]);
     }

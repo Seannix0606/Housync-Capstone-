@@ -247,7 +247,7 @@
                                             </div>
                                             <div>
                                                 <h5 class="font-14 mb-0">{{ $staffMember->staffProfile->name ?? 'N/A' }}</h5>
-                                                <small class="text-muted">{{ $staffMember->email }}</small>
+                                                <small class="text-muted">{{ $staffMember->username }}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -310,7 +310,7 @@
                                                 </a></li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 @endif
-                                                <li><a class="dropdown-item" href="#" onclick="alert('Email: {{ $staffMember->email }}\nPassword: Use password reset if needed')" title="View Login Credentials">
+                                                <li><a class="dropdown-item" href="#" onclick="alert('Username: {{ $staffMember->username }}\nPassword: Use password reset if needed')" title="View Login Credentials">
                                                     <i class="mdi mdi-key me-1"></i> View Credentials
                                                 </a></li>
                                                 @if($staffMember->staffProfile->status === 'active')
@@ -407,7 +407,7 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="mdi mdi-check-circle text-success me-2"></i>
-                    Staff Assigned Successfully!
+                    Staff login credentials
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -435,10 +435,10 @@
                     <div class="credentials-box p-4 mb-4" style="background: #f8f9fa; border: 2px solid #28a745; border-radius: 8px;">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-primary">Email Address:</label>
+                                <label class="form-label fw-bold text-primary">Username:</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="assignedStaffEmail" value="{{ session('credentials')['email'] ?? session('staff_credentials')['email'] }}" readonly style="background: white; font-weight: bold; font-size: 1.1rem;">
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyText('assignedStaffEmail')" title="Copy email">
+                                    <input type="text" class="form-control" id="assignedStaffEmail" value="{{ (session('credentials') ?? [])['username'] ?? (session('credentials') ?? [])['email'] ?? session('staff_credentials')['username'] ?? '' }}" readonly style="background: white; font-weight: bold; font-size: 1.1rem;">
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyText('assignedStaffEmail')" title="Copy username">
                                         <i class="mdi mdi-content-copy"></i>
                                     </button>
                                 </div>
@@ -446,7 +446,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-primary">Password:</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="assignedStaffPassword" value="{{ session('credentials')['password'] ?? session('staff_credentials')['password'] }}" readonly style="background: white; font-weight: bold; font-size: 1.1rem; color: #dc3545;">
+                                    <input type="text" class="form-control" id="assignedStaffPassword" value="{{ (session('credentials') ?? [])['password'] ?? session('staff_credentials')['password'] ?? '' }}" readonly style="background: white; font-weight: bold; font-size: 1.1rem; color: #dc3545;">
                                     <button class="btn btn-outline-primary" type="button" onclick="copyText('assignedStaffPassword')" title="Copy password">
                                         <i class="mdi mdi-content-copy"></i>
                                     </button>
@@ -457,7 +457,7 @@
                     
                     <!-- Action Buttons -->
                     <div class="d-flex gap-2 mb-4">
-                        <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials(this)" title="Copy both email and password">
+                        <button type="button" class="btn btn-primary" onclick="copyAllStaffCredentials(this)" title="Copy both username and password">
                             <i class="mdi mdi-content-copy me-1"></i> Copy All Credentials
                         </button>
                         <button type="button" class="btn btn-outline-success" onclick="printStaffCredentials()" title="Print credentials">
@@ -480,12 +480,12 @@
                         <p class="mb-2">Share these credentials with the staff member:</p>
                         <div class="row">
                             <div class="col-md-6">
-                                <strong>Email:</strong><br>
+                                <strong>Username:</strong><br>
                                 <code id="staffEmail"></code>
                             </div>
                             <div class="col-md-6">
-                                <strong>Password:</strong><br>
-                                <code id="staffPassword"></code>
+                                <strong>Note:</strong><br>
+                                <code id="staffNote"></code>
                             </div>
                         </div>
                     </div>
@@ -530,14 +530,13 @@ function updateStaffStatus(assignmentId, status) {
     }
 }
 
-function viewStaffCredentials(assignmentId, email) {
-    // Fetch credentials from the server
+function viewStaffCredentials(assignmentId) {
     fetch(`/landlord/staff/${assignmentId}/credentials`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('staffEmail').textContent = data.email;
-            document.getElementById('staffPassword').textContent = data.password;
-            
+            document.getElementById('staffEmail').textContent = data.username ?? '';
+            document.getElementById('staffNote').textContent = data.note ?? '';
+
             const modal = new bootstrap.Modal(document.getElementById('staffCredentialsModal'));
             modal.show();
         })
@@ -548,9 +547,9 @@ function viewStaffCredentials(assignmentId, email) {
 }
 
 function copyStaffCredentials() {
-    const email = document.getElementById('staffEmail').textContent;
-    const password = document.getElementById('staffPassword').textContent;
-    const credentials = `Email: ${email}\nPassword: ${password}`;
+    const username = document.getElementById('staffEmail')?.textContent ?? '';
+    const note = document.getElementById('staffNote')?.textContent ?? '';
+    const credentials = `Username: ${username}\n${note}`;
     
     navigator.clipboard.writeText(credentials).then(function() {
         alert('Credentials copied to clipboard!');
@@ -595,12 +594,12 @@ function copyText(elementId) {
 }
 
 function copyAllStaffCredentials(triggerBtn) {
-    const emailEl = document.getElementById('assignedStaffEmail');
+    const usernameEl = document.getElementById('assignedStaffEmail');
     const passwordEl = document.getElementById('assignedStaffPassword');
-    const email = emailEl ? emailEl.value : '';
+    const username = usernameEl ? usernameEl.value : '';
     const password = passwordEl ? passwordEl.value : '';
     const credentials = `Staff Login Credentials:
-Email: ${email}
+Username: ${username}
 Password: ${password}
 
 Please use these credentials to log in to your staff dashboard.`;
@@ -658,7 +657,7 @@ Please use these credentials to log in to your staff dashboard.`;
 }
 
 function printStaffCredentials() {
-    const email = document.getElementById('assignedStaffEmail').value;
+    const username = document.getElementById('assignedStaffEmail').value;
     const password = document.getElementById('assignedStaffPassword').value;
     
     const printWindow = window.open('', '_blank');
@@ -684,8 +683,8 @@ function printStaffCredentials() {
             
             <div class="credentials">
                 <div class="credential-item">
-                    <span class="label">Email Address:</span>
-                    <span class="value">${email}</span>
+                    <span class="label">Username:</span>
+                    <span class="value">${username}</span>
                 </div>
                 <div class="credential-item">
                     <span class="label">Password:</span>
@@ -746,7 +745,7 @@ function filterStaffByType() {
                 data.staff.forEach(staff => {
                     const option = document.createElement('option');
                     option.value = staff.id;
-                    option.textContent = `${staff.name} (${staff.email})`;
+                    option.textContent = `${staff.name} (${staff.username})`;
                     staffSelect.appendChild(option);
                 });
                 staffSelect.disabled = false;
