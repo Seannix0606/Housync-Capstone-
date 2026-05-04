@@ -920,6 +920,11 @@ class FormRequestValidationTest extends TestCase
         $property = $this->createProperty($landlord);
         $defaultBedrooms = UnitTypeBedroomMapping::defaultBedroomsByType();
 
+        $this->assertNotEmpty(
+            $defaultBedrooms,
+            'No unit type slugs found in config — loop would be vacuous'
+        );
+
         foreach (UnitTypeBedroomMapping::allowedUnitTypeKeys() as $index => $slug) {
             $response = $this->actingAs($landlord)
                 ->post(route('landlord.store-unit', $property->id), $this->validStoreUnitPayload([
