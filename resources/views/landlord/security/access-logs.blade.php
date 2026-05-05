@@ -190,10 +190,17 @@
         <div class="card-body">
             @if($visitLogs->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover table-visit-pairs">
                         <thead>
+                            <tr class="visit-group-header">
+                                <th class="text-success">Entry Side</th>
+                                <th class="visit-separator-cell"></th>
+                                <th class="text-primary">Exit Side</th>
+                                <th colspan="5"></th>
+                            </tr>
                             <tr>
                                 <th>In (main entrance)</th>
+                                <th class="visit-separator-cell"></th>
                                 <th>Out (main exit)</th>
                                 <th>Duration</th>
                                 <th>Card UID</th>
@@ -214,6 +221,9 @@
                                     <td>
                                         <div>{{ $in->access_time->format('M j, Y') }}</div>
                                         <small class="text-muted">{{ $in->access_time->format('g:i:s A') }}</small>
+                                    </td>
+                                    <td class="visit-separator-cell">
+                                        <span class="visit-separator-line"></span>
                                     </td>
                                     <td>
                                         <div>{{ $out->access_time->format('M j, Y') }}</div>
@@ -278,21 +288,32 @@
         </div>
     </div>
 
-    <!-- Other events: denied, orphan exit/in, other locations, incomplete entrance -->
+    <!-- Access events: denied, orphan exit/in, other locations, incomplete entrance -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-list"></i> Other access events
+                    <i class="fas fa-list"></i> Access events
                 </h5>
                 <small class="text-muted">Denied attempts, taps at other readers, orphan exit without matching entrance, or entrance without a matching exit yet.</small>
             </div>
-            @if($otherLogsPaginator->total() > 0)
-                <span class="badge bg-secondary">
-                    {{ $otherLogsPaginator->firstItem() }}–{{ $otherLogsPaginator->lastItem() }} of {{ $otherLogsPaginator->total() }}
-                </span>
-            @endif
+            <div class="d-flex align-items-center gap-2">
+                @if($otherLogsPaginator->total() > 0)
+                    <span class="badge bg-secondary">
+                        {{ $otherLogsPaginator->firstItem() }}–{{ $otherLogsPaginator->lastItem() }} of {{ $otherLogsPaginator->total() }}
+                    </span>
+                @endif
+                <button class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#access-events-collapse"
+                        aria-expanded="false"
+                        aria-controls="access-events-collapse">
+                    Toggle
+                </button>
+            </div>
         </div>
+        <div id="access-events-collapse" class="collapse">
         <div class="card-body">
             @if($otherLogsPaginator->count() > 0)
                 <div class="table-responsive">
@@ -391,6 +412,7 @@
                 </div>
             @endif
         </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -424,6 +446,30 @@
         font-weight: 600;
         color: #495057;
         margin-bottom: 0.25rem;
+    }
+
+    .table-visit-pairs .visit-separator-cell {
+        width: 18px;
+        min-width: 18px;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        text-align: center;
+    }
+
+    .table-visit-pairs .visit-separator-line {
+        display: inline-block;
+        width: 2px;
+        min-height: 34px;
+        background: #ced4da;
+        border-radius: 99px;
+    }
+
+    .table-visit-pairs .visit-group-header th {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-bottom: 0;
+        padding-bottom: 0.35rem;
     }
 </style>
 @endsection

@@ -202,46 +202,92 @@
         </div>
     </div>
 
-    <!-- Recent Access Logs -->
+    <!-- Recent Complete Visits -->
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Recent Access Attempts</h5>
+            <h5 class="card-title mb-0">Recent Complete Visits</h5>
             <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
                class="btn btn-sm btn-outline-primary">
                 View All
             </a>
         </div>
         <div class="card-body">
-            <div class="table-responsive" id="recent-logs-container">
-                <table class="table table-sm" id="recent-logs-table">
+            <div class="table-responsive">
+                <table class="table table-sm table-visit-pairs">
                     <thead>
+                        <tr class="visit-group-header">
+                            <th class="text-success">Entry Side</th>
+                            <th class="visit-separator-cell"></th>
+                            <th class="text-primary">Exit Side</th>
+                            <th colspan="4"></th>
+                        </tr>
                         <tr>
-                            <th>Time</th>
+                            <th>In (Main Entrance)</th>
+                            <th class="visit-separator-cell"></th>
+                            <th>Out (Main Exit)</th>
+                            <th>Duration</th>
                             <th>Card UID</th>
                             <th>Tenant</th>
-                            <th>Result</th>
-                            <th>Reason</th>
+                            <th>Visit</th>
                         </tr>
                     </thead>
-                    <tbody id="recent-logs-body">
-                        @forelse($recentLogs as $log)
+                    <tbody>
+                        @forelse($recentCompleteVisits as $visit)
+                            @php
+                                $in = $visit->in;
+                                $out = $visit->out;
+                                $secs = $in->access_time->diffInSeconds($out->access_time);
+                                $mins = (int) floor($secs / 60);
+                            @endphp
                             <tr>
-                                <td><small>{{ $log->access_time->format('M j, g:i A') }}</small></td>
-                                <td><code class="small">{{ $log->card_uid }}</code></td>
-                                <td><small>{{ $log->tenant_name }}</small></td>
-                                <td><span class="badge bg-{{ $log->display_badge_class }}">{{ $log->display_result }}</span></td>
                                 <td>
-                                    @if($log->denial_reason)
-                                        <small class="text-muted">{{ $log->denial_reason_display }}</small>
-                                    @else
-                                        <small class="text-success">Access granted</small>
-                                    @endif
+                                    <small>
+                                        <div>{{ $in->access_time->format('M j, Y') }}</div>
+                                        <div class="text-muted">{{ $in->access_time->format('g:i:s A') }}</div>
+                                    </small>
+                                </td>
+                                <td class="visit-separator-cell">
+                                    <span class="visit-separator-line"></span>
+                                </td>
+                                <td>
+                                    <small>
+                                        <div>{{ $out->access_time->format('M j, Y') }}</div>
+                                        <div class="text-muted">{{ $out->access_time->format('g:i:s A') }}</div>
+                                    </small>
+                                </td>
+                                <td>
+                                    <small>
+                                        @if($secs < 60)
+                                            {{ $secs }}s
+                                        @elseif($mins < 60)
+                                            {{ $mins }} min
+                                        @else
+                                            {{ intdiv($mins, 60) }} h {{ $mins % 60 }} min
+                                        @endif
+                                    </small>
+                                </td>
+                                <td>
+                                    <code class="small">{{ $in->card_uid }}</code>
+                                </td>
+                                <td>
+                                    <small>
+                                        @if($in->tenantAssignment)
+                                            {{ $in->tenantAssignment->tenant->name }}
+                                        @else
+                                            Unknown
+                                        @endif
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">In → Out</span>
                                 </td>
                             </tr>
                         @empty
-                            <tr id="recent-logs-empty-row">
-                                <td colspan="5" class="text-center text-muted py-3">
-                                    No recent access attempts yet.
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">
+                                    No complete visits yet.
+                                    <br>
+                                    <small class="text-muted">A complete visit requires a granted <code>main_entrance</code> tap followed by a granted <code>main_exit</code> tap for the same card UID.</small>
                                 </td>
                             </tr>
                         @endforelse
@@ -252,65 +298,6 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const bodyEl = document.getElementById('recent-logs-body');
-    if (!bodyEl) return;
-    const propertyId = @json($propertyId);
-
-    function escapeHtml(str) {
-        if (str == null) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function renderRows(logs) {
-        if (!Array.isArray(logs) || logs.length === 0) {
-            bodyEl.innerHTML = `
-                <tr id="recent-logs-empty-row">
-                    <td colspan="5" class="text-center text-muted py-3">
-                        No recent access attempts yet.
-                    </td>
-                </tr>`;
-            return;
-        }
-
-        const rows = logs.map(l => `
-            <tr>
-                <td><small>${escapeHtml(l.access_time_human)}</small></td>
-                <td><code class="small">${escapeHtml(l.card_uid)}</code></td>
-                <td><small>${escapeHtml(l.tenant_name)}</small></td>
-                <td><span class="badge bg-${escapeHtml(l.result_badge_class || 'secondary')}">${escapeHtml(l.result_text)}</span></td>
-                <td>${l.denial_reason ? `<small class="text-muted">${escapeHtml(l.denial_reason)}</small>` : '<small class="text-success">Access granted</small>'}</td>
-            </tr>`).join('');
-        bodyEl.innerHTML = rows;
-    }
-
-    async function refreshLogs() {
-        try {
-            const params = new URLSearchParams();
-            if (propertyId) params.set('property_id', propertyId);
-            params.set('limit', 10);
-            const res = await fetch(`/api/rfid/recent-logs?${params.toString()}`, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            if (data && data.success && Array.isArray(data.logs)) {
-                renderRows(data.logs);
-            }
-        } catch (e) { /* silent */ }
-    }
-
-    // Initial and interval refresh (every 2s)
-    refreshLogs();
-    setInterval(refreshLogs, 2000);
-});
-</script>
-@endpush
 
 @section('styles')
 <style>
@@ -326,6 +313,30 @@ document.addEventListener('DOMContentLoaded', function() {
         letter-spacing: 0.05em;
         color: #6c757d;
         border-bottom: 2px solid #dee2e6;
+    }
+
+    .table-visit-pairs .visit-separator-cell {
+        width: 18px;
+        min-width: 18px;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        text-align: center;
+    }
+
+    .table-visit-pairs .visit-separator-line {
+        display: inline-block;
+        width: 2px;
+        min-height: 34px;
+        background: #ced4da;
+        border-radius: 99px;
+    }
+
+    .table-visit-pairs .visit-group-header th {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-bottom: 0;
+        padding-bottom: 0.35rem;
     }
     
     .btn-group-sm .btn {
