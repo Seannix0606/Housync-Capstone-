@@ -387,6 +387,22 @@ class User extends Authenticatable
         return $query->where('role', $role);
     }
 
+    /**
+     * Whether every uploaded landlord document has been verified (and at least one exists).
+     */
+    public function landlordDocumentsFullyVerified(): bool
+    {
+        $documents = $this->relationLoaded('landlordDocuments')
+            ? $this->landlordDocuments
+            : $this->landlordDocuments()->get();
+
+        if ($documents->isEmpty()) {
+            return false;
+        }
+
+        return $documents->every(fn ($doc) => $doc->verification_status === 'verified');
+    }
+
     // Methods - Now update profiles instead of users table
     public function approve($adminId)
     {

@@ -67,21 +67,28 @@
                             </span>
                         </td>
                         <td>
-                            <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" style="display: inline;">
-                                @csrf
-                                <input type="hidden" name="status" value="verified">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-check"></i> Verify
-                                </button>
-                            </form>
-                            <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" style="display: inline;">
-                                @csrf
-                                <input type="hidden" name="status" value="rejected">
-                                <input type="text" name="notes" placeholder="Reason (optional)" style="width: 120px;" />
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            </form>
+                            @if($doc->verification_status === 'pending')
+                                <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" class="js-landlord-doc-verify-form" style="display: inline;">
+                                    @csrf
+                                    <input type="hidden" name="status" value="verified">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check"></i> Verify
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" class="js-landlord-doc-verify-form" style="display: inline;">
+                                    @csrf
+                                    <input type="hidden" name="status" value="rejected">
+                                    <input type="text" name="notes" placeholder="Reason (optional)" style="width: 120px;" />
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </form>
+                            @else
+                                <span style="font-size: 0.75rem; color: #64748b;">No further action</span>
+                                @if($doc->verification_status === 'rejected' && $doc->verification_notes)
+                                    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">{{ $doc->verification_notes }}</div>
+                                @endif
+                            @endif
                         </td>
                     </tr>
                 @endforeach
