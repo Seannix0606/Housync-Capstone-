@@ -98,16 +98,41 @@ class LandlordVerificationController extends Controller
             'verification_notes' => $request->notes,
         ]);
 
-        if ($request->expectsJson()) {
-            $verified = $request->status === 'verified';
+        $autoApproved = false;
 
+        if ($request->status === 'verified') {
+            $landlord = User::where('role', 'landlord')
+                ->with(['landlordProfile', 'landlordDocuments'])
+                ->find($doc->landlord_id);
+
+            if ($landlord && $landlord->landlordProfile) {
+                $allVerified = $landlord->landlordDocuments->isNotEmpty()
+                    && $landlord->landlordDocuments->every(fn ($item) => $item->verification_status === 'verified');
+
+                if ($allVerified && $landlord->landlordProfile->status !== 'approved') {
+                    $landlord->approve(Auth::id());
+                    $autoApproved = true;
+                    Cache::forget('super_admin.pending_landlords_count');
+                }
+            }
+        }
+
+        if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => $verified ? 'Document verified.' : 'Document rejected.',
-                'variant' => $verified ? 'success' : 'warning',
+                'message' => $autoApproved
+                    ? 'Document verified. Landlord automatically approved.'
+                    : 'Document updated.',
+                'variant' => $autoApproved ? 'success' : ($request->status === 'verified' ? 'success' : 'warning'),
+                'auto_approved' => $autoApproved,
             ]);
         }
 
-        return back()->with('success', 'Document updated.');
+        return back()->with(
+            'success',
+            $autoApproved
+                ? 'Document verified. Landlord automatically approved.'
+                : 'Document updated.'
+        );
     }
 }

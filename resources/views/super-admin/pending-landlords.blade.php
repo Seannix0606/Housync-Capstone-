@@ -704,7 +704,7 @@
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">Landlord Registration Requests</h2>
-                        <p class="section-subtitle">Review applications and approve or reject landlord accounts</p>
+                        <p class="section-subtitle">Review applications, verify documents, and reject landlord accounts when needed</p>
                     </div>
                 </div>
 
@@ -763,25 +763,15 @@
                                             @elseif($docsAllVerified)
                                                 <span class="status-badge status-docs-complete">All verified</span>
                                             @else
-                                                <span class="status-badge status-docs-pending" title="Verify each file in View Docs">{{ $docVerified }}/{{ $docTotal }} verified</span>
+                                                <span class="status-badge status-docs-pending" title="Verify each file in Verify Documents">{{ $docVerified }}/{{ $docTotal }} verified</span>
                                             @endif
                                         </td>
                                         <td>
                                             <div class="landlord-actions">
                                                 <button type="button" class="btn btn-primary btn-sm" onclick='showDocumentsModal({{ $landlord->id }}, @json($landlord->name))'>
-                                                    <i class="fas fa-file-alt"></i> View Docs
+                                                    <i class="fas fa-file-alt"></i> Verify Documents
                                                 </button>
                                                 @if($landlord->landlordProfile)
-                                                    <form method="POST" action="{{ route('super-admin.approve-landlord', $landlord->id) }}" style="display: inline;">
-                                                        @csrf
-                                                        <button
-                                                            type="submit"
-                                                            class="btn btn-success btn-sm"
-                                                            @if(! $docsAllVerified) disabled title="Verify every document in View Docs before approving" @else onclick="return confirm('Are you sure you want to approve this landlord?')" @endif
-                                                        >
-                                                            <i class="fas fa-check"></i> Approve
-                                                        </button>
-                                                    </form>
                                                     <button type="button" class="btn btn-danger btn-sm" onclick='showRejectModal({{ $landlord->id }}, @json($landlord->name))'>
                                                         <i class="fas fa-times"></i> Reject
                                                     </button>
