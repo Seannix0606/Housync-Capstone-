@@ -55,6 +55,30 @@ class StaffController extends Controller
         return view('landlord.assign-staff', compact('units', 'selectedUnit'));
     }
 
+    /**
+     * Toggle staff profile active/inactive (landlord-owned staff only).
+     */
+    public function updateStaffProfileStatus(Request $request, User $user)
+    {
+        $request->validate([
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        if ($user->role !== 'staff') {
+            abort(404);
+        }
+
+        $profile = StaffProfile::where('user_id', $user->id)
+            ->where('created_by_landlord_id', Auth::id())
+            ->firstOrFail();
+
+        $profile->update(['status' => $request->status]);
+
+        $verb = $request->status === 'active' ? 'activated' : 'deactivated';
+
+        return back()->with('success', "Staff member {$verb} successfully.");
+    }
+
     public function addStaff(Request $request)
     {
         try {
@@ -208,7 +232,8 @@ class StaffController extends Controller
             ->where('status', 'active')
             ->whereHas('staffProfile', function ($q) use ($staffType, $landlordId) {
                 $q->where('staff_type', $staffType)
-                    ->where('created_by_landlord_id', $landlordId);
+                    ->where('created_by_landlord_id', $landlordId)
+                    ->where('status', 'active');
             })
             ->with('staffProfile')
             ->get()

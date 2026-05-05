@@ -314,13 +314,27 @@
                                                     <i class="mdi mdi-key me-1"></i> View Credentials
                                                 </a></li>
                                                 @if($staffMember->staffProfile->status === 'active')
-                                                <li><a class="dropdown-item" href="#" onclick="alert('Deactivate feature coming soon')" title="Deactivate Staff">
-                                                    <i class="mdi mdi-pause me-1"></i> Deactivate
-                                                </a></li>
+                                                <li>
+                                                    <form action="{{ route('landlord.update-staff-profile-status', $staffMember) }}" method="post" class="px-0 mb-0" onsubmit="return confirm('Deactivate this staff member? They will no longer appear for new assignments until reactivated.');">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="hidden" name="status" value="inactive">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="mdi mdi-pause me-1"></i> Deactivate
+                                                        </button>
+                                                    </form>
+                                                </li>
                                                 @else
-                                                <li><a class="dropdown-item" href="#" onclick="alert('Activate feature coming soon')" title="Activate Staff">
-                                                    <i class="mdi mdi-play me-1"></i> Activate
-                                                </a></li>
+                                                <li>
+                                                    <form action="{{ route('landlord.update-staff-profile-status', $staffMember) }}" method="post" class="px-0 mb-0" onsubmit="return confirm('Activate this staff member?');">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="hidden" name="status" value="active">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="mdi mdi-play me-1"></i> Activate
+                                                        </button>
+                                                    </form>
+                                                </li>
                                                 @endif
                                             </ul>
                                         </div>

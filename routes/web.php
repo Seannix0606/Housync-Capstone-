@@ -191,6 +191,7 @@ Route::middleware(['role:landlord'])->prefix('landlord')->name('landlord.')->gro
     // Staff Management
     Route::controller(\App\Http\Controllers\Landlord\StaffController::class)->group(function () {
         Route::get('/staff', 'index')->name('staff');
+        Route::put('/staff/members/{user}/profile-status', 'updateStaffProfileStatus')->name('update-staff-profile-status');
         Route::post('/staff/add', 'addStaff')->name('add-staff');
         Route::get('/staff/by-type/{staffType}', 'getStaffByType')->name('staff-by-type');
         Route::get('/staff/create', 'create')->name('create-staff');
