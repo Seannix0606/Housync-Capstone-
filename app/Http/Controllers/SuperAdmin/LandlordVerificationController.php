@@ -33,10 +33,17 @@ class LandlordVerificationController extends Controller
             return back()->with('error', 'User is not a landlord.');
         }
 
-        $landlord->load('landlordProfile');
+        $landlord->load(['landlordProfile', 'landlordDocuments']);
 
         if ($landlord->landlordProfile && $landlord->landlordProfile->status === 'approved') {
             return back()->with('error', 'This landlord is already approved.');
+        }
+
+        if (! $landlord->landlordDocumentsFullyVerified()) {
+            return back()->with(
+                'error',
+                'All submitted documents must be verified before this landlord can be approved.',
+            );
         }
 
         $landlord->approve(Auth::id());
@@ -90,6 +97,16 @@ class LandlordVerificationController extends Controller
             'verified_by' => Auth::id(),
             'verification_notes' => $request->notes,
         ]);
+
+        if ($request->expectsJson()) {
+            $verified = $request->status === 'verified';
+
+            return response()->json([
+                'success' => true,
+                'message' => $verified ? 'Document verified.' : 'Document rejected.',
+                'variant' => $verified ? 'success' : 'warning',
+            ]);
+        }
 
         return back()->with('success', 'Document updated.');
     }

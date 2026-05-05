@@ -36,12 +36,18 @@
             padding: 2rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-bottom: 2rem;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
         }
 
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
             margin-bottom: 2rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid #f1f5f9;
@@ -88,8 +94,18 @@
             font-weight: 500;
         }
 
+        .table-container {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .data-table {
             width: 100%;
+            max-width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             margin-top: 1rem;
         }
@@ -104,16 +120,92 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            vertical-align: top;
+            word-break: normal;
+            overflow-wrap: normal;
         }
 
         .data-table td {
             padding: 1rem;
             border-bottom: 1px solid #f1f5f9;
             font-size: 0.875rem;
+            vertical-align: top;
+            word-break: normal;
+            overflow-wrap: normal;
+        }
+
+        /* Long unbroken strings only where needed */
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2),
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4) {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .data-table td:nth-child(3) {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 0;
         }
 
         .data-table tbody tr:hover {
             background: #f8fafc;
+        }
+
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1) { width: 12%; min-width: 4.5rem; }
+
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2) { width: 16%; min-width: 6rem; }
+
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3) { width: 9%; min-width: 4.5rem; }
+
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4) { width: 14%; min-width: 5rem; }
+
+        .data-table th:nth-child(5),
+        .data-table td:nth-child(5) { width: 11%; min-width: 5rem; }
+
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6) { width: 9%; min-width: 6.75rem; }
+
+        .data-table th:nth-child(7),
+        .data-table td:nth-child(7) { width: 11%; min-width: 7.75rem; }
+
+        .data-table th:nth-child(8),
+        .data-table td:nth-child(8) { width: 10%; min-width: 9.5rem; }
+
+        .data-table th:nth-child(6),
+        .data-table th:nth-child(7) {
+            white-space: nowrap;
+        }
+
+        .cell-business-info {
+            max-width: 100%;
+            line-height: 1.35;
+        }
+
+        .landlord-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+            min-width: min(100%, 9.25rem);
+        }
+
+        .landlord-actions form {
+            display: block;
+            margin: 0;
+            width: 100%;
+        }
+
+        .landlord-actions .btn {
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+            white-space: nowrap;
         }
 
         .btn {
@@ -169,11 +261,22 @@
         }
 
         .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            min-height: 1.625rem;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
+            line-height: 1;
             text-transform: uppercase;
+            white-space: nowrap;
+            max-width: 100%;
+            word-break: normal;
+            overflow-wrap: normal;
+            letter-spacing: 0.025em;
         }
 
         .status-pending {
@@ -189,6 +292,22 @@
         .status-rejected {
             background: #fee2e2;
             color: #dc2626;
+        }
+
+        .status-docs-complete {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-docs-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .btn-success:disabled,
+        .btn-success[disabled] {
+            opacity: 0.55;
+            cursor: not-allowed;
         }
 
         .alert {
@@ -360,6 +479,54 @@
             min-height: 100px;
         }
 
+        @media (max-width: 1200px) {
+            .page-section {
+                padding: 1.35rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.65rem 0.5rem;
+                font-size: 0.8125rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .page-section {
+                padding: 1rem;
+            }
+
+            .section-title {
+                font-size: 1.2rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.35rem;
+                font-size: 0.72rem;
+            }
+
+            .data-table th {
+                letter-spacing: 0.02em;
+            }
+
+            .status-badge {
+                font-size: 0.65rem;
+                min-height: 1.35rem;
+                padding: 0.2rem 0.45rem;
+                letter-spacing: 0.02em;
+            }
+
+            .btn-sm {
+                padding: 0.35rem 0.5rem;
+                font-size: 0.7rem;
+            }
+        }
+
         /* Dark Mode Styles */
         body.dark-mode .content-header h1 {
             color: #f1f5f9 !important;
@@ -434,6 +601,16 @@
         body.dark-mode .status-rejected {
             background: #7f1d1d !important;
             color: #fca5a5 !important;
+        }
+
+        body.dark-mode .status-docs-complete {
+            background: #064e3b !important;
+            color: #6ee7b7 !important;
+        }
+
+        body.dark-mode .status-docs-pending {
+            background: #78350f !important;
+            color: #fbbf24 !important;
         }
 
         body.dark-mode .alert-success {
@@ -545,6 +722,7 @@
                                     <th>Business Info</th>
                                     <th>Registered</th>
                                     <th>Status</th>
+                                    <th>Documents</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -560,7 +738,7 @@
                                         <td>{{ $landlord->email }}</td>
                                         <td>{{ $landlord->phone ?? 'N/A' }}</td>
                                         <td>
-                                            <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $landlord->business_info }}">
+                                            <div class="cell-business-info" title="{{ $landlord->business_info }}">
                                                 {{ $landlord->business_info ?? 'N/A' }}
                                             </div>
                                         </td>
@@ -573,20 +751,38 @@
                                                 {{ ucfirst($landlord->status) }}
                                             </span>
                                         </td>
+                                        @php
+                                            $docRows = $landlord->landlordDocuments;
+                                            $docTotal = $docRows->count();
+                                            $docVerified = $docRows->where('verification_status', 'verified')->count();
+                                            $docsAllVerified = $landlord->landlordDocumentsFullyVerified();
+                                        @endphp
                                         <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-primary btn-sm" onclick="showDocumentsModal({{ $landlord->id }}, '{{ $landlord->name }}')">
+                                            @if($docTotal === 0)
+                                                <span class="status-badge status-docs-pending" title="No files on record">No uploads</span>
+                                            @elseif($docsAllVerified)
+                                                <span class="status-badge status-docs-complete">All verified</span>
+                                            @else
+                                                <span class="status-badge status-docs-pending" title="Verify each file in View Docs">{{ $docVerified }}/{{ $docTotal }} verified</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="landlord-actions">
+                                                <button type="button" class="btn btn-primary btn-sm" onclick='showDocumentsModal({{ $landlord->id }}, @json($landlord->name))'>
                                                     <i class="fas fa-file-alt"></i> View Docs
                                                 </button>
-                                                {{-- INTENTIONAL BUG DEMO: restore pending-only actions with: landlordProfile->status === 'pending' --}}
                                                 @if($landlord->landlordProfile)
                                                     <form method="POST" action="{{ route('super-admin.approve-landlord', $landlord->id) }}" style="display: inline;">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve this landlord?')">
+                                                        <button
+                                                            type="submit"
+                                                            class="btn btn-success btn-sm"
+                                                            @if(! $docsAllVerified) disabled title="Verify every document in View Docs before approving" @else onclick="return confirm('Are you sure you want to approve this landlord?')" @endif
+                                                        >
                                                             <i class="fas fa-check"></i> Approve
                                                         </button>
                                                     </form>
-                                                    <button class="btn btn-danger btn-sm" onclick="showRejectModal({{ $landlord->id }}, '{{ $landlord->name }}')">
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick='showRejectModal({{ $landlord->id }}, @json($landlord->name))'>
                                                         <i class="fas fa-times"></i> Reject
                                                     </button>
                                                 @else
@@ -700,6 +896,7 @@
         let currentPreviewObjectUrl = null;
         let currentImageZoom = 1;
         let currentPreviewController = null;
+        let documentsModalLandlordId = null;
 
         function getFileExtension(fileName, fileUrl) {
             const source = (fileName || fileUrl || '').split('?')[0].toLowerCase();
@@ -888,51 +1085,167 @@
             applyPreviewImageZoom();
         }
 
-        function showDocumentsModal(landlordId, landlordName) {
-            document.getElementById('documentsModal').style.display = 'block';
-            
-            // Show loading state
-            document.getElementById('documentsContent').innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6;"></i>
-                    <p style="margin-top: 1rem;">Loading documents...</p>
-                </div>
-            `;
-            
-            // Fetch documents via AJAX
-            fetch(`/super-admin/landlords/${landlordId}/documents`)
-                .then(response => response.text())
-                .then(html => {
-                    // Extract the documents content from the response
+        function loadDocumentsIntoModal(landlordId, opts) {
+            opts = opts || {};
+            const container = document.getElementById('documentsContent');
+            if (!container) {
+                return Promise.reject(new Error('Missing documents container'));
+            }
+
+            if (opts.showLoading) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6;"></i>
+                        <p style="margin-top: 1rem;">Loading documents...</p>
+                    </div>
+                `;
+            }
+
+            return fetch(`/super-admin/landlords/${landlordId}/documents`, { credentials: 'same-origin' })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load documents');
+                    }
+                    return response.text();
+                })
+                .then((html) => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const documentsSection = doc.querySelector('.documents-section');
-                    
-                    if (documentsSection) {
-                        document.getElementById('documentsContent').innerHTML = documentsSection.outerHTML;
-                    } else {
-                        document.getElementById('documentsContent').innerHTML = `
-                            <div style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #f59e0b;"></i>
-                                <p style="margin-top: 1rem;">No documents found for this landlord.</p>
-                            </div>
-                        `;
+
+                    container.textContent = '';
+
+                    if (opts.flash) {
+                        const bar = document.createElement('div');
+                        const isWarning = opts.flashVariant === 'warning';
+                        bar.style.cssText = isWarning
+                            ? 'padding:0.5rem 1rem;margin-bottom:0.75rem;background:#fef3c7;color:#92400e;border-radius:0.375rem;font-size:0.875rem;'
+                            : 'padding:0.5rem 1rem;margin-bottom:0.75rem;background:#d1fae5;color:#047857;border-radius:0.375rem;font-size:0.875rem;';
+                        bar.textContent = opts.flash;
+                        container.appendChild(bar);
+                        setTimeout(() => {
+                            try {
+                                bar.remove();
+                            } catch (e) {
+                                /* ignore */
+                            }
+                        }, 4000);
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading documents:', error);
-                    document.getElementById('documentsContent').innerHTML = `
+
+                    if (documentsSection) {
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = documentsSection.outerHTML;
+                        while (wrapper.firstChild) {
+                            container.appendChild(wrapper.firstChild);
+                        }
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.style.cssText = 'text-align: center; padding: 2rem;';
+                        empty.innerHTML =
+                            '<i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #f59e0b;"></i><p style="margin-top: 1rem;">No documents found for this landlord.</p>';
+                        container.appendChild(empty);
+                    }
+                });
+        }
+
+        function showDocumentsModal(landlordId, landlordName) {
+            documentsModalLandlordId = landlordId;
+            document.getElementById('documentsModal').style.display = 'block';
+
+            loadDocumentsIntoModal(landlordId, { showLoading: true }).catch((error) => {
+                console.error('Error loading documents:', error);
+                const c = document.getElementById('documentsContent');
+                if (c) {
+                    c.innerHTML = `
                         <div style="text-align: center; padding: 2rem;">
                             <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #ef4444;"></i>
                             <p style="margin-top: 1rem;">Error loading documents. Please try again.</p>
                         </div>
                     `;
-                });
+                }
+            });
         }
 
         function closeDocumentsModal() {
             document.getElementById('documentsModal').style.display = 'none';
+            documentsModalLandlordId = null;
         }
+
+        (function attachLandlordDocVerifySubmit() {
+            const modal = document.getElementById('documentsModal');
+            if (!modal) {
+                return;
+            }
+            modal.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement)) {
+                    return;
+                }
+                if (!form.classList.contains('js-landlord-doc-verify-form')) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const landlordIdForRefresh = documentsModalLandlordId;
+                if (landlordIdForRefresh == null) {
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                }
+
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Accept: 'application/json',
+                    },
+                    credentials: 'same-origin',
+                })
+                    .then(async (response) => {
+                        const ct = response.headers.get('content-type') || '';
+                        const data = ct.includes('application/json') ? await response.json() : {};
+                        if (!response.ok) {
+                            const msg =
+                                data.message ||
+                                (data.errors
+                                    ? Object.values(data.errors)
+                                          .flat()
+                                          .join(' ')
+                                    : 'Could not update document.');
+                            throw new Error(msg);
+                        }
+                        return data;
+                    })
+                    .then((data) => {
+                        if (
+                            documentsModalLandlordId == null ||
+                            documentsModalLandlordId !== landlordIdForRefresh
+                        ) {
+                            return;
+                        }
+                        return loadDocumentsIntoModal(landlordIdForRefresh, {
+                            showLoading: false,
+                            flash: data.message || 'Document updated.',
+                            flashVariant: data.variant || 'success',
+                        });
+                    })
+                    .catch((err) => {
+                        alert(err.message || 'Could not update document.');
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                        }
+                    });
+            });
+        })();
 
         function showRejectModal(landlordId, landlordName) {
             document.getElementById('rejectModal').style.display = 'block';
