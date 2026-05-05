@@ -42,20 +42,25 @@ class RfidController extends Controller
 
         $cards = $cards->orderBy('created_at', 'desc')->paginate(10);
 
-        // Get recent access logs
-        $recentLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
+        // Show recent complete visits (paired IN at main_entrance + OUT at main_exit).
+        $recentBaseLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'tenantAssignment.unit', 'apartment'])
             ->when($propertyId, function ($query) use ($propertyId) {
                 return $query->where('property_id', $propertyId);
             })
-            ->orderBy('access_time', 'desc')
-            ->limit(10)
+            ->orderBy('access_time', 'asc')
+            ->limit(500)
             ->get();
+        [$recentCompleteVisits] = $this->partitionAccessLogsIntoVisitsAndOther($recentBaseLogs);
+        $recentCompleteVisits = $recentCompleteVisits
+            ->sortByDesc(fn ($visit) => $visit->out->access_time)
+            ->take(10)
+            ->values();
 
         // Get access statistics
         $stats = AccessLog::getAccessStats($propertyId, 30);
 
         return view('landlord.security.index', compact(
-            'cards', 'apartments', 'propertyId', 'recentLogs', 'stats'
+            'cards', 'apartments', 'propertyId', 'recentCompleteVisits', 'stats'
         ));
     }
 
