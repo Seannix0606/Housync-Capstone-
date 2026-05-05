@@ -1175,6 +1175,19 @@
                     return;
                 }
 
+                const statusInput = form.querySelector('input[name="status"]');
+                const isVerifyAction = statusInput?.value === 'verified';
+                const triggersAutoApprove = form.dataset.autoApproveOnVerify === '1';
+                if (isVerifyAction && triggersAutoApprove) {
+                    const landlordName = form.dataset.landlordName || 'This landlord';
+                    const shouldContinue = window.confirm(
+                        `${landlordName} is already approved after this verification and will be moved to User Management. Continue?`
+                    );
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+
                 event.preventDefault();
 
                 const landlordIdForRefresh = documentsModalLandlordId;
@@ -1218,6 +1231,15 @@
                             documentsModalLandlordId == null ||
                             documentsModalLandlordId !== landlordIdForRefresh
                         ) {
+                            return;
+                        }
+                        if (data && data.auto_approved) {
+                            closeDocumentsModal();
+                            alert(
+                                data.message ||
+                                    'Landlord approved and moved to User Management.'
+                            );
+                            window.location.reload();
                             return;
                         }
                         return loadDocumentsIntoModal(landlordIdForRefresh, {

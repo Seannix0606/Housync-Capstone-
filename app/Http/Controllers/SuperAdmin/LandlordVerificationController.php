@@ -19,6 +19,9 @@ class LandlordVerificationController extends Controller
                 'approvedBy',
                 'landlordDocuments',
             ])
+            ->whereHas('landlordProfile', function ($query) {
+                $query->where('status', 'pending');
+            })
             ->latest('users.created_at')
             ->paginate(15);
 
@@ -121,7 +124,7 @@ class LandlordVerificationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $autoApproved
-                    ? 'Document verified. Landlord automatically approved.'
+                    ? 'Document verified. This landlord is now approved and has been moved to User Management.'
                     : 'Document updated.',
                 'variant' => $autoApproved ? 'success' : ($request->status === 'verified' ? 'success' : 'warning'),
                 'auto_approved' => $autoApproved,
@@ -131,7 +134,7 @@ class LandlordVerificationController extends Controller
         return back()->with(
             'success',
             $autoApproved
-                ? 'Document verified. Landlord automatically approved.'
+                ? 'Document verified. This landlord is now approved and has been moved to User Management.'
                 : 'Document updated.'
         );
     }

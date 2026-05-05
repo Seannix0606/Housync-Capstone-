@@ -49,6 +49,12 @@
             </thead>
             <tbody>
                 @foreach ($documents as $doc)
+                    @php
+                        $remainingDocs = $documents->where('id', '!=', $doc->id);
+                        $willAutoApproveAfterVerify = $remainingDocs->every(
+                            fn ($item) => $item->verification_status === 'verified'
+                        );
+                    @endphp
                     <tr>
                         <td>{{ $doc->document_type_label }}</td>
                         <td>
@@ -68,7 +74,7 @@
                         </td>
                         <td>
                             @if($doc->verification_status === 'pending')
-                                <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" class="js-landlord-doc-verify-form" style="display: inline;">
+                                <form method="POST" action="{{ route('super-admin.verify-landlord-document', $doc->id) }}" class="js-landlord-doc-verify-form" style="display: inline;" data-auto-approve-on-verify="{{ $willAutoApproveAfterVerify ? '1' : '0' }}" data-landlord-name="{{ $landlord->name }}">
                                     @csrf
                                     <input type="hidden" name="status" value="verified">
                                     <button type="submit" class="btn btn-success">
