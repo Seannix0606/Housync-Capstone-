@@ -42,7 +42,7 @@ class RfidController extends Controller
 
         $cards = $cards->orderBy('created_at', 'desc')->paginate(10);
 
-        // Show recent complete visits (paired IN at main_entrance + OUT at main_exit).
+        // Show recent visit timeline: completed IN->OUT plus open IN (waiting for OUT).
         $recentBaseLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'tenantAssignment.unit', 'apartment'])
             ->when($propertyId, function ($query) use ($propertyId) {
                 return $query->where('property_id', $propertyId);
@@ -50,9 +50,23 @@ class RfidController extends Controller
             ->orderBy('access_time', 'asc')
             ->limit(500)
             ->get();
-        [$recentCompleteVisits] = $this->partitionAccessLogsIntoVisitsAndOther($recentBaseLogs);
-        $recentCompleteVisits = $recentCompleteVisits
-            ->sortByDesc(fn ($visit) => $visit->out->access_time)
+        [$recentCompleteVisits, , $recentOpenVisits] = $this->partitionAccessLogsIntoVisitsAndOther($recentBaseLogs);
+        $recentVisits = $recentCompleteVisits
+            ->map(function ($visit) {
+                $visit->visit_status = 'complete';
+                $visit->sort_time = $visit->out->access_time;
+
+                return $visit;
+            })
+            ->concat(
+                $recentOpenVisits->map(function ($visit) {
+                    $visit->visit_status = 'open';
+                    $visit->sort_time = $visit->in->access_time;
+
+                    return $visit;
+                })
+            )
+            ->sortByDesc(fn ($visit) => $visit->sort_time)
             ->take(10)
             ->values();
 
@@ -60,7 +74,7 @@ class RfidController extends Controller
         $stats = AccessLog::getAccessStats($propertyId, 30);
 
         return view('landlord.security.index', compact(
-            'cards', 'apartments', 'propertyId', 'recentCompleteVisits', 'stats'
+            'cards', 'apartments', 'propertyId', 'recentVisits', 'stats'
         ));
     }
 
@@ -277,12 +291,13 @@ class RfidController extends Controller
      * Pair granted taps: main_entrance then main_exit for the same card_uid in time order.
      * Unmatched entrance, orphan exit, denied, and other locations stay in "other".
      *
-     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection}
+     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection, 2: \Illuminate\Support\Collection}
      */
     private function partitionAccessLogsIntoVisitsAndOther($allLogsAsc): array
     {
         $pendingEntranceByCard = [];
-        $visits = [];
+        $completeVisits = [];
+        $openVisits = [];
         $other = [];
 
         foreach ($allLogsAsc as $log) {
@@ -312,7 +327,7 @@ class RfidController extends Controller
 
             if ($loc === 'main_exit') {
                 if (isset($pendingEntranceByCard[$log->card_uid])) {
-                    $visits[] = (object) [
+                    $completeVisits[] = (object) [
                         'in' => $pendingEntranceByCard[$log->card_uid],
                         'out' => $log,
                     ];
@@ -327,11 +342,18 @@ class RfidController extends Controller
             $other[] = $log;
         }
 
-        foreach ($pendingEntranceByCard as $orphanIn) {
-            $other[] = $orphanIn;
+        foreach ($pendingEntranceByCard as $pendingIn) {
+            $openVisits[] = (object) [
+                'in' => $pendingIn,
+                'out' => null,
+            ];
         }
 
-        return [collect($visits), collect($other)->sortByDesc('access_time')->values()];
+        return [
+            collect($completeVisits),
+            collect($other)->sortByDesc('access_time')->values(),
+            collect($openVisits)->sortByDesc(fn ($visit) => $visit->in->access_time)->values(),
+        ];
     }
 
     /**

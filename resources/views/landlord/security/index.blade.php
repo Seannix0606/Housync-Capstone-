@@ -202,10 +202,10 @@
         </div>
     </div>
 
-    <!-- Recent Complete Visits -->
+    <!-- Recent Visits -->
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Recent Complete Visits</h5>
+            <h5 class="card-title mb-0">Recent Visits</h5>
             <a href="{{ route('landlord.security.access-logs', ['property_id' => $propertyId]) }}" 
                class="btn btn-sm btn-outline-primary">
                 View All
@@ -232,12 +232,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($recentCompleteVisits as $visit)
+                        @forelse($recentVisits as $visit)
                             @php
                                 $in = $visit->in;
                                 $out = $visit->out;
-                                $secs = $in->access_time->diffInSeconds($out->access_time);
-                                $mins = (int) floor($secs / 60);
+                                $isComplete = $visit->visit_status === 'complete' && $out;
+                                $secs = $isComplete ? $in->access_time->diffInSeconds($out->access_time) : null;
+                                $mins = $secs !== null ? (int) floor($secs / 60) : null;
                             @endphp
                             <tr>
                                 <td>
@@ -251,13 +252,20 @@
                                 </td>
                                 <td>
                                     <small>
-                                        <div>{{ $out->access_time->format('M j, Y') }}</div>
-                                        <div class="text-muted">{{ $out->access_time->format('g:i:s A') }}</div>
+                                        @if($isComplete)
+                                            <div>{{ $out->access_time->format('M j, Y') }}</div>
+                                            <div class="text-muted">{{ $out->access_time->format('g:i:s A') }}</div>
+                                        @else
+                                            <div class="text-warning">Waiting for OUT</div>
+                                            <div class="text-muted">No exit yet</div>
+                                        @endif
                                     </small>
                                 </td>
                                 <td>
                                     <small>
-                                        @if($secs < 60)
+                                        @if(!$isComplete)
+                                            --
+                                        @elseif($secs < 60)
                                             {{ $secs }}s
                                         @elseif($mins < 60)
                                             {{ $mins }} min
@@ -279,15 +287,19 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-success">In → Out</span>
+                                    @if($isComplete)
+                                        <span class="badge bg-success">IN | OUT</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark">IN | Waiting OUT</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-3">
-                                    No complete visits yet.
+                                    No visits yet.
                                     <br>
-                                    <small class="text-muted">A complete visit requires a granted <code>main_entrance</code> tap followed by a granted <code>main_exit</code> tap for the same card UID.</small>
+                                    <small class="text-muted">Visits show both complete <code>IN | OUT</code> pairs and open entries waiting for <code>OUT</code>.</small>
                                 </td>
                             </tr>
                         @endforelse
