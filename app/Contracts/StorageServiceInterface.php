@@ -24,4 +24,3 @@ interface StorageServiceInterface
      */
     public function listFiles(string $bucket, string $path = ''): ?array;
 }
-

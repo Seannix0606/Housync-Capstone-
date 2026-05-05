@@ -9,9 +9,9 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Property;
 use App\Models\TenantAssignment;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\DirectMessagingAllowlist;
-use App\Models\Unit;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,6 +129,7 @@ class ChatController extends Controller
             $property->landlord_id,
             $property->id
         );
+
         return redirect()->route('tenant.chat.show', $conversation->id);
     }
 

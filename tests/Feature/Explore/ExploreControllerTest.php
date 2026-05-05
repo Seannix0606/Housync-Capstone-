@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Explore;
 
+use App\Models\Amenity;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
-use App\Models\Amenity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;

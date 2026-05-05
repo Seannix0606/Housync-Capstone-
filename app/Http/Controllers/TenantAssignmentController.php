@@ -353,7 +353,7 @@ class TenantAssignmentController extends Controller
             // --- START FIX: Determine Storage Mechanism ---
             // Force local storage when in local environment, regardless of Supabase config
             $useSupabase = config('app.env') !== 'local';
-            //&& config('services.supabase.key');
+            // && config('services.supabase.key');
 
             if ($useSupabase) {
                 $supabase = new \App\Services\SupabaseService;

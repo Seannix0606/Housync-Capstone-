@@ -71,5 +71,4 @@ class Announcement extends Model
             default => 'primary',
         };
     }
-
 }

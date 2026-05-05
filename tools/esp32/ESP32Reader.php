@@ -45,7 +45,7 @@ class ESP32Reader
         echo "Baudrate: {$this->baudrate}\n";
         echo "Laravel URL: {$this->laravelUrl}\n";
         echo "API Endpoint: {$this->apiEndpoint}\n";
-        echo "API Key: ".($this->apiKey ? '***set***' : '(not set — requests will be rejected!)')."\n";
+        echo 'API Key: '.($this->apiKey ? '***set***' : '(not set — requests will be rejected!)')."\n";
         echo "Web Scan Requests: Enabled\n";
         echo str_repeat('-', 50)."\n";
     }
@@ -160,15 +160,15 @@ class ESP32Reader
 
         $context = stream_context_create([
             'http' => [
-                'method'  => 'POST',
-                'header'  => $headers,
+                'method' => 'POST',
+                'header' => $headers,
                 'content' => $postData,
                 'timeout' => 30,
             ],
             'ssl' => [
-                'verify_peer'      => true,
+                'verify_peer' => true,
                 'verify_peer_name' => true,
-                'allow_self_signed'=> false,
+                'allow_self_signed' => false,
             ],
         ]);
 
@@ -544,14 +544,14 @@ class ESP32Reader
         // Create SSL context for HTTPS connections
         $context = stream_context_create([
             'http' => [
-                'method'  => 'GET',
-                'header'  => $headers,
+                'method' => 'GET',
+                'header' => $headers,
                 'timeout' => 30,
             ],
             'ssl' => [
-                'verify_peer'      => true,
+                'verify_peer' => true,
                 'verify_peer_name' => true,
-                'allow_self_signed'=> false,
+                'allow_self_signed' => false,
             ],
         ]);
 
@@ -713,14 +713,14 @@ if (php_sapi_name() === 'cli') {
     // Parse command line arguments
     $options = [
         'port' => 'COM8',
-        'url'  => 'https://web-production-2bbdd0.up.railway.app',
-        'key'  => getenv('ESP32_API_KEY') ?: '',
+        'url' => 'https://web-production-2bbdd0.up.railway.app',
+        'key' => getenv('ESP32_API_KEY') ?: '',
         'help' => false,
     ];
 
     $shortopts = 'h';
-    $longopts  = ['port:', 'url:', 'key:', 'help'];
-    $parsed    = getopt($shortopts, $longopts);
+    $longopts = ['port:', 'url:', 'key:', 'help'];
+    $parsed = getopt($shortopts, $longopts);
 
     if (isset($parsed['h']) || isset($parsed['help'])) {
         echo "Enhanced ESP32 RFID Reader for Laravel (Serial Bridge)\n";
@@ -769,4 +769,3 @@ if (php_sapi_name() === 'cli') {
 } else {
     echo "This script must be run from command line\n";
 }
-

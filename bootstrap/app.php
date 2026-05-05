@@ -30,8 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $rawProxies = env('TRUSTED_PROXIES');
         $at = match (true) {
             $rawProxies === null || $rawProxies === '' => null,
-            str_contains($rawProxies, ',')            => array_map('trim', explode(',', $rawProxies)),
-            default                                   => $rawProxies,
+            str_contains($rawProxies, ',') => array_map('trim', explode(',', $rawProxies)),
+            default => $rawProxies,
         };
         $middleware->trustProxies(
             at: $at,

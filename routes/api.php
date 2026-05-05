@@ -63,132 +63,132 @@ Route::middleware(['web', 'throttle:60,1', 'auth'])->group(function () {
 // `web` middleware is required so session cookies authenticate `<img src="/api/storage/...">`
 // requests from logged-in landlords and tenants.
 Route::middleware(['web'])->group(function () {
-Route::get('/storage/{path}', function (Request $request, $path) {
+    Route::get('/storage/{path}', function (Request $request, $path) {
 
-    // ── 1. Path traversal guard ───────────────────────────────────────────
-    // Payment proofs use the non-public disk (storage/app/private); other guarded paths stay under app/public.
-    $relativeFromRoute = ltrim(str_replace('\\', '/', $path), '/');
+        // ── 1. Path traversal guard ───────────────────────────────────────────
+        // Payment proofs use the non-public disk (storage/app/private); other guarded paths stay under app/public.
+        $relativeFromRoute = ltrim(str_replace('\\', '/', $path), '/');
 
-    $privateBase = realpath(storage_path('app/private'));
-    $publicBase = realpath(storage_path('app/public'));
+        $privateBase = realpath(storage_path('app/private'));
+        $publicBase = realpath(storage_path('app/public'));
 
-    $segmentPath = str_replace('/', DIRECTORY_SEPARATOR, $relativeFromRoute);
+        $segmentPath = str_replace('/', DIRECTORY_SEPARATOR, $relativeFromRoute);
 
-    $fullPath = false;
-    $basePath = null;
+        $fullPath = false;
+        $basePath = null;
 
-    if (str_starts_with($relativeFromRoute, 'payment-proofs/')
-        || str_starts_with($relativeFromRoute, 'landlord-instapay-quick-response-codes/')) {
-        // Private disk first; payment proofs may fall back to public (legacy store).
-        foreach ([$privateBase, $publicBase] as $tryBase) {
-            if ($tryBase === false) {
-                continue;
+        if (str_starts_with($relativeFromRoute, 'payment-proofs/')
+            || str_starts_with($relativeFromRoute, 'landlord-instapay-quick-response-codes/')) {
+            // Private disk first; payment proofs may fall back to public (legacy store).
+            foreach ([$privateBase, $publicBase] as $tryBase) {
+                if ($tryBase === false) {
+                    continue;
+                }
+                $candidate = realpath($tryBase.DIRECTORY_SEPARATOR.$segmentPath);
+                $prefix = rtrim($tryBase, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+                if ($candidate !== false && str_starts_with($candidate, $prefix) && is_file($candidate)) {
+                    $fullPath = $candidate;
+                    $basePath = $tryBase;
+                    break;
+                }
             }
-            $candidate = realpath($tryBase.DIRECTORY_SEPARATOR.$segmentPath);
-            $prefix = rtrim($tryBase, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
-            if ($candidate !== false && str_starts_with($candidate, $prefix) && is_file($candidate)) {
-                $fullPath = $candidate;
-                $basePath = $tryBase;
-                break;
-            }
+            abort_if($fullPath === false || $basePath === null, 404);
+        } else {
+            $basePath = $publicBase;
+            abort_if($basePath === false, 404);
+            $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
+            $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+            abort_if(
+                $fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath),
+                404
+            );
         }
-        abort_if($fullPath === false || $basePath === null, 404);
-    } else {
-        $basePath = $publicBase;
-        abort_if($basePath === false, 404);
-        $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$segmentPath);
-        $basePrefix = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
-        abort_if(
-            $fullPath === false || ! str_starts_with($fullPath, $basePrefix) || ! is_file($fullPath),
-            404
-        );
-    }
 
-    // Relative path (forward slashes) used in DB columns and authorization lookups.
-    $relativePath = ltrim(str_replace('\\', '/', substr($fullPath, strlen($basePath))), '/');
+        // Relative path (forward slashes) used in DB columns and authorization lookups.
+        $relativePath = ltrim(str_replace('\\', '/', substr($fullPath, strlen($basePath))), '/');
 
-    // ── 2. Authorization ──────────────────────────────────────────────────
-    $user = auth()->user();
+        // ── 2. Authorization ──────────────────────────────────────────────────
+        $user = auth()->user();
 
-    if (str_starts_with($relativePath, 'tenant-documents/')) {
-        // Tenant documents: private — owner, their active/past landlord, or super_admin.
-        abort_if(! $user, 401);
+        if (str_starts_with($relativePath, 'tenant-documents/')) {
+            // Tenant documents: private — owner, their active/past landlord, or super_admin.
+            abort_if(! $user, 401);
 
-        $doc = \App\Models\TenantDocument::where('file_path', $relativePath)->first();
-        abort_if(! $doc, 404);
+            $doc = \App\Models\TenantDocument::where('file_path', $relativePath)->first();
+            abort_if(! $doc, 404);
 
-        if (! $user->isSuperAdmin() && $doc->tenant_id !== $user->id) {
-            abort_unless($user->isLandlord(), 403);
+            if (! $user->isSuperAdmin() && $doc->tenant_id !== $user->id) {
+                abort_unless($user->isLandlord(), 403);
 
-            $isAssigned = \App\Models\TenantAssignment::where('tenant_id', $doc->tenant_id)
-                ->where('landlord_id', $user->id)
+                $isAssigned = \App\Models\TenantAssignment::where('tenant_id', $doc->tenant_id)
+                    ->where('landlord_id', $user->id)
+                    ->exists();
+
+                abort_unless($isAssigned, 403);
+            }
+
+        } elseif (str_starts_with($relativePath, 'payment-proofs/')) {
+            // Payment proofs: private — the paying tenant, the bill's landlord, or super_admin.
+            abort_if(! $user, 401);
+
+            $payment = \App\Models\Payment::with('bill')->where('proof_image', $relativePath)->first();
+            abort_if(! $payment, 404);
+
+            $isOwner = $payment->tenant_id === $user->id;
+            $isLandlord = $payment->bill?->landlord_id === $user->id;
+
+            abort_unless($isOwner || $isLandlord || $user->isSuperAdmin(), 403);
+
+        } elseif (str_starts_with($relativePath, 'landlord-instapay-quick-response-codes/')) {
+            abort_if(! $user, 401);
+
+            $landlordOwningCode = \App\Models\User::query()
+                ->where('role', 'landlord')
+                ->where('landlord_instapay_quick_response_code_image_path', $relativePath)
+                ->first();
+            abort_if(! $landlordOwningCode, 404);
+
+            $isLandlordOwner = $landlordOwningCode->id === $user->id;
+            $tenantHasBillFromLandlord = \App\Models\Bill::query()
+                ->where('landlord_id', $landlordOwningCode->id)
+                ->where('tenant_id', $user->id)
                 ->exists();
 
-            abort_unless($isAssigned, 403);
+            abort_unless($isLandlordOwner || $tenantHasBillFromLandlord || $user->isSuperAdmin(), 403);
+
+        } elseif (str_starts_with($relativePath, 'chat-attachments/')) {
+            // Chat attachments: private — only participants of the conversation.
+            abort_if(! $user, 401);
+
+            $attachment = \App\Models\MessageAttachment::with('message')->where('file_path', $relativePath)->first();
+            abort_if(! $attachment, 404);
+
+            $conversationId = $attachment->message?->conversation_id;
+            abort_if(! $conversationId, 404);
+
+            $isParticipant = \App\Models\ConversationParticipant::where('conversation_id', $conversationId)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            abort_unless($isParticipant || $user->isSuperAdmin(), 403);
+
+        } elseif (str_starts_with($relativePath, 'properties/')) {
+            // Property images: public — no authentication required.
+            // These are served from the public disk and are intentionally world-readable
+            // (shown on the explore page to unauthenticated visitors).
+            // No auth check needed; the path traversal guard above already ensures the
+            // resolved file stays within storage/app/public.
+
+        } else {
+            // Unlisted directory — return 404 (not 403) to avoid leaking that the file exists.
+            abort(404);
         }
 
-    } elseif (str_starts_with($relativePath, 'payment-proofs/')) {
-        // Payment proofs: private — the paying tenant, the bill's landlord, or super_admin.
-        abort_if(! $user, 401);
+        // ── 3. Serve file ─────────────────────────────────────────────────────
+        return response()->file($fullPath, [
+            'Content-Type' => mime_content_type($fullPath),
+            'Cache-Control' => 'private, no-store',
+        ]);
 
-        $payment = \App\Models\Payment::with('bill')->where('proof_image', $relativePath)->first();
-        abort_if(! $payment, 404);
-
-        $isOwner    = $payment->tenant_id === $user->id;
-        $isLandlord = $payment->bill?->landlord_id === $user->id;
-
-        abort_unless($isOwner || $isLandlord || $user->isSuperAdmin(), 403);
-
-    } elseif (str_starts_with($relativePath, 'landlord-instapay-quick-response-codes/')) {
-        abort_if(! $user, 401);
-
-        $landlordOwningCode = \App\Models\User::query()
-            ->where('role', 'landlord')
-            ->where('landlord_instapay_quick_response_code_image_path', $relativePath)
-            ->first();
-        abort_if(! $landlordOwningCode, 404);
-
-        $isLandlordOwner = $landlordOwningCode->id === $user->id;
-        $tenantHasBillFromLandlord = \App\Models\Bill::query()
-            ->where('landlord_id', $landlordOwningCode->id)
-            ->where('tenant_id', $user->id)
-            ->exists();
-
-        abort_unless($isLandlordOwner || $tenantHasBillFromLandlord || $user->isSuperAdmin(), 403);
-
-    } elseif (str_starts_with($relativePath, 'chat-attachments/')) {
-        // Chat attachments: private — only participants of the conversation.
-        abort_if(! $user, 401);
-
-        $attachment = \App\Models\MessageAttachment::with('message')->where('file_path', $relativePath)->first();
-        abort_if(! $attachment, 404);
-
-        $conversationId = $attachment->message?->conversation_id;
-        abort_if(! $conversationId, 404);
-
-        $isParticipant = \App\Models\ConversationParticipant::where('conversation_id', $conversationId)
-            ->where('user_id', $user->id)
-            ->exists();
-
-        abort_unless($isParticipant || $user->isSuperAdmin(), 403);
-
-    } elseif (str_starts_with($relativePath, 'properties/')) {
-        // Property images: public — no authentication required.
-        // These are served from the public disk and are intentionally world-readable
-        // (shown on the explore page to unauthenticated visitors).
-        // No auth check needed; the path traversal guard above already ensures the
-        // resolved file stays within storage/app/public.
-
-    } else {
-        // Unlisted directory — return 404 (not 403) to avoid leaking that the file exists.
-        abort(404);
-    }
-
-    // ── 3. Serve file ─────────────────────────────────────────────────────
-    return response()->file($fullPath, [
-        'Content-Type'  => mime_content_type($fullPath),
-        'Cache-Control' => 'private, no-store',
-    ]);
-
-})->where('path', '.*')->name('api.storage.fallback');
+    })->where('path', '.*')->name('api.storage.fallback');
 });

@@ -217,8 +217,7 @@ class ExploreController extends Controller
         $slug,
         PropertyHeroPresentationService $propertyHeroPresentationService,
         PropertyUnitPresentationService $propertyUnitPresentationService
-    )
-    {
+    ) {
         $property = Property::with([
             'units' => function ($query) {
                 $query->select([

@@ -648,11 +648,11 @@ class RfidController extends Controller
 
             if ($scanIdToFulfill) {
                 $scanCacheKey = 'rfid:scan_request:'.$scanIdToFulfill;
-                $scanData     = Cache::get($scanCacheKey);
+                $scanData = Cache::get($scanCacheKey);
 
                 if ($scanData && in_array($scanData['status'], ['pending', 'processing'], true)) {
-                    $scanData['status']       = 'completed';
-                    $scanData['card_uid']     = $cardUID;
+                    $scanData['status'] = 'completed';
+                    $scanData['card_uid'] = $cardUID;
                     $scanData['completed_at'] = now()->toISOString();
 
                     // Keep fulfilled data available long enough for the browser poller
@@ -665,9 +665,9 @@ class RfidController extends Controller
                     }
 
                     Log::info('Web scan request fulfilled', [
-                        'scan_id'  => $scanIdToFulfill,
+                        'scan_id' => $scanIdToFulfill,
                         'card_uid' => $cardUID,
-                        'device'   => $deviceId,
+                        'device' => $deviceId,
                     ]);
 
                     $result['scan_request_fulfilled'] = $scanIdToFulfill;
@@ -712,8 +712,8 @@ class RfidController extends Controller
     public function getLatestCardUID(Request $request)
     {
         try {
-            $propertyId  = $request->query('property_id');
-            $landlordId  = $request->query('landlord_id');
+            $propertyId = $request->query('property_id');
+            $landlordId = $request->query('landlord_id');
 
             $query = AccessLog::orderBy('access_time', 'desc');
 
@@ -860,7 +860,7 @@ class RfidController extends Controller
             }
 
             $landlordId = (int) $user->id;
-            $ttl        = now()->addSeconds($timeout + 5);
+            $ttl = now()->addSeconds($timeout + 5);
 
             // Create a scan request entry that ESP32Reader.php will monitor
             $scanId = 'web_scan_'.uniqid();
@@ -954,7 +954,7 @@ class RfidController extends Controller
 
         // Auto-expire timed-out requests
         $requestedAt = \Carbon\Carbon::parse($scanData['requested_at']);
-        $timeout     = (int) ($scanData['timeout'] ?? 15);
+        $timeout = (int) ($scanData['timeout'] ?? 15);
 
         if ($requestedAt->diffInSeconds(now()) > $timeout) {
             $scanData['status'] = 'timeout';

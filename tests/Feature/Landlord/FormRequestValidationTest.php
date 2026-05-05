@@ -4,9 +4,9 @@ namespace Tests\Feature\Landlord;
 
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Property;
-use App\Support\UnitTypeBedroomMapping;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\UnitTypeBedroomMapping;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

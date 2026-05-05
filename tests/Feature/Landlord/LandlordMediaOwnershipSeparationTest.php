@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Landlord;
 
+use App\Http\Middleware\RoleMiddleware;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
-use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;

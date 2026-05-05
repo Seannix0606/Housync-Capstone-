@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\BillPaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Payment;
-use App\Enums\BillPaymentMethod;
 use App\Models\User;
 use App\Notifications\PaymentProofSubmitted;
 use App\Services\Billing\PaymentVerificationImageStorageService;

@@ -29,9 +29,10 @@ return new class extends Migration
             $target = $toDir.DIRECTORY_SEPARATOR.$basename;
             if (file_exists($target)) {
                 Log::warning("Migration skip: collision for {$basename}");
+
                 continue;
             }
-            if ( ! @rename($filePath, $target)) {
+            if (! @rename($filePath, $target)) {
                 Log::error("Migration failed: could not move {$basename}");
             }
         }

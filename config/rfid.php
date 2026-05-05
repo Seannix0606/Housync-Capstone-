@@ -23,23 +23,23 @@ return [
 
     // ── Serial bridge settings (only used when mode = serial) ────────────────
 
-    'com_port'  => env('RFID_COM_PORT',  'COM3'),
+    'com_port' => env('RFID_COM_PORT', 'COM3'),
     'baud_rate' => env('RFID_BAUD_RATE', 115200),
 
     // Serial commands sent to the ESP32
     'commands' => [
-        'ping'         => 'PING',
+        'ping' => 'PING',
         'scan_request' => 'SCAN_REQUEST',
-        'scan_stop'    => 'SCAN_STOP',
-        'status'       => 'STATUS',
+        'scan_stop' => 'SCAN_STOP',
+        'status' => 'STATUS',
     ],
 
     // Expected response strings from the ESP32
     'responses' => [
-        'pong'           => 'PONG',
-        'scan_active'    => 'SCAN_REQUEST_ACTIVE',
+        'pong' => 'PONG',
+        'scan_active' => 'SCAN_REQUEST_ACTIVE',
         'scan_completed' => 'SCAN_COMPLETED',
-        'scan_timeout'   => 'SCAN_TIMEOUT',
+        'scan_timeout' => 'SCAN_TIMEOUT',
     ],
 
     // ── Shared settings (both modes) ─────────────────────────────────────────

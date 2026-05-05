@@ -3,22 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BillPaymentMethod;
+use App\Http\Requests\Landlord\StoreBillRequest;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Payment;
 use App\Models\TenantAssignment;
 use App\Models\User;
-use App\Http\Requests\Landlord\StoreBillRequest;
 use App\Notifications\BillCreated;
 use App\Notifications\PaymentProofSubmitted;
 use App\Notifications\PaymentRecorded;
 use App\Services\Billing\PaymentVerificationImageStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class BillingController extends Controller
 {

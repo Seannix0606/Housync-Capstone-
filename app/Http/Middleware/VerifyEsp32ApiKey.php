@@ -21,17 +21,17 @@ class VerifyEsp32ApiKey
         if (empty($expectedKey)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Internal Server Error: Application configuration is missing or invalid.'
+                'message' => 'Internal Server Error: Application configuration is missing or invalid.',
             ], 500);
         }
 
         // Check if the request contains the correct key
         $providedKey = $request->header('X-ESP32-Key');
 
-        if (!is_string($providedKey) || !hash_equals((string) $expectedKey, $providedKey)) {
+        if (! is_string($providedKey) || ! hash_equals((string) $expectedKey, $providedKey)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized: Invalid or missing authorization credentials.'
+                'message' => 'Unauthorized: Invalid or missing authorization credentials.',
             ], 401);
         }
 

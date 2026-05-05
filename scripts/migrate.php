@@ -10,14 +10,13 @@
  * Usage (from the project root):
  *   php scripts/migrate.php
  */
-
 define('LARAVEL_START', microtime(true));
 
 // ── 1. Resolve the project root (one level up from scripts/) ─────────────────
 $root = dirname(__DIR__);
 
 // ── 2. Composer autoloader ───────────────────────────────────────────────────
-$autoload = $root . '/vendor/autoload.php';
+$autoload = $root.'/vendor/autoload.php';
 
 if (! file_exists($autoload)) {
     fwrite(STDERR, "[ERROR] vendor/autoload.php not found. Run 'composer install' first.\n");
@@ -27,7 +26,7 @@ if (! file_exists($autoload)) {
 require $autoload;
 
 // ── 3. Bootstrap the Laravel application ────────────────────────────────────
-$app = require $root . '/bootstrap/app.php';
+$app = require $root.'/bootstrap/app.php';
 
 // Boot the HTTP kernel so all service providers (including DatabaseServiceProvider
 // and MigrationServiceProvider) are registered and booted.
@@ -38,7 +37,7 @@ $kernel->bootstrap();
 /** @var \Illuminate\Database\Migrations\Migrator $migrator */
 $migrator = $app->make('migrator');
 
-$migrationPath = $root . '/database/migrations';
+$migrationPath = $root.'/database/migrations';
 
 echo "[INFO] Connecting to database...\n";
 
@@ -64,7 +63,7 @@ if (empty($pending)) {
     exit(0);
 }
 
-echo "[INFO] Running " . count($pending) . " pending migration(s):\n";
+echo '[INFO] Running '.count($pending)." pending migration(s):\n";
 foreach ($pending as $migration) {
     echo "       - {$migration}\n";
 }
@@ -76,7 +75,7 @@ $migrator->run([$migrationPath]);
 $notes = $migrator->getNotes();
 foreach ($notes as $note) {
     // Strip any Symfony Console formatting tags (e.g. <info>, <comment>).
-    echo preg_replace('/<[^>]+>/', '', $note) . "\n";
+    echo preg_replace('/<[^>]+>/', '', $note)."\n";
 }
 
 // Verify by checking what ran vs. what was pending.

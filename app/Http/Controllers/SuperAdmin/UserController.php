@@ -10,7 +10,6 @@ use App\Models\StaffProfile;
 use App\Models\SuperAdminProfile;
 use App\Models\TenantProfile;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
