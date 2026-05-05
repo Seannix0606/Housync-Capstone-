@@ -5,6 +5,7 @@ nixPkgs = ['php82', 'php82Packages.composer', 'nodejs-18_x']
 cmds = [
     'composer install --no-dev --optimize-autoloader',
     'npm install',
+    'npm run build',
     'chmod -R 755 storage',
     'chmod -R 755 bootstrap/cache'
 ]

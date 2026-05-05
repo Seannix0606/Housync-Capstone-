@@ -1,5 +1,9 @@
 @extends('layouts.landlord-app')
 
+@prepend('scripts')
+    @include('partials.unit-type-bedroom-autofill')
+@endprepend
+
 @section('title', 'Add New Unit')
 
 @push('styles')
@@ -443,12 +447,12 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="bedrooms" class="form-label">Number of Bedrooms *</label>
-                                <input type="number" id="bedrooms" name="bedrooms" class="form-control @error('bedrooms') error @enderror" 
-                                       value="{{ old('bedrooms', 0) }}" placeholder="0" min="0" required readonly>
+                                <input type="number" id="bedrooms" name="bedrooms" class="form-control @error('bedrooms') error @enderror"
+                                       value="{{ old('bedrooms', 0) }}" placeholder="0" min="0" required>
                                 @error('bedrooms')
                                     <div class="error-message">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">Auto-filled based on unit type</small>
+                                <small class="form-text text-muted">Filled automatically when you choose a unit type; you may override.</small>
                             </div>
                             
                             <div class="form-group">
@@ -770,37 +774,6 @@
                     }
                 });
             }
-
-            // Auto-populate bedrooms based on unit type
-            const unitTypeSelect = document.getElementById('unit_type');
-            const bedroomsInput = document.getElementById('bedrooms');
-
-            unitTypeSelect.addEventListener('change', function() {
-                const unitType = this.value;
-                let bedroomCount = 0;
-
-                switch(unitType) {
-                    case 'studio':
-                        bedroomCount = 0;
-                        break;
-                    case 'one_bedroom':
-                        bedroomCount = 1;
-                        break;
-                    case 'two_bedroom':
-                        bedroomCount = 2;
-                        break;
-                    case 'three_bedroom':
-                        bedroomCount = 3;
-                        break;
-                    case 'penthouse':
-                        bedroomCount = 3; // Default for penthouse, can be adjusted
-                        break;
-                    default:
-                        bedroomCount = 0;
-                }
-
-                bedroomsInput.value = bedroomCount;
-            });
 
             // Form submission
             form.addEventListener('submit', function(e) {

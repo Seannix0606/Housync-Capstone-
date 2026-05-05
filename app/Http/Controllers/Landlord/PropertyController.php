@@ -96,8 +96,10 @@ class PropertyController extends Controller
             /** @var \App\Models\User $landlord */
             $landlord = Auth::user();
 
-            $property = DB::transaction(function () use ($request, $landlord, $propertyService, $propertyMediaService, $propertyCreationUnitMediaApplicator) {
-                $property = $propertyService->createPropertyWithUnits([
+            // Persist property + units first. Media uploads must not roll back the DB row when
+            // external storage (Supabase) is down or misconfigured — see PropertyMediaService.
+            $property = DB::transaction(function () use ($request, $landlord, $propertyService) {
+                return $propertyService->createPropertyWithUnits([
                     'landlord_id' => $landlord->id,
                     'name' => $request->name,
                     'property_type' => $request->property_type,
@@ -120,7 +122,10 @@ class PropertyController extends Controller
                     'amenities' => $request->amenities ?? [],
                     'status' => 'active',
                 ]);
+            });
 
+            $mediaWarning = null;
+            try {
                 $mediaPayload = $propertyMediaService->uploadForProperty(
                     $property->id,
                     $request->file('property_cover_image'),
@@ -132,20 +137,35 @@ class PropertyController extends Controller
                 }
 
                 $propertyCreationUnitMediaApplicator->applyFromRequest($property->fresh(), $request);
+            } catch (\Throwable $mediaException) {
+                Log::error('Property created but media step failed', [
+                    'property_id' => $property->id,
+                    'landlord_id' => $landlord->id,
+                    'exception' => $mediaException,
+                ]);
+                $mediaWarning = 'Property was saved, but one or more images could not be processed. You can add photos later in property settings.';
+            }
 
-                return $property->fresh(['units']);
-            });
-
+            $property = $property->fresh(['units']);
             $unitCount = $property->units->count();
             $successMessage = $unitCount === 1
                 ? 'Property created successfully with 1 unit.'
                 : "Property created successfully with {$unitCount} units.";
 
-            return redirect()->route('landlord.apartments')->with('success', $successMessage);
+            $redirect = redirect()->route('landlord.apartments')->with('success', $successMessage);
+            if ($mediaWarning !== null) {
+                $redirect->with('warning', $mediaWarning);
+            }
+
+            return $redirect;
         } catch (ValidationException $exception) {
             return back()->withInput()->withErrors($exception->errors());
         } catch (\Exception $exception) {
-            Log::error('Error creating property: '.$exception->getMessage());
+            Log::error('Error creating property', [
+                'landlord_id' => Auth::id(),
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
 
             return back()->withInput()->with('error', 'Failed to create property. Please try again.');
         }

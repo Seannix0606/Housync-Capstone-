@@ -286,8 +286,14 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-error" id="create-property-flash-error">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+    @endif
+
     @if($errors->any())
-        <div class="alert alert-error">
+        <div class="alert alert-error" id="create-property-validation-errors">
             <i class="fas fa-exclamation-circle"></i> Please fix the following errors:
             <ul style="margin-left: 1rem; margin-top: 0.5rem;">
                 @foreach($errors->all() as $error)
@@ -324,7 +330,7 @@
             </div>
         </div>
         
-        <form id="createApartmentForm" method="POST" action="{{ route('landlord.store-apartment') }}" class="form-container" enctype="multipart/form-data">
+        <form id="createApartmentForm" method="POST" action="{{ route('landlord.store-apartment') }}" class="form-container" enctype="multipart/form-data" novalidate>
             @csrf
             
             <!-- Basic Information -->
@@ -729,7 +735,41 @@
 <script>
     // Form validation and enhancement
     document.addEventListener('DOMContentLoaded', function() {
+        const validationBanner = document.getElementById('create-property-validation-errors')
+            || document.getElementById('create-property-flash-error');
+        if (validationBanner) {
+            validationBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         const form = document.getElementById('createApartmentForm');
+        if (!form) {
+            console.error('createApartmentForm not found');
+            return;
+        }
+
+        /** Skip disabled/hidden fields so property-type toggles do not trip HTML5 or JS checks. */
+        function isFieldActiveForValidation(field) {
+            if (!field || field.disabled || field.type === 'hidden') {
+                return false;
+            }
+            if (typeof field.checkVisibility === 'function') {
+                try {
+                    return field.checkVisibility({ checkOpacityZero: true, checkVisibilityCSS: true });
+                } catch (e) {
+                    /* fall through */
+                }
+            }
+            let el = field;
+            while (el && el !== document.body) {
+                const st = window.getComputedStyle(el);
+                if (st.display === 'none' || st.visibility === 'hidden') {
+                    return false;
+                }
+                el = el.parentElement;
+            }
+            return true;
+        }
+
         const inputs = form.querySelectorAll('input, select, textarea');
         const coverImageInput = document.getElementById('createApartmentCoverImageInput');
         const galleryInput = document.getElementById('createApartmentGalleryInput');
@@ -839,8 +879,11 @@
             // Only validate required fields strictly
             const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
             requiredFields.forEach(field => {
+                if (!isFieldActiveForValidation(field)) {
+                    return;
+                }
                 validateField(field);
-                if (field.classList.contains('error') || !field.value.trim()) {
+                if (field.classList.contains('error') || !String(field.value || '').trim()) {
                     isValid = false;
                     console.log('Required field validation failed:', field.name);
                 }
@@ -848,9 +891,11 @@
 
             // For optional fields, only validate if they have a value, but don't block submission
             inputs.forEach(input => {
-                if (!input.hasAttribute('required') && input.value.trim()) {
+                if (!isFieldActiveForValidation(input)) {
+                    return;
+                }
+                if (!input.hasAttribute('required') && String(input.value || '').trim()) {
                     validateField(input);
-                    // Don't block submission for optional field errors, just show the error
                 }
             });
 
@@ -1132,9 +1177,20 @@
         }
 
         if (propertyTypeSelect) {
+            let lastPropertyType = propertyTypeSelect.value;
             propertyTypeSelect.addEventListener('change', function () {
+                const next = propertyTypeSelect.value;
+                // Leaving duplex: clear per-unit fields so nothing stray gets posted if the browser ever included them.
+                if (lastPropertyType === 'duplex' && next !== 'duplex') {
+                    [unitBedrooms0, unitBedrooms1, unitStories0, unitStories1].forEach(function (el) {
+                        if (el) {
+                            el.value = '';
+                        }
+                    });
+                }
                 togglePropertyFields();
                 rebuildUnitMediaSlots();
+                lastPropertyType = next;
             });
             togglePropertyFields();
             rebuildUnitMediaSlots();

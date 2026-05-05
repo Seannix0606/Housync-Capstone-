@@ -4,17 +4,19 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Contracts\Landlord\PropertyTypeUnitRulesContract;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Landlord\FinalizeBulkUnitsRequest;
 use App\Http\Requests\Landlord\StoreUnitRequest;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\Landlord\LandlordUnitStatsService;
 use App\Services\Media\UnitMediaService;
+use App\Support\UnitTypeBedroomMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
@@ -206,7 +208,7 @@ class UnitController extends Controller
             // Note: very large numbers may impact performance, but we intentionally do not cap it.
             'units_per_floor' => 'nullable|integer|min:1',
             'create_all_bedrooms' => 'nullable|boolean',
-            'default_unit_type' => 'required|string|max:100',
+            'default_unit_type' => ['required', 'string', 'max:100', Rule::in(UnitTypeBedroomMapping::allowedUnitTypeKeys())],
             'default_rent' => 'required|numeric|min:0',
             'default_bedrooms' => 'required|integer|min:0',
             'default_bathrooms' => 'required|integer|min:1',
@@ -249,7 +251,7 @@ class UnitController extends Controller
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
-        $property = $landlord->properties()->withCount('units')->findOrFail($propertyId);
+        $property = $landlord->properties()->withCount('units')->with('units')->findOrFail($propertyId);
         $apartment = $property;
         $bulkParams = session('bulk_creation_params', []);
         $existingUnitsCount = $property->units_count;
@@ -260,67 +262,14 @@ class UnitController extends Controller
         return view('landlord.bulk-edit-units', compact('apartment', 'property', 'bulkParams', 'existingUnitsCount', 'bulkNewUnitsRemaining'));
     }
 
-    public function finalizeBulkUnits(Request $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)
+    public function finalizeBulkUnits(FinalizeBulkUnitsRequest $request, $propertyId, PropertyTypeUnitRulesContract $unitRules)
     {
         /** @var \App\Models\User $landlord */
         $landlord = Auth::user();
         $property = $landlord->properties()->findOrFail($propertyId);
 
-        $units = [];
-        $expectedCount = (int) $request->input('units_expected_count', 0);
-
-        // Prefer compact JSON payload to avoid PHP max_input_vars truncation on large batches.
-        $payload = $request->input('units_payload');
-        if (is_string($payload) && $payload !== '') {
-            try {
-                $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
-                if (is_array($decoded)) {
-                    $units = $decoded;
-                }
-            } catch (\JsonException $jsonException) {
-                Log::warning('Invalid bulk units payload JSON', [
-                    'property_id' => $propertyId,
-                    'error' => $jsonException->getMessage(),
-                ]);
-
-                return back()->withInput()->with('error', 'Invalid units payload received. Please try again.');
-            }
-        }
-
-        // Backward compatibility with old frontend that posts units[x][field] keys.
-        if (empty($units) && is_array($request->input('units'))) {
-            $units = $request->input('units');
-        }
-
-        // Debug: Log the number of units received
-        $unitsReceived = $units;
-        Log::info('Bulk units received', [
-            'property_id' => $propertyId,
-            'units_count' => is_array($unitsReceived) ? count($unitsReceived) : 0,
-            'expected_units_count' => $expectedCount,
-            'post_data_size' => strlen(serialize($request->all())),
-        ]);
-
-        if (empty($units)) {
-            return back()->with('error', 'No units data received. Please try again.');
-        }
-
-        if ($expectedCount > 0 && count($units) < $expectedCount) {
-            return back()->withInput()->with('error', 'Only '.count($units)." of {$expectedCount} units were received. Please retry; this usually means form data was truncated.");
-        }
-
-        Validator::make(['units' => $units], [
-            'units' => 'required|array',
-            'units.*.unit_number' => 'required|string|max:50',
-            'units.*.unit_type' => 'required|string|max:100',
-            'units.*.rent_amount' => 'required|numeric|min:0',
-            'units.*.bedrooms' => 'required|integer|min:0',
-            'units.*.bathrooms' => 'required|integer|min:1',
-            'units.*.status' => 'required|in:available,maintenance',
-            'units.*.leasing_type' => 'required|in:separate,inclusive',
-            'units.*.max_occupants' => 'required|integer|min:1',
-            'units.*.floor_number' => 'required|integer|min:1',
-        ])->validate();
+        /** @var array<int, array<string, mixed>> $units */
+        $units = $request->validated('units');
 
         try {
             $unitsCreated = 0;
@@ -570,7 +519,7 @@ class UnitController extends Controller
 
         $request->validate([
             'unit_number' => 'required|string|max:50|unique:units,unit_number,NULL,id,property_id,'.$propertyId,
-            'unit_type' => 'required|string|max:100',
+            'unit_type' => ['required', 'string', 'max:100', Rule::in(UnitTypeBedroomMapping::allowedUnitTypeKeys())],
             'rent_amount' => 'required|numeric|min:0',
             'bedrooms' => 'required|integer|min:0',
             'bathrooms' => 'required|integer|min:1',

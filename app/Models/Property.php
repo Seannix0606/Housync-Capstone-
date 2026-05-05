@@ -92,15 +92,45 @@ class Property extends Model
 
         static::creating(function ($property) {
             if (empty($property->slug)) {
-                $property->slug = Str::slug($property->name);
+                $property->slug = static::uniqueSlugFromName($property->name);
             }
         });
 
         static::updating(function ($property) {
             if ($property->isDirty('name') && empty($property->slug)) {
-                $property->slug = Str::slug($property->name);
+                $property->slug = static::uniqueSlugFromName($property->name, $property->id);
             }
         });
+    }
+
+    /**
+     * Generate a URL slug from the property name, appending -2, -3, … until unique (global `slug` column).
+     */
+    protected static function uniqueSlugFromName(?string $name, ?int $excludeId = null): string
+    {
+        $base = Str::slug((string) $name);
+        if ($base === '') {
+            $base = 'property';
+        }
+
+        $slug = $base;
+        $i = 1;
+        while (static::slugExists($slug, $excludeId)) {
+            $slug = $base.'-'.$i;
+            $i++;
+        }
+
+        return $slug;
+    }
+
+    protected static function slugExists(string $slug, ?int $excludeId): bool
+    {
+        $q = static::query()->where('slug', $slug);
+        if ($excludeId !== null) {
+            $q->where('id', '!=', $excludeId);
+        }
+
+        return $q->exists();
     }
 
     // ==================== RELATIONSHIPS ====================

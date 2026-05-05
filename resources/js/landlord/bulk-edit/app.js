@@ -649,20 +649,44 @@ export function mountBulkEditPage(rawConfig) {
         }
     }
 
+    /**
+     * Session/form values often arrive as strings ("0" is truthy in JS — never use `||` alone).
+     */
+    function parsePositiveInt(value, fallback) {
+        const n = typeof value === 'number' ? value : parseInt(String(value ?? '').trim(), 10);
+        if (!Number.isFinite(n) || n < 1) {
+            return fallback;
+        }
+        return n;
+    }
+
+    function parseNonNegativeNumber(value, fallback) {
+        const n = typeof value === 'number' ? value : parseFloat(String(value ?? '').trim());
+        if (!Number.isFinite(n) || n < 0) {
+            return fallback;
+        }
+        return n;
+    }
+
     function initializeBulkEdit() {
-        const totalFloors = config.totalFloors;
+        const totalFloors = Math.max(1, parsePositiveInt(config.totalFloors, 1));
         const propertyType = config.propertyType;
-        const bulkParams = config.bulkParams;
-        const unitsPerFloor = bulkParams.units_per_floor || 4;
-        const createAllBedrooms = bulkParams.create_all_bedrooms || false;
+        const bulkParams = config.bulkParams || {};
+        const unitsPerFloor = parsePositiveInt(bulkParams.units_per_floor, 4);
+        const createAllBedrooms = !!bulkParams.create_all_bedrooms;
         const defaultUnitType = bulkParams.default_unit_type || 'two_bedroom';
-        const defaultRent = bulkParams.default_rent || 15000;
-        const defaultBedrooms = bulkParams.default_bedrooms || 2;
-        const defaultBathrooms = bulkParams.default_bathrooms || 1;
+        const defaultRent = parseNonNegativeNumber(bulkParams.default_rent, 15000);
+        const defaultBedrooms = parseNonNegativeNumber(bulkParams.default_bedrooms, 2);
+        const defaultBathrooms = parsePositiveInt(bulkParams.default_bathrooms, 1);
+
+        const bedroomCountForHouse =
+            propertyType === 'house' && createAllBedrooms
+                ? parsePositiveInt(config.apartmentBedrooms, 1)
+                : 0;
 
         const totalUnitsToCreate =
             propertyType === 'house' && createAllBedrooms
-                ? config.apartmentBedrooms
+                ? bedroomCountForHouse
                 : unitsPerFloor * totalFloors;
 
         if (totalUnitsToCreate > 50) {
@@ -670,7 +694,7 @@ export function mountBulkEditPage(rawConfig) {
         }
 
         if (propertyType === 'house' && createAllBedrooms) {
-            const bedrooms = config.apartmentBedrooms;
+            const bedrooms = bedroomCountForHouse;
             for (let i = 1; i <= bedrooms; i++) {
                 addUnitToFloor(
                     1,

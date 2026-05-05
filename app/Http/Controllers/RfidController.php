@@ -8,6 +8,7 @@ use App\Models\RfidCard;
 use App\Models\TenantAssignment;
 use App\Models\TenantRfidAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -41,20 +42,25 @@ class RfidController extends Controller
 
         $cards = $cards->orderBy('created_at', 'desc')->paginate(10);
 
-        // Get recent access logs
-        $recentLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
+        // Show recent complete visits (paired IN at main_entrance + OUT at main_exit).
+        $recentBaseLogs = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'tenantAssignment.unit', 'apartment'])
             ->when($propertyId, function ($query) use ($propertyId) {
                 return $query->where('property_id', $propertyId);
             })
-            ->orderBy('access_time', 'desc')
-            ->limit(10)
+            ->orderBy('access_time', 'asc')
+            ->limit(500)
             ->get();
+        [$recentCompleteVisits] = $this->partitionAccessLogsIntoVisitsAndOther($recentBaseLogs);
+        $recentCompleteVisits = $recentCompleteVisits
+            ->sortByDesc(fn ($visit) => $visit->out->access_time)
+            ->take(10)
+            ->values();
 
         // Get access statistics
         $stats = AccessLog::getAccessStats($propertyId, 30);
 
         return view('landlord.security.index', compact(
-            'cards', 'apartments', 'propertyId', 'recentLogs', 'stats'
+            'cards', 'apartments', 'propertyId', 'recentCompleteVisits', 'stats'
         ));
     }
 
@@ -175,7 +181,7 @@ class RfidController extends Controller
     }
 
     /**
-     * Show access logs
+     * Show access logs (paired main_entrance → main_exit visits vs other events)
      */
     public function accessLogs(Request $request)
     {
@@ -190,7 +196,7 @@ class RfidController extends Controller
         $apartments = $user->properties;
 
         // Build query — restrict to this landlord's properties
-        $query = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'apartment'])
+        $query = AccessLog::with(['rfidCard', 'tenantAssignment.tenant', 'tenantAssignment.unit', 'apartment'])
             ->whereIn('property_id', $apartments->pluck('id'));
 
         // Apply filters
@@ -214,15 +220,118 @@ class RfidController extends Controller
             $query->whereDate('access_time', '<=', $dateTo);
         }
 
-        $logs = $query->orderBy('access_time', 'desc')->paginate(20);
+        $maxForPairing = 5000;
+        $allLogsAsc = (clone $query)->orderBy('access_time', 'asc')->limit($maxForPairing + 1)->get();
+        $pairingTruncated = $allLogsAsc->count() > $maxForPairing;
+        if ($pairingTruncated) {
+            $allLogsAsc = $allLogsAsc->take($maxForPairing);
+        }
+
+        [$visits, $otherLogs] = $this->partitionAccessLogsIntoVisitsAndOther($allLogsAsc);
+
+        $visits = $visits->sortByDesc(fn ($v) => $v->out->access_time)->values();
+
+        $visitPage = max(1, (int) $request->get('visit_page', 1));
+        $otherPage = max(1, (int) $request->get('other_page', 1));
+        $perVisitPage = 15;
+        $perOtherPage = 20;
+
+        $visitLogs = new LengthAwarePaginator(
+            $visits->forPage($visitPage, $perVisitPage)->values(),
+            $visits->count(),
+            $perVisitPage,
+            $visitPage,
+            ['path' => $request->url(), 'pageName' => 'visit_page']
+        );
+        $visitLogs->appends($request->except('visit_page'));
+
+        $otherLogsPaginator = new LengthAwarePaginator(
+            $otherLogs->forPage($otherPage, $perOtherPage)->values(),
+            $otherLogs->count(),
+            $perOtherPage,
+            $otherPage,
+            ['path' => $request->url(), 'pageName' => 'other_page']
+        );
+        $otherLogsPaginator->appends($request->except('other_page'));
 
         // Get denied access reasons for stats
         $deniedReasons = AccessLog::getDeniedAccessReasons($propertyId);
 
         return view('landlord.security.access-logs', compact(
-            'logs', 'apartments', 'propertyId', 'cardUid', 'result',
-            'dateFrom', 'dateTo', 'deniedReasons'
+            'visitLogs',
+            'otherLogsPaginator',
+            'pairingTruncated',
+            'maxForPairing',
+            'apartments',
+            'propertyId',
+            'cardUid',
+            'result',
+            'dateFrom',
+            'dateTo',
+            'deniedReasons',
+            'allLogsAsc'
         ));
+    }
+
+    /**
+     * Pair granted taps: main_entrance then main_exit for the same card_uid in time order.
+     * Unmatched entrance, orphan exit, denied, and other locations stay in "other".
+     *
+     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection}
+     */
+    private function partitionAccessLogsIntoVisitsAndOther($allLogsAsc): array
+    {
+        $pendingEntranceByCard = [];
+        $visits = [];
+        $other = [];
+
+        foreach ($allLogsAsc as $log) {
+            $scanType = is_array($log->raw_data) ? ($log->raw_data['scan_type'] ?? 'access_attempt') : 'access_attempt';
+            if ($scanType !== 'access_attempt') {
+                $other[] = $log;
+
+                continue;
+            }
+
+            if ($log->access_result !== 'granted') {
+                $other[] = $log;
+
+                continue;
+            }
+
+            $loc = strtolower(trim((string) $log->reader_location));
+
+            if ($loc === 'main_entrance') {
+                if (isset($pendingEntranceByCard[$log->card_uid])) {
+                    $other[] = $pendingEntranceByCard[$log->card_uid];
+                }
+                $pendingEntranceByCard[$log->card_uid] = $log;
+
+                continue;
+            }
+
+            if ($loc === 'main_exit') {
+                if (isset($pendingEntranceByCard[$log->card_uid])) {
+                    $visits[] = (object) [
+                        'in' => $pendingEntranceByCard[$log->card_uid],
+                        'out' => $log,
+                    ];
+                    unset($pendingEntranceByCard[$log->card_uid]);
+                } else {
+                    $other[] = $log;
+                }
+
+                continue;
+            }
+
+            $other[] = $log;
+        }
+
+        foreach ($pendingEntranceByCard as $orphanIn) {
+            $other[] = $orphanIn;
+        }
+
+        return [collect($visits), collect($other)->sortByDesc('access_time')->values()];
     }
 
     /**
@@ -366,6 +475,9 @@ class RfidController extends Controller
             $result['denial_reason'] = $rfidCard->getAccessDenialReason();
         }
 
+        $readerLocation = $request->input('reader_location', 'main_entrance');
+        $entryState = $this->resolveEntryStateForScan((string) $readerLocation, $cardUid);
+
         // Log the access attempt
         AccessLog::create([
             'card_uid' => $cardUid,
@@ -375,8 +487,8 @@ class RfidController extends Controller
             'access_result' => $result['access_granted'] ? 'granted' : 'denied',
             'denial_reason' => $result['denial_reason'],
             'access_time' => now(),
-            'reader_location' => $request->input('reader_location', 'main_entrance'),
-            'raw_data' => $request->all(),
+            'reader_location' => $readerLocation,
+            'raw_data' => array_merge($request->all(), ['entry_state' => $entryState]),
         ]);
 
         return response()->json($result);
@@ -450,20 +562,7 @@ class RfidController extends Controller
                 ], 400);
             }
 
-            // Determine entry state (IN/OUT) for single-scanner toggle
-            // Rule: If last scan for this card was IN, next is OUT; otherwise IN
-            $lastLog = \App\Models\AccessLog::where('card_uid', $cardUID)
-                ->orderBy('access_time', 'desc')
-                ->first();
-            $lastEntryState = null;
-            if ($lastLog) {
-                // Try to read from explicit field first, then from raw_data JSON
-                $lastEntryState = $lastLog->entry_state ?? null;
-                if (! $lastEntryState && is_array($lastLog->raw_data ?? null)) {
-                    $lastEntryState = $lastLog->raw_data['entry_state'] ?? null;
-                }
-            }
-            $entryState = ($lastEntryState === 'in') ? 'out' : 'in';
+            $entryState = $this->resolveEntryStateForScan((string) $readerLocation, $cardUID);
 
             // Process the card
             $rfidCard = RfidCard::with(['activeTenantAssignment.tenantAssignment.tenant'])->where('card_uid', $cardUID)->first();
@@ -625,9 +724,11 @@ class RfidController extends Controller
                 // Scope to all properties of the specified landlord
                 $query->whereHas('apartment', fn ($q) => $q->where('landlord_id', (int) $landlordId));
             } elseif ($user = auth()->user()) {
-                // Authenticated web session — auto-scope to this landlord's properties
                 $ownedIds = $user->properties()->pluck('id');
-                $query->whereIn('property_id', $ownedIds);
+                $query->where(function ($q) use ($ownedIds) {
+                    $q->whereIn('property_id', $ownedIds)
+                        ->orWhereNull('property_id');
+                });
             } else {
                 // No scope and no auth — refuse rather than expose cross-tenant UIDs
                 return response()->json([
@@ -1116,6 +1217,37 @@ class RfidController extends Controller
         Cache::put($cacheKey, $scanData, now()->addSeconds(30));
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Resolve entry direction for a scan.
+     * main_entrance is always "in"; main_exit is always "out".
+     * Any other reader_location keeps the legacy toggle from the card's last log.
+     */
+    private function resolveEntryStateForScan(string $readerLocation, string $cardUid): string
+    {
+        $loc = strtolower(trim($readerLocation));
+
+        if ($loc === 'main_entrance') {
+            return 'in';
+        }
+
+        if ($loc === 'main_exit') {
+            return 'out';
+        }
+
+        $lastLog = AccessLog::where('card_uid', $cardUid)
+            ->orderBy('access_time', 'desc')
+            ->first();
+        $lastEntryState = null;
+        if ($lastLog) {
+            $lastEntryState = $lastLog->entry_state ?? null;
+            if (! $lastEntryState && is_array($lastLog->raw_data ?? null)) {
+                $lastEntryState = $lastLog->raw_data['entry_state'] ?? null;
+            }
+        }
+
+        return ($lastEntryState === 'in') ? 'out' : 'in';
     }
 
     /**

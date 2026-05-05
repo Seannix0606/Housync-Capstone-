@@ -4,11 +4,16 @@ namespace App\Services\Media;
 
 use App\Services\SupabaseService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 class PropertyMediaService
 {
     /**
      * Upload property media and return normalized DB payload.
+     *
+     * Matches {@see UnitMediaService}: try Supabase first, then fall back to the
+     * public disk. Throwing here used to roll back the entire property create
+     * transaction when Supabase was misconfigured (common on new deploys).
      */
     public function uploadForProperty(int $propertyId, ?UploadedFile $coverImage, array $galleryImages = []): array
     {
@@ -18,6 +23,7 @@ class PropertyMediaService
             $payload['cover_image'] = $this->uploadSingle(
                 file: $coverImage,
                 supabasePath: "properties/{$propertyId}/cover/".$this->buildFilename('property-cover', $coverImage),
+                localPath: "properties/{$propertyId}/cover",
             );
         }
 
@@ -31,6 +37,7 @@ class PropertyMediaService
                 $galleryPaths[] = $this->uploadSingle(
                     file: $galleryImage,
                     supabasePath: "properties/{$propertyId}/gallery/".time()."-{$index}-".$this->buildFilename('property-gallery', $galleryImage),
+                    localPath: "properties/{$propertyId}/gallery",
                 );
             }
 
@@ -42,7 +49,7 @@ class PropertyMediaService
         return $payload;
     }
 
-    private function uploadSingle(UploadedFile $file, string $supabasePath): string
+    private function uploadSingle(UploadedFile $file, string $supabasePath, string $localPath): string
     {
         if (app()->environment('testing')) {
             return $supabasePath;
@@ -59,19 +66,15 @@ class PropertyMediaService
             return $result['url'];
         }
 
-        \Illuminate\Support\Facades\Log::error('Supabase property media upload failed', [
-            'path'        => $supabasePath,
-            'message'     => $result['message'] ?? 'unknown error',
-            'error'       => $result['error'] ?? null,
+        Log::warning('Supabase property media upload failed; storing on public disk', [
+            'path' => $supabasePath,
+            'localPath' => $localPath,
+            'message' => $result['message'] ?? 'unknown error',
+            'error' => $result['error'] ?? null,
             'status_code' => $result['status_code'] ?? null,
-            'response'    => $result['response'] ?? null,
         ]);
 
-        throw new \RuntimeException(
-            'Failed to upload property image to Supabase storage. '.
-            ($result['message'] ?? 'Unknown error').
-            ' (path: '.$supabasePath.')'
-        );
+        return $file->store($localPath, 'public');
     }
 
     private function buildFilename(string $prefix, UploadedFile $file): string
